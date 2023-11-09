@@ -73,7 +73,7 @@ Type id + additional type info (i.e. length of a string) forms a header of a val
 - Metadata file
     - The version of bxes is written (`u64`, `8 bytes`)
     - The number of metadata key-value pairs is written (`u64`, `8 bytes`)
-    - The ofsets of key-value pairs in "Values file" is written [offset(`u64`, `8 bytes`)]
+    - The offsets of key-value pairs in "Values file" is written [offset(`u64`, `8 bytes`)]
 - Values file
     - The version of bxes is written (`u64`, `8 bytes`)
     - The number of values is written (`u64`, `8 bytes`)
