@@ -61,19 +61,19 @@ Type id + additional type info (i.e. length of a string) forms a header of a val
 - The number of values is written (`u64`) - `8 bytes`
 - Then there is a sequence of values [(Header[type-id + metainfo], value)]
 - Then there is a number of attribute key-values pairs (`u64`) - `8 bytes`
-- After that there is a sequence of pairs (offset(`u64`, `8 bytes`), offset(`u64`, `8 bytes`)), which indicates the attributes key-value pairs.
+- After that there is a sequence of pairs (index(`u64`, `8 bytes`), index(`u64`, `8 bytes`)), which indicates the attributes key-value pairs.
 - The number of event log metadata key-value pairs is written (`u64`, `8 bytes`)
-- The event log metadata is written [key-value pair offset (`u64`, `8 bytes`)]
+- The event log metadata is written [key-value pair index (`u64`, `8 bytes`)]
 - Then the number of traces variants is written (`u64`) - `8 bytes`
 - Then the sequence of traces variants is written.
-  Each variant is a pair (number_of_traces(`u64`, `8 bytes`), number_of_events(`u64`, `8 bytes`), [Event[(number_of_attributes(`u64`,` 8 bytes`), [key-value offset (`u64`, `8 bytes`)])]])
+  Each variant is a pair (number_of_traces(`u64`, `8 bytes`), number_of_events(`u64`, `8 bytes`), [Event[(number_of_attributes(`u64`,` 8 bytes`), [key-value index (`u64`, `8 bytes`)])]])
 
  ### Multiple files format description
 
 - Metadata file
     - The version of bxes is written (`u64`, `8 bytes`)
     - The number of metadata key-value pairs is written (`u64`, `8 bytes`)
-    - The offsets of key-value pairs in "Values file" is written [offset(`u64`, `8 bytes`)]
+    - The indices of key-value pairs in "Values file" is written [index(`u64`, `8 bytes`)]
 - Values file
     - The version of bxes is written (`u64`, `8 bytes`)
     - The number of values is written (`u64`, `8 bytes`)
@@ -81,8 +81,12 @@ Type id + additional type info (i.e. length of a string) forms a header of a val
 - Key-value pairs file
     - The version of bxes is written (`u64`, `8 bytes`)
     - The number of key-value pairs is written (`u64`, `8 bytes`)
-    - The key-value pairs are written (offset(`u64`, `8 bytes`), offset(`u64`, `8 bytes`))
+    - The key-value pairs are written (index(`u64`, `8 bytes`), index(`u64`, `8 bytes`))
 - Traces file
     - The version of bxes is written (`u64`, `8 bytes`)
     - The number of traces variants is written (`u64`, `8 bytes`)
-    - Traces variants are written: (number_of_traces(`u64`, `8 bytes`), number_of_events(`u64`, `8 bytes`), [Event[(number_of_attributes(`u64`, `8 bytes`), [key-value offset (`u64`, `8 bytes`)])]])
+    - Traces variants are written: (number_of_traces(`u64`, `8 bytes`), number_of_events(`u64`, `8 bytes`), [Event[(number_of_attributes(`u64`, `8 bytes`), [key-value index (`u64`, `8 bytes`)])]])
+
+### Online event log transfer
+
+The opportunity to divide event log into different files can help in online transferring of event logs. The core idea is that values, attribute key-value pairs, event log metadata and traces can be transferred independently.
