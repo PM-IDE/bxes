@@ -50,7 +50,44 @@ The following types are suported in bxes:
 - `f64` (type id = 4, `8 bytes`)
 - `String` (UTF-8 strings) (type id = 5, length bytes) + (length in bytes, `u64`)
 - `bool` (type id = 6, `1 byte`)
-- `date` (type id = 7, `8 bytes`), the date is UTC ticks.
+
+XES-sprcific types:
+- `timestamp` (type id = 7, `8 bytes`), the date is UTC ticks.
+- `event-name` (type id = 8, String length), the name of event - string, concept-name from XES
+- `braf-lifecycle-transition` (type id = 9, `1 byte`) - BRAF lifecycle model
+    - Closed = `0`
+    - Closed.Cancelled = `1`
+    - Closed.Cancelled.Aborted = `2`
+    - Closed.Cancelled.Error = `3`
+    - Closed.Cancelled.Exited = `4`
+    - Closed.Cancelled.Obsolete = `5`
+    - Closed.Cancelled.Terminated = `6`
+    - Completed = `7`
+    - Completed.Failed = `8`
+    - Completed.Success = `9`
+    - Open = `10`
+    - Open.NotRunning = `11`
+    - Open.NotRunning.Assigned = `12`
+    - Open.NotRunning.Reserved = `13`
+    - Open.NotRunning.Suspended.Assigned = `14`
+    - Open.NotRunning.Suspended.Reserved = `15`
+    - Open.Running = `16`
+    - Open.Running.InProgress = `17`
+    - Open.Running.Suspended = `18`
+- `standard-lifecycle-transition` (type id = 10, `1 byte`) - standard lifecycle model
+    - assign = `0`
+    - ate_abort = `1`
+    - autoskip = `2`
+    - complete = `3`
+    - manualskip = `4`
+    - pi_abort = `5`
+    - reassign = `6`
+    - resume = `7`
+    - schedule = `8`
+    - start = `9`
+    - suspend = `10`
+    - unknown = `11`
+    - withdraw = `12`
 
 Type id is one byte length. In case of string the length of a string in bytes is also serialized, the length of string takes 8 bytes.
 Type id + additional type info (i.e. length of a string) forms a header of a value, followed by the actual value
@@ -89,4 +126,5 @@ Type id + additional type info (i.e. length of a string) forms a header of a val
 
 ### Online event log transfer
 
-The opportunity to divide event log into different files can help in online transferring of event logs. The core idea is that values, attribute key-value pairs, event log metadata and traces can be transferred independently.
+The opportunity to divide event log into different files can help in online transferring of event logs.
+The core idea is that values, attribute key-value pairs, event log metadata and traces can be transferred independently.
