@@ -2,6 +2,8 @@ using System.Text;
 
 namespace Bxes;
 
+using IndexType = uint;
+
 public interface IBxesWriter
 {
   Task WriteAsync(IEventLog log, string savePath);
@@ -9,20 +11,14 @@ public interface IBxesWriter
 
 public static class BxesConstants
 {
-  public const uint BxesVersion = 1;
+  public const IndexType BxesVersion = 1;
 }
 
-internal struct SingleFileBxesWriteContext
+internal readonly struct SingleFileBxesWriteContext(BinaryWriter binaryWriter)
 {
-  public BinaryWriter Writer { get; }
+  public BinaryWriter Writer { get; } = binaryWriter;
   public Dictionary<BxesValue, long> ValuesIndices { get; } = new();
   public Dictionary<(BXesStringValue, BxesValue), long> KeyValueIndices { get; } = new();
-
-
-  public SingleFileBxesWriteContext(BinaryWriter binaryWriter)
-  {
-    Writer = binaryWriter;
-  }
 }
 
 public class SingleFileBxesWriter : IBxesWriter
@@ -34,13 +30,12 @@ public class SingleFileBxesWriter : IBxesWriter
 
     var context = new SingleFileBxesWriteContext(bw);
     
-    WriteBxesVersion(bw, context);
+    WriteBxesVersion(bw);
     WriteValues(log, context);
     WriteKeyValuePairs(log, context);
-    
   }
 
-  private void WriteBxesVersion(BinaryWriter bw, SingleFileBxesWriteContext context)
+  private void WriteBxesVersion(BinaryWriter bw)
   {
     bw.Write(BxesConstants.BxesVersion);
   }
@@ -48,9 +43,9 @@ public class SingleFileBxesWriter : IBxesWriter
   private void WriteValues(IEventLog log, SingleFileBxesWriteContext context)
   {
     var valuesCountPosition = context.Writer.BaseStream.Position;
-    context.Writer.Write((ulong)0);
+    context.Writer.Write((IndexType)0);
     
-    ulong count = 0;
+    IndexType count = 0;
     foreach (var trace in log.Traces)
     {
       foreach (var @event in trace.Events)
@@ -72,20 +67,14 @@ public class SingleFileBxesWriter : IBxesWriter
     writer.BaseStream.Seek(currentPosition, SeekOrigin.Begin);
   }
 
-  private void WriteEventValues(IEvent @event, SingleFileBxesWriteContext context, ref ulong count)
+  private void WriteEventValues(IEvent @event, SingleFileBxesWriteContext context, ref IndexType count)
   {
     var nameValue = new BXesStringValue(@event.Name);
     if (!context.ValuesIndices.ContainsKey(nameValue))
     {
       context.ValuesIndices[nameValue] = context.Writer.BaseStream.Position;
       context.Writer.Write(@event.Name);
-    }
-
-    var timestampValue = new BxesInt64Value(@event.Timestamp);
-    if (!context.ValuesIndices.ContainsKey(timestampValue))
-    {
-      context.ValuesIndices[timestampValue] = context.Writer.BaseStream.Position;
-      context.Writer.Write(timestampValue.Value);
+      ++count;
     }
 
     //todo: lifecycle
@@ -95,12 +84,14 @@ public class SingleFileBxesWriter : IBxesWriter
       {
         context.ValuesIndices[key] = context.Writer.BaseStream.Position;
         context.Writer.Write(key.Value);
+        ++count;
       }
 
       if (!context.ValuesIndices.ContainsKey(value))
       {
         context.ValuesIndices[value] = context.Writer.BaseStream.Position;
         value.WriteTo(context.Writer);
+        ++count;
       }
     }
   }
@@ -108,9 +99,9 @@ public class SingleFileBxesWriter : IBxesWriter
   private void WriteKeyValuePairs(IEventLog log, SingleFileBxesWriteContext context)
   {
     var keyValueCountPosition = context.Writer.BaseStream.Position;
-    context.Writer.Write((ulong)0);
+    context.Writer.Write((IndexType)0);
 
-    ulong count = 0;
+    IndexType count = 0;
     foreach (var trace in log.Traces)
     {
       foreach (var @event in trace.Events)
@@ -122,7 +113,7 @@ public class SingleFileBxesWriter : IBxesWriter
     WriteCount(context.Writer, keyValueCountPosition, count);
   }
 
-  private void WriteEventKeyValuePair(IEvent @event, SingleFileBxesWriteContext context, ref ulong count)
+  private void WriteEventKeyValuePair(IEvent @event, SingleFileBxesWriteContext context, ref IndexType count)
   {
     foreach (var (key, value) in @event.Attributes)
     {
