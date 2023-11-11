@@ -55,39 +55,39 @@ XES-sprcific types:
 - `timestamp` (type id = 7, `8 bytes`), the date is UTC ticks.
 - `event-name` (type id = 8, String length), the name of event - string, concept-name from XES
 - `braf-lifecycle-transition` (type id = 9, `1 byte`) - BRAF lifecycle model
-    - Closed = `0`
-    - Closed.Cancelled = `1`
-    - Closed.Cancelled.Aborted = `2`
-    - Closed.Cancelled.Error = `3`
-    - Closed.Cancelled.Exited = `4`
-    - Closed.Cancelled.Obsolete = `5`
-    - Closed.Cancelled.Terminated = `6`
-    - Completed = `7`
-    - Completed.Failed = `8`
-    - Completed.Success = `9`
-    - Open = `10`
-    - Open.NotRunning = `11`
-    - Open.NotRunning.Assigned = `12`
-    - Open.NotRunning.Reserved = `13`
-    - Open.NotRunning.Suspended.Assigned = `14`
-    - Open.NotRunning.Suspended.Reserved = `15`
-    - Open.Running = `16`
-    - Open.Running.InProgress = `17`
-    - Open.Running.Suspended = `18`
+    - Closed = `1`
+    - Closed.Cancelled = `2`
+    - Closed.Cancelled.Aborted = `3`
+    - Closed.Cancelled.Error = `4`
+    - Closed.Cancelled.Exited = `5`
+    - Closed.Cancelled.Obsolete = `6`
+    - Closed.Cancelled.Terminated = `7`
+    - Completed = `8`
+    - Completed.Failed = `9`
+    - Completed.Success = `10`
+    - Open = `11`
+    - Open.NotRunning = `12`
+    - Open.NotRunning.Assigned = `13`
+    - Open.NotRunning.Reserved = `14`
+    - Open.NotRunning.Suspended.Assigned = `15`
+    - Open.NotRunning.Suspended.Reserved = `16`
+    - Open.Running = `17`
+    - Open.Running.InProgress = `18`
+    - Open.Running.Suspended = `19`
 - `standard-lifecycle-transition` (type id = 10, `1 byte`) - standard lifecycle model
-    - assign = `0`
-    - ate_abort = `1`
-    - autoskip = `2`
-    - complete = `3`
-    - manualskip = `4`
-    - pi_abort = `5`
-    - reassign = `6`
-    - resume = `7`
-    - schedule = `8`
-    - start = `9`
-    - suspend = `10`
-    - unknown = `11`
-    - withdraw = `12`
+    - assign = `1`
+    - ate_abort = `2`
+    - autoskip = `3`
+    - complete = `4`
+    - manualskip = `5`
+    - pi_abort = `6`
+    - reassign = `7`
+    - resume = `8`
+    - schedule = `9`
+    - start = `10`
+    - suspend = `11`
+    - unknown = `12`
+    - withdraw = `13`
 
 Type id is one byte length. In case of string the length of a string in bytes is also serialized, the length of string takes 8 bytes.
 Type id + additional type info (i.e. length of a string) forms a header of a value, followed by the actual value
@@ -103,9 +103,16 @@ Type id + additional type info (i.e. length of a string) forms a header of a val
 - The event log metadata is written [key-value pair index (`u64`, `8 bytes`)]
 - Then the number of traces variants is written (`u64`) - `8 bytes`
 - Then the sequence of traces variants is written.
-  Each variant is a pair (number_of_traces(`u64`, `8 bytes`), number_of_events(`u64`, `8 bytes`), [Event[(number_of_attributes(`u64`,` 8 bytes`), [key-value index (`u64`, `8 bytes`)])]])
+  Each variant is a pair (number_of_traces(`u64`, `8 bytes`), number_of_events(`u64`, `8 bytes`), [Event])
 
- ### Multiple files format description
+### Event description
+  - name value index: (`u64`, `8 bytes`)
+  - timestamp value (`u64`, `8 bytes`)
+  - lifecycle value (`2 bytes`, type id (`1 byte`) + value (`1 byte`), `0` if unspecified)
+  - number of attributes (`u32`, `4 bytes`)
+  - sequence of key value indices (size * `8 bytes`)
+
+### Multiple files format description
 
 - Metadata file
     - The version of bxes is written (`u64`, `8 bytes`)
@@ -122,7 +129,7 @@ Type id + additional type info (i.e. length of a string) forms a header of a val
 - Traces file
     - The version of bxes is written (`u64`, `8 bytes`)
     - The number of traces variants is written (`u64`, `8 bytes`)
-    - Traces variants are written: (number_of_traces(`u64`, `8 bytes`), number_of_events(`u64`, `8 bytes`), [Event[(number_of_attributes(`u64`, `8 bytes`), [key-value index (`u64`, `8 bytes`)])]])
+    - Traces variants are written: (number_of_traces(`u64`, `8 bytes`), number_of_events(`u64`, `8 bytes`), [Event])
 
 ### Online event log transfer
 
