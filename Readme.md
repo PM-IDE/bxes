@@ -47,13 +47,13 @@ The following types are suported in bxes:
 - `i64` (type id = 1, `8 bytes`)
 - `u32` (type id = 2, `4 bytes`)
 - `u64` (type id = 3, `8 bytes`)
-- `f64` (type id = 4, `8 bytes`)
-- `String` (UTF-8 strings) (type id = 5, length bytes) + (length in bytes, `u64`)
-- `bool` (type id = 6, `1 byte`)
+- `f32` (type id = 4, `4 bytes`)
+- `f64` (type id = 5, `8 bytes`)
+- `String` (UTF-8 strings) (type id = 6, length bytes) + (length in bytes, `u64`)
+- `bool` (type id = 7, `1 byte`)
 
 XES-sprcific types:
-- `timestamp` (type id = 7, `8 bytes`), the date is UTC ticks.
-- `event-name` (type id = 8, String length), the name of event - string, concept-name from XES
+- `timestamp` (type id = 8, `8 bytes`), the date is UTC ticks.
 - `braf-lifecycle-transition` (type id = 9, `1 byte`) - BRAF lifecycle model
     - Closed = `1`
     - Closed.Cancelled = `2`
