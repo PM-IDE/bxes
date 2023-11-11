@@ -19,7 +19,7 @@ public interface IEvent
 {
   long Timestamp { get; }
   string Name { get; }
-  EventLifecycle? Lifecycle { get; }
+  IEventLifecycle? Lifecycle { get; }
 
   IEventAttributes Attributes { get; }
 }
@@ -194,14 +194,87 @@ public class BXesStringValue : BxesValue<string>
   }
 }
 
-public abstract class EventLifecycle
+public enum BrafLifecycleValues : byte
+{
+  Closed = 1,
+  ClosedCancelled = 2,
+  ClosedCancelledAborted = 3,
+  ClosedCancelledError = 4,
+  ClosedCancelledExited = 5,
+  ClosedCancelledObsolete = 6,
+  ClosedCancelledTerminated = 7,
+  Completed = 8,
+  CompletedFailed = 9,
+  CompletedSuccess = 10,
+  Open = 11,
+  OpenNotRunning = 12,
+  OpenNotRunningAssigned = 13,
+  OpenNotRunningReserved = 14,
+  OpenNotRunningSuspendedAssigned = 15,
+  OpenNotRunningSuspendedReserved = 16,
+  OpenRunning = 17,
+  OpenRunningInProgress = 18,
+  OpenRunningSuspended = 19,
+}
+
+public enum StandardLifecycleValues : byte
+{
+  Assign = 1,
+  AteAbort = 2,
+  Autoskip = 3,
+  Complete = 4,
+  ManualSkip = 5,
+  PiAbort = 6,
+  ReAssign = 7,
+  Resume = 8,
+  Schedule = 9,
+  Start = 10,
+  Suspend = 11,
+  Unknown = 12,
+  Withdraw = 13,
+}
+
+public interface IEventLifecycle
 {
 }
 
-public class StandardXesLifecycle : EventLifecycle
+public abstract class EventLifecycle<TLifecycleValue> : BxesValue<TLifecycleValue>, IEventLifecycle
 {
+  protected EventLifecycle(TLifecycleValue value) : base(value)
+  {
+  }
 }
 
-public class BrafLifecycle : EventLifecycle
+public class StandardXesLifecycle : EventLifecycle<StandardLifecycleValues>
 {
+  public override byte TypeId => TypeIds.StandardLifecycle;
+
+
+  public StandardXesLifecycle(StandardLifecycleValues value) : base(value)
+  {
+  }
+
+
+  public override void WriteTo(BinaryWriter bw)
+  {
+    base.WriteTo(bw);
+    bw.Write((byte)Value);
+  }
+}
+
+public class BrafLifecycle : EventLifecycle<BrafLifecycleValues>
+{
+  public override byte TypeId => TypeIds.BrafLifecycle;
+
+
+  public BrafLifecycle(BrafLifecycleValues value) : base(value)
+  {
+  }
+
+
+  public override void WriteTo(BinaryWriter bw)
+  {
+    base.WriteTo(bw);
+    bw.Write((byte)Value);
+  }
 }
