@@ -1,4 +1,5 @@
 using System.Text;
+using Bxes.Models;
 
 namespace Bxes;
 
@@ -37,7 +38,7 @@ public class SingleFileBxesWriter : IBxesWriter
     WriteTracesVariants(log, context);
   }
 
-  private void WriteBxesVersion(BinaryWriter bw)
+  private static void WriteBxesVersion(BinaryWriter bw)
   {
     bw.Write(BxesConstants.BxesVersion);
   }
@@ -79,7 +80,6 @@ public class SingleFileBxesWriter : IBxesWriter
       ++count;
     }
 
-    //todo: lifecycle
     foreach (var (key, value) in @event.Attributes)
     {
       if (!context.ValuesIndices.ContainsKey(key))
@@ -140,36 +140,31 @@ public class SingleFileBxesWriter : IBxesWriter
     }
   }
 
-  private void WriteTracesVariants(IEventLog log, SingleFileBxesWriteContext context)
+  private void WriteTracesVariants(IEventLog log, SingleFileBxesWriteContext context) => 
+    WriteCollectionAndCount(log.Traces, context, WriteTraceVariant);
+
+  private void WriteCollectionAndCount<T>(
+    IEnumerable<T> collection, 
+    SingleFileBxesWriteContext context, 
+    Action<T, SingleFileBxesWriteContext> elementWriter)
   {
-    var countPosition = context.Writer.BaseStream.Position;
+    var countPos = context.Writer.BaseStream.Position;
     context.Writer.Write((IndexType)0);
 
-    IndexType variantsCount = 0;
-    foreach (var variant in log.Traces)
+    IndexType count = 0;
+    foreach (var element in collection)
     {
-      WriteTraceVariant(variant, context);
-      ++variantsCount;
+      elementWriter.Invoke(element, context);
+      ++count;
     }
     
-    WriteCount(context.Writer, countPosition, variantsCount);
+    WriteCount(context.Writer, countPos, count);
   }
 
   private void WriteTraceVariant(ITraceVariant variant, SingleFileBxesWriteContext context)
   {
     context.Writer.Write(variant.Count);
-
-    var countPosition = context.Writer.BaseStream.Position;
-    context.Writer.Write((IndexType)0);
-
-    IndexType eventsCount = 0;
-    foreach (var @event in variant.Events)
-    {
-      WriteEvent(@event, context);
-      ++eventsCount;
-    }
-    
-    WriteCount(context.Writer, countPosition, eventsCount);
+    WriteCollectionAndCount(variant.Events, context, WriteEvent);
   }
 
   private void WriteEvent(IEvent @event, SingleFileBxesWriteContext context)

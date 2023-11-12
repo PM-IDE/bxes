@@ -1,3 +1,5 @@
+using Bxes.Models;
+
 namespace Bxes;
 
 public interface IBxesReader
