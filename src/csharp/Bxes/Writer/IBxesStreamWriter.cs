@@ -1,6 +1,6 @@
 using Bxes.Models;
 
-namespace Bxes;
+namespace Bxes.Writer;
 
 public interface IBxesStreamWriter
 {
