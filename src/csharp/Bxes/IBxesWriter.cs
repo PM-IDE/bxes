@@ -1,3 +1,4 @@
+using System.Net;
 using System.Text;
 using Bxes.Models;
 
@@ -13,54 +14,71 @@ public interface IBxesWriter
 public static class BxesConstants
 {
   public const IndexType BxesVersion = 1;
+
+  public const string LogMetadataFileName = "metadata.bxes";
+  public const string ValuesFileName = "values.bxes";
+  public const string KeyValuePairsFileName = "kvpair.bxes";
+  public const string TracesFileName = "traces.bxes";
+
+  public static Encoding BxesEncoding { get; } = Encoding.UTF8;
 }
 
-internal readonly struct SingleFileBxesWriteContext(BinaryWriter binaryWriter)
+internal readonly struct BxesWriteContext(BinaryWriter binaryWriter)
 {
   public BinaryWriter Writer { get; } = binaryWriter;
   public Dictionary<BxesValue, long> ValuesIndices { get; } = new();
   public Dictionary<(BXesStringValue, BxesValue), long> KeyValueIndices { get; } = new();
+
+
+  private BxesWriteContext(
+    BinaryWriter writer,
+    Dictionary<BxesValue, long> valuesIndices,
+    Dictionary<(BXesStringValue, BxesValue), long> keyValueIndices) : this(writer)
+  {
+    ValuesIndices = valuesIndices;
+    KeyValueIndices = keyValueIndices;
+  }
+
+
+  public BxesWriteContext WithWriter(BinaryWriter writer) => new(writer, ValuesIndices, KeyValueIndices);
 }
 
 public class SingleFileBxesWriter : IBxesWriter
 {
-  public async Task WriteAsync(IEventLog log, string savePath)
+  public Task WriteAsync(IEventLog log, string savePath)
   {
-    await using var fs = File.OpenWrite(savePath);
-    await using var bw = new BinaryWriter(fs, Encoding.UTF8);
+    return BxesWriteUtils.ExecuteWithFile(savePath, writer =>
+    {
+      var context = new BxesWriteContext(writer);
 
-    var context = new SingleFileBxesWriteContext(bw);
-
-    WriteBxesVersion(bw);
-    WriteValues(log, context);
-    WriteKeyValuePairs(log, context);
-    WriteEventLogMetadata(log, context);
-    WriteTracesVariants(log, context);
+      BxesWriteUtils.WriteBxesVersion(writer);
+      BxesWriteUtils.WriteValues(log, context);
+      BxesWriteUtils.WriteKeyValuePairs(log, context);
+      BxesWriteUtils.WriteEventLogMetadata(log, context);
+      BxesWriteUtils.WriteTracesVariants(log, context);
+    });
   }
+}
 
-  private static void WriteBxesVersion(BinaryWriter bw)
+internal static class BxesWriteUtils
+{
+  private static void WriteCollectionAndCount<TElement>(
+    IEnumerable<TElement> collection, BxesWriteContext context, Action<TElement, BxesWriteContext> elementWriter)
   {
-    bw.Write(BxesConstants.BxesVersion);
-  }
-
-  private void WriteValues(IEventLog log, SingleFileBxesWriteContext context)
-  {
-    var valuesCountPosition = context.Writer.BaseStream.Position;
+    var countPos = context.Writer.BaseStream.Position;
     context.Writer.Write((IndexType)0);
 
     IndexType count = 0;
-    foreach (var trace in log.Traces)
+    foreach (var element in collection)
     {
-      foreach (var @event in trace.Events)
-      {
-        WriteEventValues(@event, context, ref count);
-      }
+      elementWriter.Invoke(element, context);
+      ++count;
     }
 
-    WriteCount(context.Writer, valuesCountPosition, count);
+    WriteCount(context.Writer, countPos, count);
   }
 
-  private void WriteCount(BinaryWriter writer, long countPos, ulong count)
+  private static void WriteCount(BinaryWriter writer, long countPos, IndexType count)
   {
     var currentPosition = writer.BaseStream.Position;
 
@@ -70,7 +88,9 @@ public class SingleFileBxesWriter : IBxesWriter
     writer.BaseStream.Seek(currentPosition, SeekOrigin.Begin);
   }
 
-  private void WriteEventValues(IEvent @event, SingleFileBxesWriteContext context, ref IndexType count)
+  public static void WriteBxesVersion(BinaryWriter writer) => writer.Write(BxesConstants.BxesVersion);
+  
+  private static void WriteEventValues(IEvent @event, BxesWriteContext context, ref IndexType count)
   {
     var nameValue = new BXesStringValue(@event.Name);
     if (!context.ValuesIndices.ContainsKey(nameValue))
@@ -97,8 +117,8 @@ public class SingleFileBxesWriter : IBxesWriter
       }
     }
   }
-
-  private void WriteKeyValuePairs(IEventLog log, SingleFileBxesWriteContext context)
+  
+  public static void WriteKeyValuePairs(IEventLog log, BxesWriteContext context)
   {
     var keyValueCountPosition = context.Writer.BaseStream.Position;
     context.Writer.Write((IndexType)0);
@@ -114,8 +134,8 @@ public class SingleFileBxesWriter : IBxesWriter
 
     WriteCount(context.Writer, keyValueCountPosition, count);
   }
-
-  private void WriteEventKeyValuePair(IEvent @event, SingleFileBxesWriteContext context, ref IndexType count)
+  
+  private static void WriteEventKeyValuePair(IEvent @event, BxesWriteContext context, ref IndexType count)
   {
     foreach (var (key, value) in @event.Attributes)
     {
@@ -129,8 +149,8 @@ public class SingleFileBxesWriter : IBxesWriter
       }
     }
   }
-
-  private void WriteEventLogMetadata(IEventLog log, SingleFileBxesWriteContext context)
+  
+  public static void WriteEventLogMetadata(IEventLog log, BxesWriteContext context)
   {
     context.Writer.Write((IndexType)log.Metadata.Count);
 
@@ -139,35 +159,17 @@ public class SingleFileBxesWriter : IBxesWriter
       context.Writer.Write(context.KeyValueIndices[(key, value)]);
     }
   }
-
-  private void WriteTracesVariants(IEventLog log, SingleFileBxesWriteContext context) =>
+  
+  public static void WriteTracesVariants(IEventLog log, BxesWriteContext context) =>
     WriteCollectionAndCount(log.Traces, context, WriteTraceVariant);
 
-  private void WriteCollectionAndCount<T>(
-    IEnumerable<T> collection,
-    SingleFileBxesWriteContext context,
-    Action<T, SingleFileBxesWriteContext> elementWriter)
-  {
-    var countPos = context.Writer.BaseStream.Position;
-    context.Writer.Write((IndexType)0);
-
-    IndexType count = 0;
-    foreach (var element in collection)
-    {
-      elementWriter.Invoke(element, context);
-      ++count;
-    }
-
-    WriteCount(context.Writer, countPos, count);
-  }
-
-  private void WriteTraceVariant(ITraceVariant variant, SingleFileBxesWriteContext context)
+  private static void WriteTraceVariant(ITraceVariant variant, BxesWriteContext context)
   {
     context.Writer.Write(variant.Count);
     WriteCollectionAndCount(variant.Events, context, WriteEvent);
   }
 
-  private void WriteEvent(IEvent @event, SingleFileBxesWriteContext context)
+  private static void WriteEvent(IEvent @event, BxesWriteContext context)
   {
     context.Writer.Write(context.ValuesIndices[new BXesStringValue(@event.Name)]);
     context.Writer.Write(@event.Timestamp);
@@ -180,12 +182,55 @@ public class SingleFileBxesWriter : IBxesWriter
       context.Writer.Write(context.KeyValueIndices[(key, value)]);
     }
   }
+  
+  public static void WriteValues(IEventLog log, BxesWriteContext context)
+  {
+    var valuesCountPosition = context.Writer.BaseStream.Position;
+    context.Writer.Write((IndexType)0);
+
+    IndexType count = 0;
+    foreach (var trace in log.Traces)
+    {
+      foreach (var @event in trace.Events)
+      {
+        WriteEventValues(@event, context, ref count);
+      }
+    }
+
+    WriteCount(context.Writer, valuesCountPosition, count);
+  }
+  
+  public static async Task ExecuteWithFile(string filePath, Action<BinaryWriter> writeAction)
+  {
+    await using var fs = File.OpenWrite(filePath);
+    await using var bw = new BinaryWriter(fs, BxesConstants.BxesEncoding);
+
+    writeAction(bw);
+  }
 }
 
 public class MultipleFilesBxesWriter : IBxesWriter
 {
-  public Task WriteAsync(IEventLog log, string savePath)
+  public async Task WriteAsync(IEventLog log, string savePath)
   {
-    throw new NotImplementedException();
+    if (!Directory.Exists(savePath))
+    {
+      //todo: exceptions
+      return;
+    }
+
+    var context = new BxesWriteContext();
+
+    await ExecuteWithFile(savePath, BxesConstants.ValuesFileName, bw => BxesWriteUtils.WriteValues(log, context.WithWriter(bw)));
+    await ExecuteWithFile(savePath, BxesConstants.KeyValuePairsFileName, bw => BxesWriteUtils.WriteKeyValuePairs(log, context.WithWriter(bw)));
+    await ExecuteWithFile(savePath, BxesConstants.LogMetadataFileName, bw => BxesWriteUtils.WriteEventLogMetadata(log, context.WithWriter(bw)));
+    await ExecuteWithFile(savePath, BxesConstants.TracesFileName, bw => BxesWriteUtils.WriteTracesVariants(log, context.WithWriter(bw)));
   }
+
+  private static Task ExecuteWithFile(string saveDirectory, string fileName, Action<BinaryWriter> writeAction)
+    => BxesWriteUtils.ExecuteWithFile(Path.Combine(saveDirectory, fileName), writer =>
+    {
+      BxesWriteUtils.WriteBxesVersion(writer);
+      writeAction(writer);
+    });
 }
