@@ -1,3 +1,5 @@
+using System.Runtime.InteropServices;
+
 namespace Bxes;
 
 public interface IEventLog
@@ -49,30 +51,24 @@ public abstract class BxesValue
   public abstract void WriteTo(BinaryWriter bw);
 }
 
-public abstract class BxesValue<TValue> : BxesValue
+public abstract class BxesValue<TValue>(TValue value) : BxesValue
 {
-  public TValue Value { get; }
-
-  protected BxesValue(TValue value)
-  {
-    Value = value;
-  }
+  public TValue Value { get; } = value;
 
 
   public override void WriteTo(BinaryWriter bw)
   {
     bw.Write(TypeId);
   }
+
+  public override bool Equals(object? obj) => obj is BxesValue<TValue> otherValue && otherValue.Value.Equals(Value);
+
+  public override int GetHashCode() => Value.GetHashCode();
 }
 
-public class BxesInt32Value : BxesValue<int>
+public class BxesInt32Value(int value) : BxesValue<int>(value)
 {
   public override byte TypeId => TypeIds.I32;
-  
-
-  public BxesInt32Value(int value) : base(value)
-  {
-  }
 
 
   public override void WriteTo(BinaryWriter bw)
@@ -82,15 +78,11 @@ public class BxesInt32Value : BxesValue<int>
   }
 }
 
-public class BxesInt64Value : BxesValue<long>
+public class BxesInt64Value(long value) : BxesValue<long>(value)
 {
   public override byte TypeId => TypeIds.I64;
-  
-  
-  public BxesInt64Value(long value) : base(value)
-  {
-  }
-  
+
+
   public override void WriteTo(BinaryWriter bw)
   {
     base.WriteTo(bw);
@@ -98,15 +90,11 @@ public class BxesInt64Value : BxesValue<long>
   }
 }
 
-public class BXesUint32Value : BxesValue<uint>
+public class BxesUint32Value(uint value) : BxesValue<uint>(value)
 {
   public override byte TypeId => TypeIds.U32;
-  
-  
-  public BXesUint32Value(uint value) : base(value)
-  {
-  }
-  
+
+
   public override void WriteTo(BinaryWriter bw)
   {
     base.WriteTo(bw);
@@ -114,15 +102,11 @@ public class BXesUint32Value : BxesValue<uint>
   }
 }
 
-public class BXesUint64Value : BxesValue<ulong>
+public class BxesUint64Value(ulong value) : BxesValue<ulong>(value)
 {
   public override byte TypeId => TypeIds.U64;
 
 
-  public BXesUint64Value(ulong value) : base(value)
-  {
-  }
-  
   public override void WriteTo(BinaryWriter bw)
   {
     base.WriteTo(bw);
@@ -130,15 +114,11 @@ public class BXesUint64Value : BxesValue<ulong>
   }
 }
 
-public class BXesFloat32Value : BxesValue<float>
+public class BxesFloat32Value(float value) : BxesValue<float>(value)
 {
   public override byte TypeId => TypeIds.F32;
 
 
-  public BXesFloat32Value(float value) : base(value)
-  {
-  }
-  
   public override void WriteTo(BinaryWriter bw)
   {
     base.WriteTo(bw);
@@ -146,15 +126,11 @@ public class BXesFloat32Value : BxesValue<float>
   }
 }
 
-public class BXesFloat64Value : BxesValue<double>
+public class BxesFloat64Value(double value) : BxesValue<double>(value)
 {
   public override byte TypeId => TypeIds.F64;
-  
-  
-  public BXesFloat64Value(double value) : base(value)
-  {
-  }
-  
+
+
   public override void WriteTo(BinaryWriter bw)
   {
     base.WriteTo(bw);
@@ -162,15 +138,11 @@ public class BXesFloat64Value : BxesValue<double>
   }
 }
 
-public class BXesBoolValue : BxesValue<bool>
+public class BxesBoolValue(bool value) : BxesValue<bool>(value)
 {
   public override byte TypeId => TypeIds.Bool;
-  
-  
-  public BXesBoolValue(bool value) : base(value)
-  {
-  }
-  
+
+
   public override void WriteTo(BinaryWriter bw)
   {
     base.WriteTo(bw);
@@ -178,19 +150,29 @@ public class BXesBoolValue : BxesValue<bool>
   }
 }
 
-public class BXesStringValue : BxesValue<string>
+public class BXesStringValue(string value) : BxesValue<string>(value)
 {
   public override byte TypeId => TypeIds.String;
-  
-  
-  public BXesStringValue(string value) : base(value)
-  {
-  }
-  
+
+
   public override void WriteTo(BinaryWriter bw)
   {
     base.WriteTo(bw);
     bw.Write(Value);
+  }
+}
+
+public class BxesTimeStampValue(long value) : BxesValue<long>(value)
+{
+  public override byte TypeId => TypeIds.Timestamp;
+
+  public DateTime Timestamp { get; } = new(value, DateTimeKind.Utc);
+  
+
+  public override void WriteTo(BinaryWriter bw)
+  {
+    base.WriteTo(bw);
+    bw.Write(value);
   }
 }
 
@@ -238,21 +220,12 @@ public interface IEventLifecycle
 {
 }
 
-public abstract class EventLifecycle<TLifecycleValue> : BxesValue<TLifecycleValue>, IEventLifecycle
-{
-  protected EventLifecycle(TLifecycleValue value) : base(value)
-  {
-  }
-}
+public abstract class EventLifecycle<TLifecycleValue>(TLifecycleValue value)
+  : BxesValue<TLifecycleValue>(value), IEventLifecycle;
 
-public class StandardXesLifecycle : EventLifecycle<StandardLifecycleValues>
+public class StandardXesLifecycle(StandardLifecycleValues value) : EventLifecycle<StandardLifecycleValues>(value)
 {
   public override byte TypeId => TypeIds.StandardLifecycle;
-
-
-  public StandardXesLifecycle(StandardLifecycleValues value) : base(value)
-  {
-  }
 
 
   public override void WriteTo(BinaryWriter bw)
@@ -262,14 +235,9 @@ public class StandardXesLifecycle : EventLifecycle<StandardLifecycleValues>
   }
 }
 
-public class BrafLifecycle : EventLifecycle<BrafLifecycleValues>
+public class BrafLifecycle(BrafLifecycleValues value) : EventLifecycle<BrafLifecycleValues>(value)
 {
   public override byte TypeId => TypeIds.BrafLifecycle;
-
-
-  public BrafLifecycle(BrafLifecycleValues value) : base(value)
-  {
-  }
 
 
   public override void WriteTo(BinaryWriter bw)

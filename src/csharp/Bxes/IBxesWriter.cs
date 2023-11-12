@@ -33,6 +33,7 @@ public class SingleFileBxesWriter : IBxesWriter
     WriteBxesVersion(bw);
     WriteValues(log, context);
     WriteKeyValuePairs(log, context);
+    WriteEventLogMetadata(log, context);
   }
 
   private void WriteBxesVersion(BinaryWriter bw)
@@ -125,6 +126,16 @@ public class SingleFileBxesWriter : IBxesWriter
         context.Writer.Write(context.ValuesIndices[value]);
         ++count;
       }
+    }
+  }
+
+  private void WriteEventLogMetadata(IEventLog log, SingleFileBxesWriteContext context)
+  {
+    context.Writer.Write((IndexType)log.Metadata.Count);
+
+    foreach (var (key, value) in log.Metadata)
+    {
+      context.Writer.Write(context.KeyValueIndices[(key, value)]);
     }
   }
 }
