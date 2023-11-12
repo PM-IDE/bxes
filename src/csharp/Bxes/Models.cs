@@ -5,15 +5,16 @@ namespace Bxes;
 public interface IEventLog
 {
   IEventLogMetadata Metadata { get; }
-  IEnumerable<ITrace> Traces { get; }
+  IEnumerable<ITraceVariant> Traces { get; }
 }
 
 public interface IEventLogMetadata : IEventAttributes
 {
 }
 
-public interface ITrace
+public interface ITraceVariant
 {
+  uint Count { get; }
   IEnumerable<IEvent> Events { get; }
 }
 
@@ -21,7 +22,7 @@ public interface IEvent
 {
   long Timestamp { get; }
   string Name { get; }
-  IEventLifecycle? Lifecycle { get; }
+  IEventLifecycle Lifecycle { get; }
 
   IEventAttributes Attributes { get; }
 }
@@ -218,9 +219,10 @@ public enum StandardLifecycleValues : byte
 
 public interface IEventLifecycle
 {
+  void WriteTo(BinaryWriter bw);
 }
 
-public abstract class EventLifecycle<TLifecycleValue>(TLifecycleValue value)
+public abstract class EventLifecycle<TLifecycleValue>(TLifecycleValue value) 
   : BxesValue<TLifecycleValue>(value), IEventLifecycle;
 
 public class StandardXesLifecycle(StandardLifecycleValues value) : EventLifecycle<StandardLifecycleValues>(value)

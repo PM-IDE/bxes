@@ -34,6 +34,7 @@ public class SingleFileBxesWriter : IBxesWriter
     WriteValues(log, context);
     WriteKeyValuePairs(log, context);
     WriteEventLogMetadata(log, context);
+    WriteTracesVariants(log, context);
   }
 
   private void WriteBxesVersion(BinaryWriter bw)
@@ -134,6 +135,52 @@ public class SingleFileBxesWriter : IBxesWriter
     context.Writer.Write((IndexType)log.Metadata.Count);
 
     foreach (var (key, value) in log.Metadata)
+    {
+      context.Writer.Write(context.KeyValueIndices[(key, value)]);
+    }
+  }
+
+  private void WriteTracesVariants(IEventLog log, SingleFileBxesWriteContext context)
+  {
+    var countPosition = context.Writer.BaseStream.Position;
+    context.Writer.Write((IndexType)0);
+
+    IndexType variantsCount = 0;
+    foreach (var variant in log.Traces)
+    {
+      WriteTraceVariant(variant, context);
+      ++variantsCount;
+    }
+    
+    WriteCount(context.Writer, countPosition, variantsCount);
+  }
+
+  private void WriteTraceVariant(ITraceVariant variant, SingleFileBxesWriteContext context)
+  {
+    context.Writer.Write(variant.Count);
+
+    var countPosition = context.Writer.BaseStream.Position;
+    context.Writer.Write((IndexType)0);
+
+    IndexType eventsCount = 0;
+    foreach (var @event in variant.Events)
+    {
+      WriteEvent(@event, context);
+      ++eventsCount;
+    }
+    
+    WriteCount(context.Writer, countPosition, eventsCount);
+  }
+
+  private void WriteEvent(IEvent @event, SingleFileBxesWriteContext context)
+  {
+    context.Writer.Write(context.ValuesIndices[new BXesStringValue(@event.Name)]);
+    context.Writer.Write(@event.Timestamp);
+    @event.Lifecycle.WriteTo(context.Writer);
+    
+    context.Writer.Write((IndexType)@event.Attributes.Count);
+    
+    foreach (var (key, value) in @event.Attributes)
     {
       context.Writer.Write(context.KeyValueIndices[(key, value)]);
     }
