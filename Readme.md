@@ -55,6 +55,7 @@ The following types are suported in bxes:
 XES-sprcific types:
 - `timestamp` (type id = 8, `8 bytes`), the date is UTC ticks.
 - `braf-lifecycle-transition` (type id = 9, `1 byte`) - BRAF lifecycle model
+    - NULL (unspecified) = `0`,
     - Closed = `1`
     - Closed.Cancelled = `2`
     - Closed.Cancelled.Aborted = `3`
@@ -75,6 +76,7 @@ XES-sprcific types:
     - Open.Running.InProgress = `18`
     - Open.Running.Suspended = `19`
 - `standard-lifecycle-transition` (type id = 10, `1 byte`) - standard lifecycle model
+    - NULL (unspecified) = `0`,
     - assign = `1`
     - ate_abort = `2`
     - autoskip = `3`
