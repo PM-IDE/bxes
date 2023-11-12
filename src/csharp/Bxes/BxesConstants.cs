@@ -4,7 +4,7 @@ namespace Bxes;
 
 public static class BxesConstants
 {
-  public const UInt32 BxesVersion = 1;
+  public const uint BxesVersion = 1;
 
   public const string LogMetadataFileName = "metadata.bxes";
   public const string ValuesFileName = "values.bxes";

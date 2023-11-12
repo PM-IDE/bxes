@@ -7,7 +7,7 @@ using IndexType = uint;
 internal static class BxesWriteUtils
 {
   private static void WriteCollectionAndCount<TElement>(
-    IEnumerable<TElement> collection, BxesWriteContext context, Action<TElement, BxesWriteContext> elementWriter)
+    IEnumerable<TElement> collection, BxesWriteContext context, Func<TElement, BxesWriteContext, IndexType> elementWriter)
   {
     var countPos = context.Writer.BaseStream.Position;
     context.Writer.Write((IndexType)0);
@@ -15,8 +15,7 @@ internal static class BxesWriteUtils
     IndexType count = 0;
     foreach (var element in collection)
     {
-      elementWriter.Invoke(element, context);
-      ++count;
+      count += elementWriter.Invoke(element, context);
     }
 
     WriteCount(context.Writer, countPos, count);
@@ -34,14 +33,15 @@ internal static class BxesWriteUtils
 
   public static void WriteBxesVersion(BinaryWriter writer) => writer.Write(BxesConstants.BxesVersion);
   
-  private static void WriteEventValues(IEvent @event, BxesWriteContext context, ref IndexType count)
+  private static IndexType WriteEventValues(IEvent @event, BxesWriteContext context)
   {
+    IndexType writtenCount = 0;
     var nameValue = new BXesStringValue(@event.Name);
     if (!context.ValuesIndices.ContainsKey(nameValue))
     {
       context.ValuesIndices[nameValue] = context.Writer.BaseStream.Position;
       context.Writer.Write(@event.Name);
-      ++count;
+      ++writtenCount;
     }
 
     foreach (var (key, value) in @event.Attributes)
@@ -50,37 +50,28 @@ internal static class BxesWriteUtils
       {
         context.ValuesIndices[key] = context.Writer.BaseStream.Position;
         context.Writer.Write(key.Value);
-        ++count;
+        ++writtenCount;
       }
 
       if (!context.ValuesIndices.ContainsKey(value))
       {
         context.ValuesIndices[value] = context.Writer.BaseStream.Position;
         value.WriteTo(context.Writer);
-        ++count;
+        ++writtenCount;
       }
     }
+
+    return writtenCount;
   }
   
   public static void WriteKeyValuePairs(IEventLog log, BxesWriteContext context)
   {
-    var keyValueCountPosition = context.Writer.BaseStream.Position;
-    context.Writer.Write((IndexType)0);
-
-    IndexType count = 0;
-    foreach (var trace in log.Traces)
-    {
-      foreach (var @event in trace.Events)
-      {
-        WriteEventKeyValuePair(@event, context, ref count);
-      }
-    }
-
-    WriteCount(context.Writer, keyValueCountPosition, count);
+    WriteCollectionAndCount(log.Traces.SelectMany(variant => variant.Events), context, WriteEventKeyValuePair);
   }
   
-  private static void WriteEventKeyValuePair(IEvent @event, BxesWriteContext context, ref IndexType count)
+  private static IndexType WriteEventKeyValuePair(IEvent @event, BxesWriteContext context)
   {
+    IndexType writtenCount = 0;
     foreach (var (key, value) in @event.Attributes)
     {
       var tuple = (key, value);
@@ -89,9 +80,11 @@ internal static class BxesWriteUtils
         context.KeyValueIndices[tuple] = context.Writer.BaseStream.Position;
         context.Writer.Write(context.ValuesIndices[key]);
         context.Writer.Write(context.ValuesIndices[value]);
-        ++count;
+        ++writtenCount;
       }
     }
+
+    return writtenCount;
   }
   
   public static void WriteEventLogMetadata(IEventLog log, BxesWriteContext context)
@@ -107,13 +100,14 @@ internal static class BxesWriteUtils
   public static void WriteTracesVariants(IEventLog log, BxesWriteContext context) =>
     WriteCollectionAndCount(log.Traces, context, WriteTraceVariant);
 
-  private static void WriteTraceVariant(ITraceVariant variant, BxesWriteContext context)
+  private static uint WriteTraceVariant(ITraceVariant variant, BxesWriteContext context)
   {
     context.Writer.Write(variant.Count);
     WriteCollectionAndCount(variant.Events, context, WriteEvent);
+    return 1;
   }
 
-  private static void WriteEvent(IEvent @event, BxesWriteContext context)
+  private static uint WriteEvent(IEvent @event, BxesWriteContext context)
   {
     context.Writer.Write(context.ValuesIndices[new BXesStringValue(@event.Name)]);
     context.Writer.Write(@event.Timestamp);
@@ -125,23 +119,13 @@ internal static class BxesWriteUtils
     {
       context.Writer.Write(context.KeyValueIndices[(key, value)]);
     }
+
+    return 1;
   }
   
   public static void WriteValues(IEventLog log, BxesWriteContext context)
   {
-    var valuesCountPosition = context.Writer.BaseStream.Position;
-    context.Writer.Write((IndexType)0);
-
-    IndexType count = 0;
-    foreach (var trace in log.Traces)
-    {
-      foreach (var @event in trace.Events)
-      {
-        WriteEventValues(@event, context, ref count);
-      }
-    }
-
-    WriteCount(context.Writer, valuesCountPosition, count);
+    WriteCollectionAndCount(log.Traces.SelectMany(variant => variant.Events), context, WriteEventValues);
   }
   
   public static async Task ExecuteWithFile(string filePath, Action<BinaryWriter> writeAction)
