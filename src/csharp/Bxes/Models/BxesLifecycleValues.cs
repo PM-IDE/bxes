@@ -47,7 +47,7 @@ public interface IEventLifecycle
   void WriteTo(BinaryWriter bw);
 }
 
-public abstract class EventLifecycle<TLifecycleValue>(TLifecycleValue value) 
+public abstract class EventLifecycle<TLifecycleValue>(TLifecycleValue value)
   : BxesValue<TLifecycleValue>(value), IEventLifecycle;
 
 public class StandardXesLifecycle(StandardLifecycleValues value) : EventLifecycle<StandardLifecycleValues>(value)

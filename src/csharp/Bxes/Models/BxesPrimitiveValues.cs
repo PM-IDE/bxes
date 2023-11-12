@@ -101,7 +101,7 @@ public class BxesTimeStampValue(long value) : BxesValue<long>(value)
   public override byte TypeId => TypeIds.Timestamp;
 
   public DateTime Timestamp { get; } = new(value, DateTimeKind.Utc);
-  
+
 
   public override void WriteTo(BinaryWriter bw)
   {

@@ -15,11 +15,11 @@ public class BXesTraceStartEvent : BxesStreamEvent
 {
 }
 
-public class BXesEventEvent<TEvent> : BxesStreamEvent where TEvent: IEvent
+public class BXesEventEvent<TEvent> : BxesStreamEvent where TEvent : IEvent
 {
   public TEvent Event { get; set; }
 
-  
+
   public BXesEventEvent(TEvent @event)
   {
     Event = @event;

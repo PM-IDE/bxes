@@ -30,7 +30,7 @@ public class SingleFileBxesWriter : IBxesWriter
     await using var bw = new BinaryWriter(fs, Encoding.UTF8);
 
     var context = new SingleFileBxesWriteContext(bw);
-    
+
     WriteBxesVersion(bw);
     WriteValues(log, context);
     WriteKeyValuePairs(log, context);
@@ -47,7 +47,7 @@ public class SingleFileBxesWriter : IBxesWriter
   {
     var valuesCountPosition = context.Writer.BaseStream.Position;
     context.Writer.Write((IndexType)0);
-    
+
     IndexType count = 0;
     foreach (var trace in log.Traces)
     {
@@ -56,17 +56,17 @@ public class SingleFileBxesWriter : IBxesWriter
         WriteEventValues(@event, context, ref count);
       }
     }
-    
+
     WriteCount(context.Writer, valuesCountPosition, count);
   }
-  
+
   private void WriteCount(BinaryWriter writer, long countPos, ulong count)
   {
     var currentPosition = writer.BaseStream.Position;
-    
+
     writer.BaseStream.Seek(countPos, SeekOrigin.Begin);
     writer.Write(count);
-    
+
     writer.BaseStream.Seek(currentPosition, SeekOrigin.Begin);
   }
 
@@ -140,12 +140,12 @@ public class SingleFileBxesWriter : IBxesWriter
     }
   }
 
-  private void WriteTracesVariants(IEventLog log, SingleFileBxesWriteContext context) => 
+  private void WriteTracesVariants(IEventLog log, SingleFileBxesWriteContext context) =>
     WriteCollectionAndCount(log.Traces, context, WriteTraceVariant);
 
   private void WriteCollectionAndCount<T>(
-    IEnumerable<T> collection, 
-    SingleFileBxesWriteContext context, 
+    IEnumerable<T> collection,
+    SingleFileBxesWriteContext context,
     Action<T, SingleFileBxesWriteContext> elementWriter)
   {
     var countPos = context.Writer.BaseStream.Position;
@@ -157,7 +157,7 @@ public class SingleFileBxesWriter : IBxesWriter
       elementWriter.Invoke(element, context);
       ++count;
     }
-    
+
     WriteCount(context.Writer, countPos, count);
   }
 
@@ -172,9 +172,9 @@ public class SingleFileBxesWriter : IBxesWriter
     context.Writer.Write(context.ValuesIndices[new BXesStringValue(@event.Name)]);
     context.Writer.Write(@event.Timestamp);
     @event.Lifecycle.WriteTo(context.Writer);
-    
+
     context.Writer.Write((IndexType)@event.Attributes.Count);
-    
+
     foreach (var (key, value) in @event.Attributes)
     {
       context.Writer.Write(context.KeyValueIndices[(key, value)]);
