@@ -14,10 +14,13 @@ public class MultipleFilesBxesWriter : IBxesWriter
 
     var context = new BxesWriteContext();
 
-    await ExecuteWithFile(savePath, BxesConstants.ValuesFileName, bw => BxesWriteUtils.WriteValues(log, context.WithWriter(bw)));
-    await ExecuteWithFile(savePath, BxesConstants.KeyValuePairsFileName, bw => BxesWriteUtils.WriteKeyValuePairs(log, context.WithWriter(bw)));
-    await ExecuteWithFile(savePath, BxesConstants.LogMetadataFileName, bw => BxesWriteUtils.WriteEventLogMetadata(log, context.WithWriter(bw)));
-    await ExecuteWithFile(savePath, BxesConstants.TracesFileName, bw => BxesWriteUtils.WriteTracesVariants(log, context.WithWriter(bw)));
+    void Write(BinaryWriter writer, Action<IEventLog, BxesWriteContext> writeAction) =>
+      writeAction(log, context.WithWriter(writer));
+
+    await ExecuteWithFile(savePath, BxesConstants.ValuesFileName, bw => Write(bw, BxesWriteUtils.WriteValues));
+    await ExecuteWithFile(savePath, BxesConstants.KVPairsFileName, bw => Write(bw, BxesWriteUtils.WriteKeyValuePairs));
+    await ExecuteWithFile(savePath, BxesConstants.MetadataFileName, bw => Write(bw, BxesWriteUtils.WriteEventLogMetadata));
+    await ExecuteWithFile(savePath, BxesConstants.TracesFileName, bw => Write(bw, BxesWriteUtils.WriteTracesVariants));
   }
 
   private static Task ExecuteWithFile(string saveDirectory, string fileName, Action<BinaryWriter> writeAction)

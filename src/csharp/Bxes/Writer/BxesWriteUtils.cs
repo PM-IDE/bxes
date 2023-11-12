@@ -7,7 +7,8 @@ using IndexType = uint;
 internal static class BxesWriteUtils
 {
   private static void WriteCollectionAndCount<TElement>(
-    IEnumerable<TElement> collection, BxesWriteContext context, Func<TElement, BxesWriteContext, IndexType> elementWriter)
+    IEnumerable<TElement> collection, BxesWriteContext context,
+    Func<TElement, BxesWriteContext, IndexType> elementWriter)
   {
     var countPos = context.Writer.BaseStream.Position;
     context.Writer.Write((IndexType)0);
@@ -32,7 +33,7 @@ internal static class BxesWriteUtils
   }
 
   public static void WriteBxesVersion(BinaryWriter writer) => writer.Write(BxesConstants.BxesVersion);
-  
+
   private static IndexType WriteEventValues(IEvent @event, BxesWriteContext context)
   {
     IndexType writtenCount = 0;
@@ -63,12 +64,12 @@ internal static class BxesWriteUtils
 
     return writtenCount;
   }
-  
+
   public static void WriteKeyValuePairs(IEventLog log, BxesWriteContext context)
   {
     WriteCollectionAndCount(log.Traces.SelectMany(variant => variant.Events), context, WriteEventKeyValuePair);
   }
-  
+
   private static IndexType WriteEventKeyValuePair(IEvent @event, BxesWriteContext context)
   {
     IndexType writtenCount = 0;
@@ -86,7 +87,7 @@ internal static class BxesWriteUtils
 
     return writtenCount;
   }
-  
+
   public static void WriteEventLogMetadata(IEventLog log, BxesWriteContext context)
   {
     context.Writer.Write((IndexType)log.Metadata.Count);
@@ -96,7 +97,7 @@ internal static class BxesWriteUtils
       context.Writer.Write(context.KeyValueIndices[(key, value)]);
     }
   }
-  
+
   public static void WriteTracesVariants(IEventLog log, BxesWriteContext context) =>
     WriteCollectionAndCount(log.Traces, context, WriteTraceVariant);
 
@@ -122,12 +123,12 @@ internal static class BxesWriteUtils
 
     return 1;
   }
-  
+
   public static void WriteValues(IEventLog log, BxesWriteContext context)
   {
     WriteCollectionAndCount(log.Traces.SelectMany(variant => variant.Events), context, WriteEventValues);
   }
-  
+
   public static async Task ExecuteWithFile(string filePath, Action<BinaryWriter> writeAction)
   {
     await using var fs = File.OpenWrite(filePath);
