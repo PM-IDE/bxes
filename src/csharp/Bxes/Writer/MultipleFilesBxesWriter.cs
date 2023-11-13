@@ -8,8 +8,7 @@ public class MultipleFilesBxesWriter : IBxesWriter
   {
     if (!Directory.Exists(savePath))
     {
-      //todo: exceptions
-      return;
+      throw new SavePathIsNotDirectoryException(savePath);
     }
 
     var context = new BxesWriteContext();
@@ -23,10 +22,15 @@ public class MultipleFilesBxesWriter : IBxesWriter
     await ExecuteWithFile(savePath, BxesConstants.TracesFileName, bw => Write(bw, BxesWriteUtils.WriteTracesVariants));
   }
 
-  private static Task ExecuteWithFile(string saveDirectory, string fileName, Action<BinaryWriter> writeAction)
-    => BxesWriteUtils.ExecuteWithFile(Path.Combine(saveDirectory, fileName), writer =>
+  private static Task ExecuteWithFile(string saveDirectory, string fileName, Action<BinaryWriter> writeAction) => 
+    BxesWriteUtils.ExecuteWithFile(Path.Combine(saveDirectory, fileName), writer =>
     {
       BxesWriteUtils.WriteBxesVersion(writer);
       writeAction(writer);
     });
+}
+
+public class SavePathIsNotDirectoryException(string savePath) : BxesException
+{
+  public override string Message { get; } = $"The {savePath} is not a directory or it does not exist";
 }
