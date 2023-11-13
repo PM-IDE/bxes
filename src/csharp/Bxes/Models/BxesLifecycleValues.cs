@@ -75,7 +75,7 @@ public class BrafLifecycle(BrafLifecycleValues value) : EventLifecycle<BrafLifec
     true => new BrafLifecycle((BrafLifecycleValues)value),
     false => throw new IndexOutOfRangeException()
   };
-  
+
   public override byte TypeId => TypeIds.BrafLifecycle;
 
 

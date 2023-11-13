@@ -22,7 +22,7 @@ public class MultipleFilesBxesWriter : IBxesWriter
     await ExecuteWithFile(savePath, BxesConstants.TracesFileName, bw => Write(bw, BxesWriteUtils.WriteTracesVariants));
   }
 
-  private static Task ExecuteWithFile(string saveDirectory, string fileName, Action<BinaryWriter> writeAction) => 
+  private static Task ExecuteWithFile(string saveDirectory, string fileName, Action<BinaryWriter> writeAction) =>
     BxesWriteUtils.ExecuteWithFile(Path.Combine(saveDirectory, fileName), writer =>
     {
       BxesWriteUtils.WriteBxesVersion(writer);

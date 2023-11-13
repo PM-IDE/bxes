@@ -10,9 +10,9 @@ public abstract class BxesValue
   public static BxesValue Parse(BinaryReader reader)
   {
     var valuesOffset = reader.BaseStream.Position;
-    
+
     var typeId = reader.ReadByte();
-    
+
     switch (typeId)
     {
       case TypeIds.Bool:
@@ -20,7 +20,7 @@ public abstract class BxesValue
         {
           0 => false,
           1 => true,
-          var other => throw new ParseException(valuesOffset, $"Failed to parse bool value, expected 1 or 0, got {other}")
+          var other => throw new ParseException(valuesOffset, $"Failed to parse bool, expected 1 or 0, got {other}")
         };
 
         return new BxesBoolValue(value);

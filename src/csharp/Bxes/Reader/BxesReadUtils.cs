@@ -8,7 +8,7 @@ public static class BxesReadUtils
   {
     var valuesCount = reader.ReadUInt32();
     var values = new List<BxesValue>();
-    
+
     for (uint i = 0; i < valuesCount; ++i)
     {
       values.Add(BxesValue.Parse(reader));
@@ -49,7 +49,7 @@ public static class BxesReadUtils
   {
     var variantsCount = reader.ReadUInt32();
     var variants = new List<ITraceVariant>();
-    
+
     for (uint i = 0; i < variantsCount; ++i)
     {
       var tracesCount = reader.ReadUInt32();
@@ -64,16 +64,16 @@ public static class BxesReadUtils
 
         var attributesCount = reader.ReadUInt32();
         var eventAttributes = new EventAttributesImpl();
-        
+
         for (uint k = 0; k < attributesCount; ++k)
         {
           var kv = keyValues[(int)reader.ReadUInt32()];
           eventAttributes[(BXesStringValue)values[(int)kv.Key]] = values[(int)kv.Value];
         }
-        
+
         events.Add(new EventImpl(timestamp, name, lifecycle, eventAttributes));
       }
-      
+
       variants.Add(new TraceVariantImpl(tracesCount, events));
     }
 

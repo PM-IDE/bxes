@@ -91,7 +91,7 @@ internal static class BxesWriteUtils
   public static bool WriteKeyValuePairIfNeeded(KeyValuePair<BXesStringValue, BxesValue> pair, BxesWriteContext context)
   {
     if (context.KeyValueIndices.ContainsKey(pair)) return false;
-    
+
     context.KeyValueIndices[pair] = context.Writer.BaseStream.Position;
 
     context.Writer.Write(context.ValuesIndices[pair.Key]);
