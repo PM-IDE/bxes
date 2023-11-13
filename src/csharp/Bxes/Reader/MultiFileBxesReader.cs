@@ -15,34 +15,50 @@ public class MultiFileBxesReader : IBxesReader
       action(reader);
     }
 
+    uint? version = null;
     List<BxesValue> values = null!;
     OpenRead(BxesConstants.ValuesFileName, reader =>
     {
-      var version = reader.ReadUInt32();
+      ValidateVersions(ref version, reader.ReadUInt32());
       values = BxesReadUtils.ReadValues(reader);
     });
 
     List<KeyValuePair<uint, uint>> keyValues = null!;
     OpenRead(BxesConstants.KVPairsFileName, reader =>
     {
-      var version = reader.ReadUInt32();
+      ValidateVersions(ref version, reader.ReadUInt32());
       keyValues = BxesReadUtils.ReadKeyValuePairs(reader);
     });
 
     EventLogMetadataImpl metadata = null!;
     OpenRead(BxesConstants.MetadataFileName, reader =>
     {
-      var version = reader.ReadUInt32();
+      ValidateVersions(ref version, reader.ReadUInt32());
       metadata = BxesReadUtils.ReadMetadata(reader, keyValues, values);
     });
 
     List<ITraceVariant> variants = null!;
     OpenRead(BxesConstants.TracesFileName, reader =>
     {
-      var version = reader.ReadUInt32();
+      ValidateVersions(ref version, reader.ReadUInt32());
       variants = BxesReadUtils.ReadVariants(reader, keyValues, values);
     });
 
     return new InMemoryEventLog(metadata, variants);
   }
+
+  private static void ValidateVersions(ref uint? previousVersion, uint currentVersion)
+  {
+    if (previousVersion is { } && previousVersion.Value != currentVersion)
+    {
+      throw new VersionsAreNotEqualException(previousVersion.Value, currentVersion);
+    }
+
+    previousVersion = currentVersion;
+  }
+}
+
+public class VersionsAreNotEqualException(uint firstVersion, uint secondVersion) : BxesException
+{
+  public override string Message { get; } = $"First version {firstVersion}, is not equal to second one {secondVersion}";
 }
