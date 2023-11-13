@@ -14,6 +14,6 @@ public class SingleFileBxesReader : IBxesReader
     var metadata = BxesReadUtils.ReadMetadata(br, keyValues, values);
     var variants = BxesReadUtils.ReadVariants(br, keyValues, values);
 
-    return new InMemoryEventLog(metadata, variants);
+    return new InMemoryEventLog(version, metadata, variants);
   }
 }

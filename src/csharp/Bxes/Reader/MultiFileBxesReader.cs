@@ -44,7 +44,7 @@ public class MultiFileBxesReader : IBxesReader
       variants = BxesReadUtils.ReadVariants(reader, keyValues, values);
     });
 
-    return new InMemoryEventLog(metadata, variants);
+    return new InMemoryEventLog(version!.Value, metadata, variants);
   }
 
   private static void ValidateVersions(ref uint? previousVersion, uint currentVersion)
