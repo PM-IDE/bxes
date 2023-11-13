@@ -7,3 +7,11 @@ public interface IEventLog
 }
 
 public interface IEventLogMetadata : IEventAttributes;
+
+public class EventLogMetadataImpl : EventAttributesImpl, IEventLogMetadata;
+
+public class InMemoryEventLog(IEventLogMetadata metadata, List<ITraceVariant> traces) : IEventLog
+{
+  public IEventLogMetadata Metadata { get; } = metadata;
+  public IEnumerable<ITraceVariant> Traces { get; } = traces;
+}

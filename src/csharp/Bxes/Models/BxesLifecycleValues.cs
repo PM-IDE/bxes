@@ -52,6 +52,12 @@ public abstract class EventLifecycle<TLifecycleValue>(TLifecycleValue value)
 
 public class StandardXesLifecycle(StandardLifecycleValues value) : EventLifecycle<StandardLifecycleValues>(value)
 {
+  public static StandardXesLifecycle Parse(byte value) => Enum.IsDefined(typeof(StandardLifecycleValues), value) switch
+  {
+    true => new StandardXesLifecycle((StandardLifecycleValues)value),
+    false => throw new IndexOutOfRangeException()
+  };
+
   public override byte TypeId => TypeIds.StandardLifecycle;
 
 
@@ -64,6 +70,12 @@ public class StandardXesLifecycle(StandardLifecycleValues value) : EventLifecycl
 
 public class BrafLifecycle(BrafLifecycleValues value) : EventLifecycle<BrafLifecycleValues>(value)
 {
+  public static BrafLifecycle Parse(byte value) => Enum.IsDefined(typeof(BrafLifecycleValues), value) switch
+  {
+    true => new BrafLifecycle((BrafLifecycleValues)value),
+    false => throw new IndexOutOfRangeException()
+  };
+  
   public override byte TypeId => TypeIds.BrafLifecycle;
 
 
