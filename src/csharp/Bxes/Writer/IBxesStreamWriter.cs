@@ -7,6 +7,80 @@ public interface IBxesStreamWriter : IDisposable
   void HandleEvent(BxesStreamEvent @event);
 }
 
+public class SingleFileBxesStreamWriterImpl<TEvent> : IBxesStreamWriter where TEvent : IEvent
+{
+  private readonly MultipleFilesBxesStreamWriterImpl<TEvent> myMultipleWriter;
+  private readonly string mySaveDirectoryName;
+  private readonly string mySavePath;
+
+
+  public SingleFileBxesStreamWriterImpl(string savePath)
+  {
+    if (Path.GetDirectoryName(savePath) is not { } directoryName)
+    {
+      throw new DirectoryNotFoundException($"Failed to get parent directory for {savePath}");
+    }
+
+    mySavePath = savePath;
+    mySaveDirectoryName = directoryName;
+    myMultipleWriter = new MultipleFilesBxesStreamWriterImpl<TEvent>(directoryName);
+  }
+  
+  public void HandleEvent(BxesStreamEvent @event) => myMultipleWriter.HandleEvent(@event);
+
+
+  public void Dispose()
+  {
+    myMultipleWriter.Dispose();
+    
+    MergeFilesIntoOne();
+  }
+
+  private void MergeFilesIntoOne()
+  {
+    using var writer = new BinaryWriter(File.OpenWrite(mySavePath));
+    writer.Write(BxesConstants.BxesVersion);
+    
+    BinaryReader OpenRead(string fileName) => new(File.OpenRead(Path.Join(mySaveDirectoryName, fileName)));
+    
+    SkipVersionAndCopyContents(OpenRead(BxesConstants.ValuesFileName), writer);
+    SkipVersionAndCopyContents(OpenRead(BxesConstants.KVPairsFileName), writer);
+    SkipVersionAndCopyContents(OpenRead(BxesConstants.MetadataFileName), writer);
+    SkipVersionAndCopyContents(OpenRead(BxesConstants.TracesFileName), writer);
+  }
+
+  private static void SkipVersionAndCopyContents(BinaryReader reader, BinaryWriter writer)
+  {
+    try
+    {
+      const int VersionSize = sizeof(int);
+      reader.BaseStream.Seek(VersionSize, SeekOrigin.Begin);
+    
+      WriteFromReaderToWriter(reader, writer);
+    }
+    finally
+    {
+      reader.Dispose();
+    }
+  }
+
+  private static void WriteFromReaderToWriter(BinaryReader reader, BinaryWriter writer)
+  {
+    var buffer = new byte[1024];
+    
+    while (true)
+    {
+      var readCount = reader.Read(buffer);
+      if (readCount == 0)
+      {
+        break;
+      }
+      
+      writer.Write(buffer, 0, readCount);
+    }
+  }
+}
+
 public class MultipleFilesBxesStreamWriterImpl<TEvent> : IBxesStreamWriter where TEvent: IEvent
 {
   private readonly BinaryWriter myMetadataWriter;
@@ -57,13 +131,13 @@ public class MultipleFilesBxesStreamWriterImpl<TEvent> : IBxesStreamWriter where
   {
     switch (@event)
     {
-      case BXesEventEvent<TEvent> eventEvent:
+      case BxesEventEvent<TEvent> eventEvent:
         HandleEventEvent(eventEvent);
         break;
       case BxesLogMetadataKeyValueEvent metadataEvent:
         HandleMetadataEvent(metadataEvent);
         break;
-      case BXesTraceVariantStartEvent variantStartEvent:
+      case BxesTraceVariantStartEvent variantStartEvent:
         HandleTraceVariantStart(variantStartEvent);
         break;
       default:
@@ -71,7 +145,7 @@ public class MultipleFilesBxesStreamWriterImpl<TEvent> : IBxesStreamWriter where
     }
   }
 
-  private void HandleEventEvent(BXesEventEvent<TEvent> @event)
+  private void HandleEventEvent(BxesEventEvent<TEvent> @event)
   {
     myValuesCount += BxesWriteUtils.WriteEventValues(@event.Event, myContext.WithWriter(myValuesWriter));
     myKeyValuePairsCount += BxesWriteUtils.WriteEventKeyValuePairs(@event.Event, myContext.WithWriter(myKeyValuesWriter));
@@ -94,7 +168,7 @@ public class MultipleFilesBxesStreamWriterImpl<TEvent> : IBxesStreamWriter where
     ++myMetadataValuesCount;
   }
 
-  private void HandleTraceVariantStart(BXesTraceVariantStartEvent @event)
+  private void HandleTraceVariantStart(BxesTraceVariantStartEvent @event)
   {
     WriteLastTraceVariantCountIfNeeded();
 
@@ -136,12 +210,12 @@ public class MultipleFilesBxesStreamWriterImpl<TEvent> : IBxesStreamWriter where
 
 public abstract class BxesStreamEvent;
 
-public sealed class BXesTraceVariantStartEvent(uint tracesCount) : BxesStreamEvent
+public sealed class BxesTraceVariantStartEvent(uint tracesCount) : BxesStreamEvent
 {
   public uint TracesCount { get; } = tracesCount;
 }
 
-public sealed class BXesEventEvent<TEvent>(TEvent @event) : BxesStreamEvent
+public sealed class BxesEventEvent<TEvent>(TEvent @event) : BxesStreamEvent
   where TEvent : IEvent
 {
   public TEvent Event { get; set; } = @event;
