@@ -10,9 +10,32 @@ public class SimpleWriteTest
   [Test]
   public void SimpleTest1()
   {
-    var log = TestLogsProvider.CreateSimpleTestLog1();
-    new SingleFileBxesWriter().WriteAsync(log, "/Users/aero/qwerty.bxes").GetAwaiter().GetResult();
-    var readLog = new SingleFileBxesReader().Read("/Users/aero/qwerty.bxes");
+    ExecuteSimpleTest(TestLogsProvider.CreateSimpleTestLog1());
+  }
+
+  private void ExecuteSimpleTest(IEventLog log)
+  {
+    ExecuteTestWithTempFile(testPath =>
+    {
+      new SingleFileBxesWriter().WriteAsync(log, testPath).GetAwaiter().GetResult();
+      var readLog = new SingleFileBxesReader().Read(testPath);
+
+      Assert.That(log.Equals(readLog));
+    });
+  }
+
+  private void ExecuteTestWithTempFile(Action<string> testAction)
+  {
+    var tempFilePath = Path.GetTempFileName();
+
+    try
+    {
+      testAction(tempFilePath);
+    }
+    finally
+    {
+      File.Delete(tempFilePath);
+    }
   }
 }
 
@@ -33,7 +56,7 @@ public static class TestLogsProvider
   private static ITraceVariant CreateRandomVariant()
   {
     var eventsCount = Random.Shared.Next(100);
-    var events = new List<EventImpl>();
+    var events = new List<InMemoryEventImpl>();
 
     for (var i = 0; i < eventsCount; ++i)
     {
@@ -43,7 +66,7 @@ public static class TestLogsProvider
     return new TraceVariantImpl((uint)Random.Shared.Next(10000), events);
   }
 
-  private static EventImpl CreateRandomEvent() =>
+  private static InMemoryEventImpl CreateRandomEvent() =>
     new(
       Random.Shared.Next(10123123),
       new BXesStringValue(GenerateRandomString()),
