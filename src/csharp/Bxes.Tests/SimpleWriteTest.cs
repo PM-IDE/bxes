@@ -1,4 +1,6 @@
 using Bxes.Models;
+using Bxes.Reader;
+using Bxes.Writer;
 
 namespace Bxes.Tests;
 
@@ -9,6 +11,8 @@ public class SimpleWriteTest
   public void SimpleTest1()
   {
     var log = TestLogsProvider.CreateSimpleTestLog1();
+    new SingleFileBxesWriter().WriteAsync(log, "/Users/aero/qwerty.bxes").GetAwaiter().GetResult();
+    var readLog = new SingleFileBxesReader().Read("/Users/aero/qwerty.bxes");
   }
 }
 

@@ -92,7 +92,10 @@ public class BXesStringValue(string value) : BxesValue<string>(value)
   public override void WriteTo(BinaryWriter bw)
   {
     base.WriteTo(bw);
-    bw.Write(Value);
+
+    var bytes = BxesConstants.BxesEncoding.GetBytes(value);
+    bw.Write((ulong)bytes.Length);
+    bw.Write(bytes);
   }
 }
 

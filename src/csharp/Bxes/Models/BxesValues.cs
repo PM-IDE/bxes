@@ -30,10 +30,12 @@ public abstract class BxesValue
         return new BxesInt64Value(reader.ReadInt64());
       case TypeIds.U32:
         return new BxesUint32Value(reader.ReadUInt32());
+      case TypeIds.F32:
+        return new BxesFloat32Value(reader.ReadSingle());
       case TypeIds.U64:
         return new BxesUint64Value(reader.ReadUInt64());
       case TypeIds.F64:
-        return new BxesFloat32Value(reader.ReadSingle());
+        return new BxesFloat64Value(reader.ReadDouble());
       case TypeIds.Timestamp:
         return new BxesTimeStampValue(reader.ReadInt64());
       case TypeIds.String:

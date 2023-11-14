@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Bxes.Models;
 
 namespace Bxes.Writer;
@@ -8,7 +7,8 @@ using IndexType = uint;
 internal static class BxesWriteUtils
 {
   private static void WriteCollectionAndCount<TElement>(
-    IEnumerable<TElement> collection, BxesWriteContext context,
+    IEnumerable<TElement> collection,
+    BxesWriteContext context,
     Func<TElement, BxesWriteContext, IndexType> elementWriter)
   {
     var countPos = context.Writer.BaseStream.Position;
@@ -38,40 +38,47 @@ internal static class BxesWriteUtils
   public static IndexType WriteEventValues(IEvent @event, BxesWriteContext context)
   {
     IndexType writtenCount = 0;
-    var nameValue = new BXesStringValue(@event.Name);
-    if (WriteValueIfNeeded(nameValue, context))
+    foreach (var value in EnumerateEventValues(@event))
     {
-      ++writtenCount;
+      writtenCount += WriteValue(value, context);
     }
+    
+    return writtenCount;
+  }
+  
+  private static IndexType WriteValue(BxesValue value, BxesWriteContext context)
+  {
+    if (WriteValueIfNeeded(value, context)) return 1;
+
+    return 0;
+  }
+
+  private static IEnumerable<BxesValue> EnumerateEventValues(IEvent @event)
+  {
+    yield return new BXesStringValue(@event.Name);
 
     foreach (var (key, value) in @event.Attributes)
     {
-      if (WriteValueIfNeeded(key, context))
-      {
-        ++writtenCount;
-      }
-
-      if (WriteValueIfNeeded(value, context))
-      {
-        ++writtenCount;
-      }
+      yield return key;
+      yield return value;
     }
-
-    return writtenCount;
   }
 
   public static bool WriteValueIfNeeded(BxesValue value, BxesWriteContext context)
   {
-    if (context.ValuesIndices.ContainsKey(value)) return false;
+    if (!context.ValuesIndices.TryAdd(value, (IndexType)context.ValuesIndices.Count)) return false;
 
-    context.ValuesIndices[value] = context.Writer.BaseStream.Position;
     value.WriteTo(context.Writer);
     return true;
   }
 
   public static void WriteKeyValuePairs(IEventLog log, BxesWriteContext context)
   {
-    WriteCollectionAndCount(log.Traces.SelectMany(variant => variant.Events), context, WriteEventKeyValuePairs);
+    var pairs = log.Traces
+      .SelectMany(variant => variant.Events.SelectMany(EnumerateEventKeyValuePairs))
+      .Concat(log.Metadata);
+    
+    WriteCollectionAndCount(pairs, context, WriteKeyValuePair);
   }
 
   public static IndexType WriteEventKeyValuePairs(IEvent @event, BxesWriteContext context)
@@ -88,11 +95,25 @@ internal static class BxesWriteUtils
     return writtenCount;
   }
 
-  public static bool WriteKeyValuePairIfNeeded(KeyValuePair<BXesStringValue, BxesValue> pair, BxesWriteContext context)
+  private static IEnumerable<KeyValuePair<BXesStringValue, BxesValue>> EnumerateEventKeyValuePairs(IEvent @event)
   {
-    if (context.KeyValueIndices.ContainsKey(pair)) return false;
+    return @event.Attributes;
+  }
 
-    context.KeyValueIndices[pair] = context.Writer.BaseStream.Position;
+  private static IndexType WriteKeyValuePair(
+    KeyValuePair<BXesStringValue, BxesValue> pair, BxesWriteContext context)
+  {
+    return WriteKeyValuePairIfNeeded(pair, context) switch
+    {
+      true => 1,
+      false => 0
+    };
+  }
+
+  public static bool WriteKeyValuePairIfNeeded(
+    KeyValuePair<BXesStringValue, BxesValue> pair, BxesWriteContext context)
+  {
+    if (!context.KeyValueIndices.TryAdd(pair, (IndexType)context.KeyValueIndices.Count)) return false;
 
     context.Writer.Write(context.ValuesIndices[pair.Key]);
     context.Writer.Write(context.ValuesIndices[pair.Value]);
@@ -143,7 +164,20 @@ internal static class BxesWriteUtils
 
   public static void WriteValues(IEventLog log, BxesWriteContext context)
   {
-    WriteCollectionAndCount(log.Traces.SelectMany(variant => variant.Events), context, WriteEventValues);
+    var values = log.Traces
+      .SelectMany(variant => variant.Events.SelectMany(EnumerateEventValues))
+      .Concat(EnumerateMetadataValues(log.Metadata));
+    
+    WriteCollectionAndCount(values, context, WriteValue);
+  }
+
+  private static IEnumerable<BxesValue> EnumerateMetadataValues(IEventLogMetadata metadata)
+  {
+    foreach (var (key, value) in metadata)
+    {
+      yield return key;
+      yield return value;
+    }
   }
 
   public static async Task ExecuteWithFile(string filePath, Action<BinaryWriter> writeAction)
