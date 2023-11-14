@@ -54,7 +54,7 @@ public static class BxesReadUtils
     {
       var tracesCount = reader.ReadUInt32();
       var eventsCount = reader.ReadUInt32();
-      var events = new List<EventImpl>();
+      var events = new List<InMemoryEventImpl>();
 
       for (uint j = 0; j < eventsCount; ++j)
       {
@@ -71,7 +71,7 @@ public static class BxesReadUtils
           eventAttributes[(BXesStringValue)values[(int)kv.Key]] = values[(int)kv.Value];
         }
 
-        events.Add(new EventImpl(timestamp, name, lifecycle, eventAttributes));
+        events.Add(new InMemoryEventImpl(timestamp, name, lifecycle, eventAttributes));
       }
 
       variants.Add(new TraceVariantImpl(tracesCount, events));

@@ -33,7 +33,7 @@ internal static class BxesWriteUtils
     writer.BaseStream.Seek(currentPosition, SeekOrigin.Begin);
   }
 
-  public static void WriteBxesVersion(BinaryWriter writer) => writer.Write(BxesConstants.BxesVersion);
+  public static void WriteBxesVersion(BinaryWriter writer, IndexType version) => writer.Write(version);
 
   public static IndexType WriteEventValues(IEvent @event, BxesWriteContext context)
   {

@@ -10,7 +10,7 @@ public class SingleFileBxesWriter : IBxesWriter
     {
       var context = new BxesWriteContext(writer);
 
-      BxesWriteUtils.WriteBxesVersion(writer);
+      BxesWriteUtils.WriteBxesVersion(writer, log.Version);
       BxesWriteUtils.WriteValues(log, context);
       BxesWriteUtils.WriteKeyValuePairs(log, context);
       BxesWriteUtils.WriteEventLogMetadata(log, context);
