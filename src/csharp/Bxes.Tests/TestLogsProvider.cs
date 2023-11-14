@@ -1,43 +1,6 @@
 using Bxes.Models;
-using Bxes.Reader;
-using Bxes.Writer;
 
 namespace Bxes.Tests;
-
-[TestFixture]
-public class SimpleWriteTest
-{
-  [Test]
-  public void SimpleTest1()
-  {
-    ExecuteSimpleTest(TestLogsProvider.CreateSimpleTestLog1());
-  }
-
-  private void ExecuteSimpleTest(IEventLog log)
-  {
-    ExecuteTestWithTempFile(testPath =>
-    {
-      new SingleFileBxesWriter().WriteAsync(log, testPath).GetAwaiter().GetResult();
-      var readLog = new SingleFileBxesReader().Read(testPath);
-
-      Assert.That(log.Equals(readLog));
-    });
-  }
-
-  private void ExecuteTestWithTempFile(Action<string> testAction)
-  {
-    var tempFilePath = Path.GetTempFileName();
-
-    try
-    {
-      testAction(tempFilePath);
-    }
-    finally
-    {
-      File.Delete(tempFilePath);
-    }
-  }
-}
 
 public static class TestLogsProvider
 {
