@@ -11,7 +11,7 @@ public class MultipleFilesBxesWriter : IBxesWriter
       throw new SavePathIsNotDirectoryException(savePath);
     }
 
-    var context = new BxesWriteContext();
+    var context = new BxesWriteContext(null!);
 
     void Write(BinaryWriter writer, Action<IEventLog, BxesWriteContext> writeAction) =>
       writeAction(log, context.WithWriter(writer));
