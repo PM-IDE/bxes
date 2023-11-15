@@ -1,3 +1,5 @@
+using Bxes.Writer;
+
 namespace Bxes.Models;
 
 public interface IEventLog : IEquatable<IEventLog>
@@ -27,5 +29,26 @@ public class InMemoryEventLog(uint version, IEventLogMetadata metadata, List<ITr
            Metadata.Equals(other.Metadata) &&
            Traces.Count() == other.Traces.Count() &&
            Traces.Zip(other.Traces).All(pair => pair.First.Equals(pair.Second));
+  }
+}
+
+public static class EventLogUtils
+{
+  public static IEnumerable<BxesStreamEvent> ToEventsStream(this IEventLog log)
+  {
+    foreach (var pair in log.Metadata)
+    {
+      yield return new BxesLogMetadataKeyValueEvent(pair);
+    }
+
+    foreach (var variant in log.Traces)
+    {
+      yield return new BxesTraceVariantStartEvent(variant.Count);
+
+      foreach (var @event in variant.Events)
+      {
+        yield return new BxesEventEvent<IEvent>(@event);
+      }
+    }
   }
 }
