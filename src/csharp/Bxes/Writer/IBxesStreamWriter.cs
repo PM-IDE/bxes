@@ -14,7 +14,7 @@ public class SingleFileBxesStreamWriterImpl<TEvent> : IBxesStreamWriter where TE
   private readonly string mySavePath;
 
 
-  public SingleFileBxesStreamWriterImpl(string savePath)
+  public SingleFileBxesStreamWriterImpl(string savePath, uint bxesVersion)
   {
     if (Path.GetDirectoryName(savePath) is not { } directoryName)
     {
@@ -23,7 +23,7 @@ public class SingleFileBxesStreamWriterImpl<TEvent> : IBxesStreamWriter where TE
 
     mySavePath = savePath;
     mySaveDirectoryName = directoryName;
-    myMultipleWriter = new MultipleFilesBxesStreamWriterImpl<TEvent>(directoryName);
+    myMultipleWriter = new MultipleFilesBxesStreamWriterImpl<TEvent>(directoryName, bxesVersion);
   }
 
   public void HandleEvent(BxesStreamEvent @event) => myMultipleWriter.HandleEvent(@event);
@@ -83,12 +83,13 @@ public class SingleFileBxesStreamWriterImpl<TEvent> : IBxesStreamWriter where TE
 
 public class MultipleFilesBxesStreamWriterImpl<TEvent> : IBxesStreamWriter where TEvent : IEvent
 {
+  private readonly uint myBxesVersion;
   private readonly BinaryWriter myMetadataWriter;
   private readonly BinaryWriter myValuesWriter;
   private readonly BinaryWriter myKeyValuesWriter;
   private readonly BinaryWriter myTracesWriter;
 
-  private readonly BxesWriteContext myContext = new();
+  private readonly BxesWriteContext myContext = new(null!);
 
 
   private uint myMetadataValuesCount;
@@ -98,12 +99,13 @@ public class MultipleFilesBxesStreamWriterImpl<TEvent> : IBxesStreamWriter where
   private long myLastTraceVariantCountPosition;
 
 
-  public MultipleFilesBxesStreamWriterImpl(string savePath)
+  public MultipleFilesBxesStreamWriterImpl(string savePath, uint bxesVersion)
   {
     if (!Directory.Exists(savePath)) throw new SavePathIsNotDirectoryException(savePath);
 
     BinaryWriter OpenWrite(string fileName) => new(File.OpenWrite(Path.Join(savePath, fileName)));
 
+    myBxesVersion = bxesVersion;
     myMetadataWriter = OpenWrite(BxesConstants.MetadataFileName);
     myValuesWriter = OpenWrite(BxesConstants.ValuesFileName);
     myKeyValuesWriter = OpenWrite(BxesConstants.KVPairsFileName);
@@ -114,10 +116,10 @@ public class MultipleFilesBxesStreamWriterImpl<TEvent> : IBxesStreamWriter where
 
   private void WriteInitialInfo()
   {
-    myTracesWriter.Write(BxesConstants.BxesVersion);
-    myMetadataWriter.Write(BxesConstants.BxesVersion);
-    myKeyValuesWriter.Write(BxesConstants.BxesVersion);
-    myValuesWriter.Write(BxesConstants.BxesVersion);
+    myTracesWriter.Write(myBxesVersion);
+    myMetadataWriter.Write(myBxesVersion);
+    myKeyValuesWriter.Write(myBxesVersion);
+    myValuesWriter.Write(myBxesVersion);
 
     myTracesWriter.Write((uint)0);
     myMetadataWriter.Write((uint)0);
@@ -169,8 +171,9 @@ public class MultipleFilesBxesStreamWriterImpl<TEvent> : IBxesStreamWriter where
   {
     WriteLastTraceVariantCountIfNeeded();
 
-    myLastTraceVariantCountPosition = myTracesWriter.BaseStream.Position;
+    myLastTraceVariantEventCount = 0;
     myTracesWriter.Write(@event.TracesCount);
+    myLastTraceVariantCountPosition = myTracesWriter.BaseStream.Position;
     myTracesWriter.Write((uint)0);
 
     ++myTracesVariantsCount;
@@ -196,6 +199,8 @@ public class MultipleFilesBxesStreamWriterImpl<TEvent> : IBxesStreamWriter where
 
   private void FlushInformation()
   {
+    WriteLastTraceVariantCountIfNeeded();
+
     const int CountPos = sizeof(uint);
 
     BxesWriteUtils.WriteCount(myTracesWriter, CountPos, myTracesVariantsCount);
