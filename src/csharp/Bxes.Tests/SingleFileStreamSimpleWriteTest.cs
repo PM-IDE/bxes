@@ -22,7 +22,7 @@ public class SingleFileStreamSimpleWriteTest
         foreach (var streamEvent in log.ToEventsStream())
         {
           writer.HandleEvent(streamEvent);
-        } 
+        }
       }
 
       return new SingleFileBxesReader().Read(testFile);

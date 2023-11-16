@@ -18,12 +18,16 @@ public class MultipleFilesBxesWriter : IBxesWriter
 
     var version = log.Version;
     await ExecuteWithFile(savePath, BxesConstants.ValuesFileName, version, bw => Write(bw, BxesWriteUtils.WriteValues));
-    await ExecuteWithFile(savePath, BxesConstants.KVPairsFileName, version, bw => Write(bw, BxesWriteUtils.WriteKeyValuePairs));
-    await ExecuteWithFile(savePath, BxesConstants.MetadataFileName, version, bw => Write(bw, BxesWriteUtils.WriteEventLogMetadata));
-    await ExecuteWithFile(savePath, BxesConstants.TracesFileName, version, bw => Write(bw, BxesWriteUtils.WriteTracesVariants));
+    await ExecuteWithFile(savePath, BxesConstants.KVPairsFileName, version,
+      bw => Write(bw, BxesWriteUtils.WriteKeyValuePairs));
+    await ExecuteWithFile(savePath, BxesConstants.MetadataFileName, version,
+      bw => Write(bw, BxesWriteUtils.WriteEventLogMetadata));
+    await ExecuteWithFile(savePath, BxesConstants.TracesFileName, version,
+      bw => Write(bw, BxesWriteUtils.WriteTracesVariants));
   }
 
-  private static Task ExecuteWithFile(string saveDirectory, string fileName, uint version, Action<BinaryWriter> writeAction) =>
+  private static Task ExecuteWithFile(
+    string saveDirectory, string fileName, uint version, Action<BinaryWriter> writeAction) =>
     BxesWriteUtils.ExecuteWithFile(Path.Combine(saveDirectory, fileName), writer =>
     {
       BxesWriteUtils.WriteBxesVersion(writer, version);

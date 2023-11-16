@@ -42,10 +42,10 @@ internal static class BxesWriteUtils
     {
       writtenCount += WriteValue(value, context);
     }
-    
+
     return writtenCount;
   }
-  
+
   private static IndexType WriteValue(BxesValue value, BxesWriteContext context)
   {
     if (WriteValueIfNeeded(value, context)) return 1;
@@ -77,7 +77,7 @@ internal static class BxesWriteUtils
     var pairs = log.Traces
       .SelectMany(variant => variant.Events.SelectMany(EnumerateEventKeyValuePairs))
       .Concat(log.Metadata);
-    
+
     WriteCollectionAndCount(pairs, context, WriteKeyValuePair);
   }
 
@@ -167,7 +167,7 @@ internal static class BxesWriteUtils
     var values = log.Traces
       .SelectMany(variant => variant.Events.SelectMany(EnumerateEventValues))
       .Concat(EnumerateMetadataValues(log.Metadata));
-    
+
     WriteCollectionAndCount(values, context, WriteValue);
   }
 

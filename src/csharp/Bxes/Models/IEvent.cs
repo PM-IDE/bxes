@@ -23,8 +23,8 @@ public class InMemoryEventImpl(
   public IEventLifecycle Lifecycle { get; } = lifecycle;
   public string Name => name.Value;
   public IEventAttributes Attributes { get; } = attributes;
-  
-  
+
+
   public bool Equals(IEvent? other)
   {
     return other is { } &&

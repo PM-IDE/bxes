@@ -10,7 +10,7 @@ public class TraceVariantImpl(uint count, List<InMemoryEventImpl> events) : ITra
 {
   public uint Count { get; } = count;
   public IEnumerable<IEvent> Events { get; } = events;
-  
+
 
   public bool Equals(ITraceVariant? other)
   {

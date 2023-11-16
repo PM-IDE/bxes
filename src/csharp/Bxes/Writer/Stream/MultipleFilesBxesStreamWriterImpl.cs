@@ -31,7 +31,7 @@ public class MultipleFilesBxesStreamWriterImpl<TEvent> : IBxesStreamWriter where
       {
         File.Delete(path);
       }
-      
+
       return new BinaryWriter(File.OpenWrite(path));
     }
 
