@@ -26,3 +26,21 @@ public readonly struct TempFolderContainer() : IPathContainer
     Directory.Delete(Path, true);
   }
 }
+
+public static class PathUtil
+{
+  public static void EnsureDeleted(string path)
+  {
+    if (!Path.Exists(path)) return;
+
+    if (File.Exists(path))
+    {
+      File.Delete(path);
+    }
+
+    if (Directory.Exists(path))
+    {
+      Directory.Delete(path);
+    }
+  }
+}

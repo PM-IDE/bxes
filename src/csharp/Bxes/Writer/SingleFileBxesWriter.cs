@@ -1,4 +1,5 @@
 using Bxes.Models;
+using Bxes.Utils;
 
 namespace Bxes.Writer;
 
@@ -6,6 +7,8 @@ public class SingleFileBxesWriter : IBxesWriter
 {
   public Task WriteAsync(IEventLog log, string savePath)
   {
+    PathUtil.EnsureDeleted(savePath);
+
     return BxesWriteUtils.ExecuteWithFile(savePath, writer =>
     {
       var context = new BxesWriteContext(writer);

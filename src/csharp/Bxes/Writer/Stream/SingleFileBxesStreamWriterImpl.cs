@@ -1,44 +1,43 @@
 using Bxes.Models;
+using Bxes.Utils;
 
 namespace Bxes.Writer.Stream;
 
 public class SingleFileBxesStreamWriterImpl<TEvent> : IBxesStreamWriter where TEvent : IEvent
 {
   private readonly MultipleFilesBxesStreamWriterImpl<TEvent> myMultipleWriter;
-  private readonly string mySaveDirectoryName;
   private readonly string mySavePath;
   private readonly uint myBxesVersion;
+  private readonly TempFolderContainer myFolderContainer;
 
 
   public SingleFileBxesStreamWriterImpl(string savePath, uint bxesVersion)
   {
-    if (Path.GetDirectoryName(savePath) is not { } directoryName)
-    {
-      throw new DirectoryNotFoundException($"Failed to get parent directory for {savePath}");
-    }
-
     mySavePath = savePath;
     myBxesVersion = bxesVersion;
-    mySaveDirectoryName = directoryName;
-    myMultipleWriter = new MultipleFilesBxesStreamWriterImpl<TEvent>(directoryName, bxesVersion);
+    myFolderContainer = new TempFolderContainer();
+    myMultipleWriter = new MultipleFilesBxesStreamWriterImpl<TEvent>(myFolderContainer.Path, bxesVersion);
   }
 
+  
   public void HandleEvent(BxesStreamEvent @event) => myMultipleWriter.HandleEvent(@event);
-
-
+  
   public void Dispose()
   {
     myMultipleWriter.Dispose();
 
     MergeFilesIntoOne();
+    
+    myFolderContainer.Dispose();
   }
 
   private void MergeFilesIntoOne()
   {
+    PathUtil.EnsureDeleted(mySavePath);
     using var writer = new BinaryWriter(File.OpenWrite(mySavePath));
     writer.Write(myBxesVersion);
 
-    BinaryReader OpenRead(string fileName) => new(File.OpenRead(Path.Join(mySaveDirectoryName, fileName)));
+    BinaryReader OpenRead(string fileName) => new(File.OpenRead(Path.Join(myFolderContainer.Path, fileName)));
 
     SkipVersionAndCopyContents(OpenRead(BxesConstants.ValuesFileName), writer);
     SkipVersionAndCopyContents(OpenRead(BxesConstants.KVPairsFileName), writer);

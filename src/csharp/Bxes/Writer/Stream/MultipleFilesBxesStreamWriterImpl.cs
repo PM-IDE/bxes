@@ -1,4 +1,5 @@
 using Bxes.Models;
+using Bxes.Utils;
 
 namespace Bxes.Writer.Stream;
 
@@ -27,10 +28,7 @@ public class MultipleFilesBxesStreamWriterImpl<TEvent> : IBxesStreamWriter where
     BinaryWriter OpenWrite(string fileName)
     {
       var path = Path.Join(savePath, fileName);
-      if (File.Exists(path))
-      {
-        File.Delete(path);
-      }
+      PathUtil.EnsureDeleted(path);
 
       return new BinaryWriter(File.OpenWrite(path));
     }
