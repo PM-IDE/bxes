@@ -1,35 +1,21 @@
 using Bxes.Models;
+using Bxes.Utils;
+using Microsoft.VisualStudio.TestPlatform.Utilities;
 
 namespace Bxes.Tests;
 
 public static class TestUtils
 {
-  public static void ExecuteTestWithTempFile(Action<string> testAction)
+  public static void ExecuteTestWithTempFile(IEventLog log, Func<string, IEventLog> testAction) => 
+    ExecuteTestWithPath(static () => new TempFilePathContainer(), file => ExecuteTestWithLog(log, () => testAction(file)));
+
+  public static void ExecuteTestWithTempFolder(IEventLog log, Func<string, IEventLog> testAction) =>
+    ExecuteTestWithPath(static () => new TempFolderContainer(), folder => ExecuteTestWithLog(log, () => testAction(folder)));
+
+  private static void ExecuteTestWithPath(Func<IPathContainer> pathCreator, Action<string> testAction)
   {
-    var tempFilePath = Path.GetTempFileName();
-
-    try
-    {
-      testAction(tempFilePath);
-    }
-    finally
-    {
-      File.Delete(tempFilePath);
-    }
-  }
-
-  public static void ExecuteWithTempDirectory(Action<string> testAction)
-  {
-    var tempDirectory = Directory.CreateTempSubdirectory();
-
-    try
-    {
-      testAction(tempDirectory.FullName);
-    }
-    finally
-    {
-      Directory.Delete(tempDirectory.FullName, true);
-    }
+    using var container = pathCreator();
+    testAction(container.Path);
   }
 
   public static void ExecuteTestWithLog(IEventLog initialLog, Func<IEventLog> logProducer)

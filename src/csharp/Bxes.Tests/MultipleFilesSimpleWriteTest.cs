@@ -15,13 +15,10 @@ public class MultipleFilesSimpleWriteTest
 
   private static void ExecuteSimpleTest(IEventLog log)
   {
-    TestUtils.ExecuteWithTempDirectory(testDirectory =>
+    TestUtils.ExecuteTestWithTempFolder(log, testDirectory =>
     {
-      TestUtils.ExecuteTestWithLog(log, () =>
-      {
-        new MultipleFilesBxesWriter().WriteAsync(log, testDirectory).GetAwaiter().GetResult();
-        return new MultiFileBxesReader().Read(testDirectory);
-      });
+      new MultipleFilesBxesWriter().WriteAsync(log, testDirectory).GetAwaiter().GetResult();
+      return new MultiFileBxesReader().Read(testDirectory);
     });
   }
 }

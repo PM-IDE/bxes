@@ -15,20 +15,17 @@ public class SingleFileStreamSimpleWriteTest
 
   private static void ExecuteSimpleTest(IEventLog log)
   {
-    TestUtils.ExecuteTestWithTempFile(testFile =>
+    TestUtils.ExecuteTestWithTempFile(log, testFile =>
     {
-      TestUtils.ExecuteTestWithLog(log, () =>
+      using (var writer = new SingleFileBxesStreamWriterImpl<IEvent>(testFile, log.Version))
       {
-        using (var writer = new SingleFileBxesStreamWriterImpl<IEvent>(testFile, log.Version))
+        foreach (var streamEvent in log.ToEventsStream())
         {
-          foreach (var streamEvent in log.ToEventsStream())
-          {
-            writer.HandleEvent(streamEvent);
-          } 
-        }
+          writer.HandleEvent(streamEvent);
+        } 
+      }
 
-        return new SingleFileBxesReader().Read(testFile);
-      });
+      return new SingleFileBxesReader().Read(testFile);
     });
   }
 }

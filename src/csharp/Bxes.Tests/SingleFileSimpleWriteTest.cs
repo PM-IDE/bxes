@@ -15,13 +15,10 @@ public class SingleFileSimpleWriteTest
 
   private static void ExecuteSimpleTest(IEventLog log)
   {
-    TestUtils.ExecuteTestWithTempFile(testPath =>
+    TestUtils.ExecuteTestWithTempFile(log, testPath =>
     {
-      TestUtils.ExecuteTestWithLog(log, () =>
-      {
-        new SingleFileBxesWriter().WriteAsync(log, testPath).GetAwaiter().GetResult();
-        return new SingleFileBxesReader().Read(testPath);
-      });
+      new SingleFileBxesWriter().WriteAsync(log, testPath).GetAwaiter().GetResult();
+      return new SingleFileBxesReader().Read(testPath);
     });
   }
 }
