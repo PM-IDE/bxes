@@ -1,85 +1,6 @@
 using Bxes.Models;
 
-namespace Bxes.Writer;
-
-public interface IBxesStreamWriter : IDisposable
-{
-  void HandleEvent(BxesStreamEvent @event);
-}
-
-public class SingleFileBxesStreamWriterImpl<TEvent> : IBxesStreamWriter where TEvent : IEvent
-{
-  private readonly MultipleFilesBxesStreamWriterImpl<TEvent> myMultipleWriter;
-  private readonly string mySaveDirectoryName;
-  private readonly string mySavePath;
-
-
-  public SingleFileBxesStreamWriterImpl(string savePath, uint bxesVersion)
-  {
-    if (Path.GetDirectoryName(savePath) is not { } directoryName)
-    {
-      throw new DirectoryNotFoundException($"Failed to get parent directory for {savePath}");
-    }
-
-    mySavePath = savePath;
-    mySaveDirectoryName = directoryName;
-    myMultipleWriter = new MultipleFilesBxesStreamWriterImpl<TEvent>(directoryName, bxesVersion);
-  }
-
-  public void HandleEvent(BxesStreamEvent @event) => myMultipleWriter.HandleEvent(@event);
-
-
-  public void Dispose()
-  {
-    myMultipleWriter.Dispose();
-
-    MergeFilesIntoOne();
-  }
-
-  private void MergeFilesIntoOne()
-  {
-    using var writer = new BinaryWriter(File.OpenWrite(mySavePath));
-    writer.Write(BxesConstants.BxesVersion);
-
-    BinaryReader OpenRead(string fileName) => new(File.OpenRead(Path.Join(mySaveDirectoryName, fileName)));
-
-    SkipVersionAndCopyContents(OpenRead(BxesConstants.ValuesFileName), writer);
-    SkipVersionAndCopyContents(OpenRead(BxesConstants.KVPairsFileName), writer);
-    SkipVersionAndCopyContents(OpenRead(BxesConstants.MetadataFileName), writer);
-    SkipVersionAndCopyContents(OpenRead(BxesConstants.TracesFileName), writer);
-  }
-
-  private static void SkipVersionAndCopyContents(BinaryReader reader, BinaryWriter writer)
-  {
-    try
-    {
-      const int VersionSize = sizeof(int);
-      reader.BaseStream.Seek(VersionSize, SeekOrigin.Begin);
-
-      WriteFromReaderToWriter(reader, writer);
-    }
-    finally
-    {
-      reader.Dispose();
-    }
-  }
-
-  private static void WriteFromReaderToWriter(BinaryReader reader, BinaryWriter writer)
-  {
-    var buffer = new byte[1024];
-
-    while (true)
-    {
-      var readCount = reader.Read(buffer);
-      if (readCount == 0)
-      {
-        break;
-      }
-
-      writer.Write(buffer, 0, readCount);
-    }
-  }
-}
+namespace Bxes.Writer.Stream;
 
 public class MultipleFilesBxesStreamWriterImpl<TEvent> : IBxesStreamWriter where TEvent : IEvent
 {
@@ -103,7 +24,16 @@ public class MultipleFilesBxesStreamWriterImpl<TEvent> : IBxesStreamWriter where
   {
     if (!Directory.Exists(savePath)) throw new SavePathIsNotDirectoryException(savePath);
 
-    BinaryWriter OpenWrite(string fileName) => new(File.OpenWrite(Path.Join(savePath, fileName)));
+    BinaryWriter OpenWrite(string fileName)
+    {
+      var path = Path.Join(savePath, fileName);
+      if (File.Exists(path))
+      {
+        File.Delete(path);
+      }
+      
+      return new BinaryWriter(File.OpenWrite(path));
+    }
 
     myBxesVersion = bxesVersion;
     myMetadataWriter = OpenWrite(BxesConstants.MetadataFileName);
@@ -208,23 +138,4 @@ public class MultipleFilesBxesStreamWriterImpl<TEvent> : IBxesStreamWriter where
     BxesWriteUtils.WriteCount(myValuesWriter, CountPos, (uint)myContext.ValuesIndices.Count);
     BxesWriteUtils.WriteCount(myKeyValuesWriter, CountPos, (uint)myContext.KeyValueIndices.Count);
   }
-}
-
-public abstract class BxesStreamEvent;
-
-public sealed class BxesTraceVariantStartEvent(uint tracesCount) : BxesStreamEvent
-{
-  public uint TracesCount { get; } = tracesCount;
-}
-
-public sealed class BxesEventEvent<TEvent>(TEvent @event) : BxesStreamEvent
-  where TEvent : IEvent
-{
-  public TEvent Event { get; set; } = @event;
-}
-
-public sealed class BxesLogMetadataKeyValueEvent(KeyValuePair<BXesStringValue, BxesValue> metadataKeyValue)
-  : BxesStreamEvent
-{
-  public KeyValuePair<BXesStringValue, BxesValue> MetadataKeyValue { get; } = metadataKeyValue;
 }

@@ -5,7 +5,7 @@ using Bxes.Writer.Stream;
 namespace Bxes.Tests;
 
 [TestFixture]
-public class MultipleFilesStreamSimpleWriteTest
+public class SingleFileStreamSimpleWriteTest
 {
   [Test]
   public void SimpleTest1()
@@ -15,11 +15,11 @@ public class MultipleFilesStreamSimpleWriteTest
 
   private static void ExecuteSimpleTest(IEventLog log)
   {
-    TestUtils.ExecuteWithTempDirectory(testDirectory =>
+    TestUtils.ExecuteTestWithTempFile(testFile =>
     {
       TestUtils.ExecuteTestWithLog(log, () =>
       {
-        using (var writer = new MultipleFilesBxesStreamWriterImpl<IEvent>(testDirectory, log.Version))
+        using (var writer = new SingleFileBxesStreamWriterImpl<IEvent>(testFile, log.Version))
         {
           foreach (var streamEvent in log.ToEventsStream())
           {
@@ -27,7 +27,7 @@ public class MultipleFilesStreamSimpleWriteTest
           } 
         }
 
-        return new MultiFileBxesReader().Read(testDirectory);
+        return new SingleFileBxesReader().Read(testFile);
       });
     });
   }

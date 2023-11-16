@@ -1,4 +1,5 @@
 using Bxes.Writer;
+using Bxes.Writer.Stream;
 
 namespace Bxes.Models;
 

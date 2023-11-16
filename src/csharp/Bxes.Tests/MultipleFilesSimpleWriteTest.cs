@@ -13,7 +13,7 @@ public class MultipleFilesSimpleWriteTest
     ExecuteSimpleTest(TestLogsProvider.CreateSimpleTestLog1());
   }
 
-  private void ExecuteSimpleTest(IEventLog log)
+  private static void ExecuteSimpleTest(IEventLog log)
   {
     TestUtils.ExecuteWithTempDirectory(testDirectory =>
     {
