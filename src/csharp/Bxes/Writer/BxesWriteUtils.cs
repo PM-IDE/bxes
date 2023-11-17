@@ -1,3 +1,4 @@
+using System.Runtime;
 using Bxes.Models;
 
 namespace Bxes.Writer;
@@ -55,7 +56,7 @@ internal static class BxesWriteUtils
 
   private static IEnumerable<BxesValue> EnumerateEventValues(IEvent @event)
   {
-    yield return new BXesStringValue(@event.Name);
+    yield return new BxesStringValue(@event.Name);
 
     foreach (var (key, value) in @event.Attributes)
     {
@@ -95,13 +96,13 @@ internal static class BxesWriteUtils
     return writtenCount;
   }
 
-  private static IEnumerable<KeyValuePair<BXesStringValue, BxesValue>> EnumerateEventKeyValuePairs(IEvent @event)
+  private static IEnumerable<KeyValuePair<BxesStringValue, BxesValue>> EnumerateEventKeyValuePairs(IEvent @event)
   {
     return @event.Attributes;
   }
 
   private static IndexType WriteKeyValuePair(
-    KeyValuePair<BXesStringValue, BxesValue> pair, BxesWriteContext context)
+    KeyValuePair<BxesStringValue, BxesValue> pair, BxesWriteContext context)
   {
     return WriteKeyValuePairIfNeeded(pair, context) switch
     {
@@ -111,7 +112,7 @@ internal static class BxesWriteUtils
   }
 
   public static bool WriteKeyValuePairIfNeeded(
-    KeyValuePair<BXesStringValue, BxesValue> pair, BxesWriteContext context)
+    KeyValuePair<BxesStringValue, BxesValue> pair, BxesWriteContext context)
   {
     if (!context.KeyValueIndices.TryAdd(pair, (IndexType)context.KeyValueIndices.Count)) return false;
 
@@ -123,15 +124,14 @@ internal static class BxesWriteUtils
 
   public static void WriteEventLogMetadata(IEventLog log, BxesWriteContext context)
   {
-    context.Writer.Write((IndexType)log.Metadata.Count);
-
-    foreach (var tuple in log.Metadata)
+    WriteCollectionAndCount(log.Metadata, context, (pair, writeContext) =>
     {
-      WriteKeyValueIndex(tuple, context);
-    }
+      WriteKeyValueIndex(pair, writeContext);
+      return 1;
+    });
   }
 
-  public static void WriteKeyValueIndex(KeyValuePair<BXesStringValue, BxesValue> tuple, BxesWriteContext context)
+  public static void WriteKeyValueIndex(KeyValuePair<BxesStringValue, BxesValue> tuple, BxesWriteContext context)
   {
     context.Writer.Write(context.KeyValueIndices[tuple]);
   }
@@ -148,16 +148,15 @@ internal static class BxesWriteUtils
 
   public static IndexType WriteEvent(IEvent @event, BxesWriteContext context)
   {
-    context.Writer.Write(context.ValuesIndices[new BXesStringValue(@event.Name)]);
+    context.Writer.Write(context.ValuesIndices[new BxesStringValue(@event.Name)]);
     context.Writer.Write(@event.Timestamp);
     @event.Lifecycle.WriteTo(context.Writer);
 
-    context.Writer.Write((IndexType)@event.Attributes.Count);
-
-    foreach (var pair in @event.Attributes)
+    WriteCollectionAndCount(@event.Attributes, context, (pair, writeContext) =>
     {
-      context.Writer.Write(context.KeyValueIndices[pair]);
-    }
+      WriteKeyValueIndex(pair, writeContext);
+      return 1;
+    });
 
     return 1;
   }
@@ -171,7 +170,8 @@ internal static class BxesWriteUtils
     WriteCollectionAndCount(values, context, WriteValue);
   }
 
-  private static IEnumerable<BxesValue> EnumerateMetadataValues(IEventLogMetadata metadata)
+  private static IEnumerable<BxesValue> EnumerateMetadataValues(
+    IEnumerable<KeyValuePair<BxesStringValue, BxesValue>> metadata)
   {
     foreach (var (key, value) in metadata)
     {

@@ -30,7 +30,7 @@ public class MultiFileBxesReader : IBxesReader
       keyValues = BxesReadUtils.ReadKeyValuePairs(reader);
     });
 
-    EventLogMetadataImpl metadata = null!;
+    IEnumerable<KeyValuePair<BxesStringValue, BxesValue>> metadata = null!;
     OpenRead(BxesConstants.MetadataFileName, reader =>
     {
       ValidateVersions(ref version, reader.ReadUInt32());

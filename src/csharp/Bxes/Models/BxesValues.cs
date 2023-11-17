@@ -48,7 +48,7 @@ public abstract class BxesValue
           throw new ParseException(valuesOffset, message);
         }
 
-        return new BXesStringValue(BxesConstants.BxesEncoding.GetString(bytes));
+        return new BxesStringValue(BxesConstants.BxesEncoding.GetString(bytes));
       case TypeIds.BrafLifecycle:
         return BrafLifecycle.Parse(reader.ReadByte());
       case TypeIds.StandardLifecycle:

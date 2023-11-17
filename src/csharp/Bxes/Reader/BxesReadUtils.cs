@@ -30,15 +30,15 @@ public static class BxesReadUtils
     return keyValues;
   }
 
-  public static EventLogMetadataImpl ReadMetadata(
+  public static IEnumerable<KeyValuePair<BxesStringValue, BxesValue>> ReadMetadata(
     BinaryReader reader, List<KeyValuePair<uint, uint>> keyValues, List<BxesValue> values)
   {
     var metadataCount = reader.ReadUInt32();
-    var metadata = new EventLogMetadataImpl();
+    var metadata = new List<KeyValuePair<BxesStringValue, BxesValue>>();
     for (uint i = 0; i < metadataCount; ++i)
     {
       var kv = keyValues[(int)reader.ReadUInt32()];
-      metadata[(BXesStringValue)values[(int)kv.Key]] = values[(int)kv.Value];
+      metadata.Add(new((BxesStringValue)values[(int)kv.Key], values[(int)kv.Value]));
     }
 
     return metadata;
@@ -58,17 +58,17 @@ public static class BxesReadUtils
 
       for (uint j = 0; j < eventsCount; ++j)
       {
-        var name = (BXesStringValue)values[(int)reader.ReadUInt32()];
+        var name = (BxesStringValue)values[(int)reader.ReadUInt32()];
         var timestamp = reader.ReadInt64();
         var lifecycle = (IEventLifecycle)BxesValue.Parse(reader);
 
         var attributesCount = reader.ReadUInt32();
-        var eventAttributes = new EventAttributesImpl();
+        var eventAttributes = new List<KeyValuePair<BxesStringValue, BxesValue>>();
 
         for (uint k = 0; k < attributesCount; ++k)
         {
           var kv = keyValues[(int)reader.ReadUInt32()];
-          eventAttributes[(BXesStringValue)values[(int)kv.Key]] = values[(int)kv.Value];
+          eventAttributes.Add(new((BxesStringValue)values[(int)kv.Key], values[(int)kv.Value]));
         }
 
         events.Add(new InMemoryEventImpl(timestamp, name, lifecycle, eventAttributes));

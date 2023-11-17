@@ -1,6 +1,3 @@
-using System.Runtime.CompilerServices;
-using Bxes.Utils;
-
 namespace Bxes.Models;
 
 public interface IEvent : IEquatable<IEvent>
@@ -9,39 +6,32 @@ public interface IEvent : IEquatable<IEvent>
   string Name { get; }
   IEventLifecycle Lifecycle { get; }
 
-  IEventAttributes Attributes { get; }
+  IEnumerable<KeyValuePair<BxesStringValue, BxesValue>> Attributes { get; }
+}
+
+public static class EventUtil
+{
+  public static bool Equals(IEvent first, IEvent second)
+  {
+    return first.Timestamp == second.Timestamp &&
+           first.Name == second.Name &&
+           first.Lifecycle.Equals(second.Lifecycle) &&
+           EventLogUtil.Equals(first.Attributes.ToList(), second.Attributes.ToList());
+  }
 }
 
 public class InMemoryEventImpl(
   long timestamp,
-  BXesStringValue name,
+  BxesStringValue name,
   IEventLifecycle lifecycle,
-  IEventAttributes attributes
+  IEnumerable<KeyValuePair<BxesStringValue, BxesValue>> attributes
 ) : IEvent
 {
   public long Timestamp { get; } = timestamp;
   public IEventLifecycle Lifecycle { get; } = lifecycle;
   public string Name => name.Value;
-  public IEventAttributes Attributes { get; } = attributes;
+  public IEnumerable<KeyValuePair<BxesStringValue, BxesValue>> Attributes { get; } = attributes;
 
 
-  public bool Equals(IEvent? other)
-  {
-    return other is { } &&
-           Timestamp == other.Timestamp &&
-           Lifecycle.Equals(other.Lifecycle) &&
-           Name == other.Name &&
-           Attributes.Equals(other.Attributes);
-  }
-}
-
-public interface IEventAttributes : IDictionary<BXesStringValue, BxesValue>, IEquatable<IEventAttributes>;
-
-public class EventAttributesImpl : Dictionary<BXesStringValue, BxesValue>, IEventAttributes
-{
-  public bool Equals(IEventAttributes? other) => other is { } && this.DeepEquals(other);
-
-  public override bool Equals(object? obj) => obj is EventAttributesImpl other && Equals(other);
-
-  public override int GetHashCode() => RuntimeHelpers.GetHashCode(this);
+  public bool Equals(IEvent? other) => other is { } && EventUtil.Equals(this, other);
 }

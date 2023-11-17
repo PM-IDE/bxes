@@ -7,19 +7,15 @@ public interface IEventLog : IEquatable<IEventLog>
 {
   uint Version { get; }
 
-  IEventLogMetadata Metadata { get; }
+  IEnumerable<KeyValuePair<BxesStringValue, BxesValue>> Metadata { get; }
   IEnumerable<ITraceVariant> Traces { get; }
 }
 
-public interface IEventLogMetadata : IEventAttributes;
-
-public class EventLogMetadataImpl : EventAttributesImpl, IEventLogMetadata;
-
-public class InMemoryEventLog(uint version, IEventLogMetadata metadata, List<ITraceVariant> traces) : IEventLog
+public class InMemoryEventLog(uint version, IEnumerable<KeyValuePair<BxesStringValue, BxesValue>> metadata, List<ITraceVariant> traces) : IEventLog
 {
   public uint Version { get; } = version;
 
-  public IEventLogMetadata Metadata { get; } = metadata;
+  public IEnumerable<KeyValuePair<BxesStringValue, BxesValue>> Metadata { get; } = metadata;
   public IEnumerable<ITraceVariant> Traces { get; } = traces;
 
 
@@ -27,13 +23,13 @@ public class InMemoryEventLog(uint version, IEventLogMetadata metadata, List<ITr
   {
     return other is { } &&
            Version == other.Version &&
-           Metadata.Equals(other.Metadata) &&
+           EventLogUtil.Equals(Metadata.ToList(), other.Metadata.ToList()) &&
            Traces.Count() == other.Traces.Count() &&
            Traces.Zip(other.Traces).All(pair => pair.First.Equals(pair.Second));
   }
 }
 
-public static class EventLogUtils
+public static class EventLogUtil
 {
   public static IEnumerable<BxesStreamEvent> ToEventsStream(this IEventLog log)
   {
@@ -51,5 +47,13 @@ public static class EventLogUtils
         yield return new BxesEventEvent<IEvent>(@event);
       }
     }
+  }
+
+  public static bool Equals(
+    ICollection<KeyValuePair<BxesStringValue, BxesValue>> first,
+    ICollection<KeyValuePair<BxesStringValue, BxesValue>> second)
+  {
+    return first.Count == second.Count &&
+           first.Zip(second).All(pair => pair.First.Key.Equals(pair.Second.Key) && pair.First.Value.Equals(pair.Second.Value));
   }
 }

@@ -32,21 +32,22 @@ public static class TestLogsProvider
   private static InMemoryEventImpl CreateRandomEvent() =>
     new(
       Random.Shared.Next(10123123),
-      new BXesStringValue(GenerateRandomString()),
+      new BxesStringValue(GenerateRandomString()),
       new BrafLifecycle(GenerateRandomBrafLifecycle()),
       GenerateRandomAttributes()
     );
 
-  private static EventAttributesImpl GenerateRandomAttributes() => GenerateRandomMetadata();
+  private static IEnumerable<KeyValuePair<BxesStringValue, BxesValue>> GenerateRandomAttributes() => 
+    GenerateRandomMetadata();
 
-  private static EventLogMetadataImpl GenerateRandomMetadata()
+  private static IEnumerable<KeyValuePair<BxesStringValue, BxesValue>> GenerateRandomMetadata()
   {
-    var metadata = new EventLogMetadataImpl();
+    var metadata = new List<KeyValuePair<BxesStringValue, BxesValue>>();
     var metadataCount = Random.Shared.Next(5);
 
     for (var i = 0; i < metadataCount; ++i)
     {
-      metadata[new BXesStringValue(GenerateRandomString())] = GenerateRandomBxesValue();
+      metadata.Add(new(new BxesStringValue(GenerateRandomString()), GenerateRandomBxesValue()));
     }
 
     return metadata;
@@ -63,7 +64,7 @@ public static class TestLogsProvider
       TypeIds.U64 => new BxesUint64Value((ulong)Random.Shared.Next(10000)),
       TypeIds.F32 => new BxesFloat32Value((float)(Random.Shared.Next(10000) + Random.Shared.NextDouble())),
       TypeIds.F64 => new BxesFloat64Value(Random.Shared.Next(10000) + Random.Shared.NextDouble()),
-      TypeIds.String => new BXesStringValue(GenerateRandomString()),
+      TypeIds.String => new BxesStringValue(GenerateRandomString()),
       TypeIds.Bool => new BxesBoolValue(GenerateRandomBool()),
       TypeIds.Timestamp => new BxesInt64Value(Random.Shared.Next(10000)),
       TypeIds.BrafLifecycle => new BrafLifecycle(GenerateRandomBrafLifecycle()),

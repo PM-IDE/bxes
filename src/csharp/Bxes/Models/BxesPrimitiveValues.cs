@@ -84,7 +84,7 @@ public class BxesBoolValue(bool value) : BxesValue<bool>(value)
   }
 }
 
-public class BXesStringValue(string value) : BxesValue<string>(value)
+public class BxesStringValue(string value) : BxesValue<string>(value)
 {
   public override byte TypeId => TypeIds.String;
 
