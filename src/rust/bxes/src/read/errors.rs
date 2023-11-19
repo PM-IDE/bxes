@@ -12,6 +12,7 @@ pub enum BxesReadError {
     NameOfEventIsNotAString,
     LifecycleOfEventOutOfRange,
     EventAttributeKeyIsNotAString,
+    VersionsMismatchError(VersionsMismatchError)
 }
 
 #[derive(Debug)]
@@ -23,5 +24,20 @@ pub struct FailedToReadValueError {
 impl FailedToReadValueError {
     pub fn new(offset: usize, message: String) -> Self {
         Self { offset, message }
+    }
+}
+
+#[derive(Debug)]
+pub struct VersionsMismatchError {
+    previous_version: u32,
+    current_version: u32
+}
+
+impl VersionsMismatchError {
+    pub fn new(previous_version: u32, current_version: u32) -> Self {
+        Self {
+            previous_version,
+            current_version
+        }
     }
 }

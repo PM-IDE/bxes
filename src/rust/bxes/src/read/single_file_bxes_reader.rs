@@ -1,4 +1,4 @@
-use super::{errors::BxesReadError, read_utils::*};
+use super::{errors::{BxesReadError, VersionsMismatchError}, read_utils::*};
 use crate::{constants::*, models::*};
 use binary_rw::{BinaryReader, Endian};
 use std::path::Path;
@@ -21,27 +21,56 @@ pub fn read_bxes(path: &str) -> Result<BxesEventLog, BxesReadError> {
 }
 
 pub fn read_bxes_multiple_files(directory_path: &str) -> Result<BxesEventLog, BxesReadError> {
+    let mut version = 0u32;
     let values = read_file(directory_path, VALUES_FILE_NAME, |reader| {
+        version = try_read_u32(reader)?;
         try_read_values(reader)
     })?;
 
     let kv_pairs = read_file(directory_path, KEY_VALUES_FILE_NAME, |reader| {
+        if let Some(error) = read_version(&mut version, reader) {
+            return Err(error);
+        }
+
         try_read_key_values(reader)
     })?;
 
     let metadata = read_file(directory_path, METADATA_FILE_NAME, |reader| {
+        if let Some(error) = read_version(&mut version, reader) {
+            return Err(error);
+        }
+        
         try_read_event_log_metadata(reader, &values, &kv_pairs)
     })?;
 
     let variants = read_file(directory_path, VARIANTS_FILE_NAME, |reader| {
+        if let Some(error) = read_version(&mut version, reader) {
+            return Err(error);
+        }
+
         try_read_traces_variants(reader, &values, &kv_pairs)
     })?;
 
     Ok(BxesEventLog {
-        version: 0,
+        version,
         metadata,
         variants,
     })
+}
+
+fn read_version(previous_version: &mut u32, reader: &mut BinaryReader) -> Option<BxesReadError> {
+    let current_version = try_read_u32(reader);
+    if current_version.is_err() {
+        return Some(current_version.err().unwrap());
+    }
+
+    let current_version = current_version.ok().unwrap();
+    if *previous_version != current_version {
+        Some(BxesReadError::VersionsMismatchError(VersionsMismatchError::new(*previous_version, current_version)))
+    } else {
+        *previous_version = current_version;
+        None
+    }
 }
 
 fn read_file<T>(
