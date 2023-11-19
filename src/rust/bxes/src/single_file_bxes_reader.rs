@@ -15,7 +15,7 @@ pub enum BxesValue {
     Float64(f64),
     String(Rc<Box<String>>),
     Bool(bool),
-    Timestamp(u64),
+    Timestamp(i64),
     BrafLifecycle(BrafLifecycle),
     StandardLifecycle(StandardLifecycle)
 }
@@ -84,11 +84,12 @@ pub struct BxesTraceVariant {
 #[derive(Debug)]
 pub struct BxesEvent {
     pub name: Rc<Box<String>>,
-    pub timestamp: u64,
+    pub timestamp: i64,
     pub lifecycle: Lifecycle,
     pub attributes: Option<Vec<(Rc<Box<String>>, BxesValue)>>
 }
 
+#[derive(Debug)]
 pub enum BxesReadError {
     FailedToOpenFile(String),
     FailedToReadValue(FailedToReadValueError),
@@ -102,6 +103,7 @@ pub enum BxesReadError {
     EventAttributeKeyIsNotAString
 }
 
+#[derive(Debug)]
 pub struct FailedToReadValueError {
     pub offset: usize,
     pub message: String
@@ -183,13 +185,12 @@ fn try_read_event(reader: &mut BinaryReader, values: &Vec<BxesValue>, kv_pairs: 
         _ => return Err(BxesReadError::NameOfEventIsNotAString)
     };
 
-    let timestamp = try_read_u64(reader)?;
+    let timestamp = try_read_i64(reader)?;
     let lifecycle = match try_read_bxes_value(reader)? {
         BxesValue::StandardLifecycle(lifecycle) => Lifecycle::Standard(lifecycle),
         BxesValue::BrafLifecycle(lifecycle) => Lifecycle::Braf(lifecycle),
         _ => return Err(BxesReadError::LifecycleOfEventOutOfRange)
     };
-
 
     Ok(BxesEvent {
         name: name_string.clone(),
@@ -275,7 +276,7 @@ fn try_read_bxes_value(reader: &mut BinaryReader) -> Result<BxesValue, BxesReadE
         type_ids::F_64 => Ok(BxesValue::Float64(try_read_f64(reader)?)),
         type_ids::BOOL => Ok(BxesValue::Bool(try_read_bool(reader)?)),
         type_ids::STRING => Ok(BxesValue::String(Rc::new(Box::new(try_read_string(reader)?)))),
-        type_ids::TIMESTAMP => Ok(BxesValue::Timestamp(try_read_u64(reader)?)),
+        type_ids::TIMESTAMP => Ok(BxesValue::Timestamp(try_read_i64(reader)?)),
         type_ids::BRAF_LIFECYCLE => Ok(BxesValue::BrafLifecycle(try_read_braf_lifecycle(reader)?)),
         type_ids::STANDARD_LIFECYCLE => Ok(BxesValue::StandardLifecycle(try_read_standard_lifecycle(reader)?)),
         _ => Err(BxesReadError::FailedToParseTypeId(type_id))
@@ -315,7 +316,7 @@ fn try_read_u8(reader: &mut BinaryReader) -> Result<u8, BxesReadError> {
 }
 
 fn try_read_string(reader: &mut BinaryReader) -> Result<String, BxesReadError> {
-    let string_length = try_read_u32(reader)?;
+    let string_length = try_read_u64(reader)?;
     let bytes = try_read_bytes(reader, string_length as usize)?;
 
     match String::from_utf8(bytes) {
