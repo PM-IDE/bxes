@@ -7,15 +7,15 @@ public interface IEventLog : IEquatable<IEventLog>
 {
   uint Version { get; }
 
-  IEnumerable<KeyValuePair<BxesStringValue, BxesValue>> Metadata { get; }
+  IEnumerable<AttributeKeyValue> Metadata { get; }
   IEnumerable<ITraceVariant> Traces { get; }
 }
 
-public class InMemoryEventLog(uint version, IEnumerable<KeyValuePair<BxesStringValue, BxesValue>> metadata, List<ITraceVariant> traces) : IEventLog
+public class InMemoryEventLog(uint version, IEnumerable<AttributeKeyValue> metadata, List<ITraceVariant> traces) : IEventLog
 {
   public uint Version { get; } = version;
 
-  public IEnumerable<KeyValuePair<BxesStringValue, BxesValue>> Metadata { get; } = metadata;
+  public IEnumerable<AttributeKeyValue> Metadata { get; } = metadata;
   public IEnumerable<ITraceVariant> Traces { get; } = traces;
 
 

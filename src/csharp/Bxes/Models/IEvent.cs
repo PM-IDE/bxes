@@ -1,3 +1,5 @@
+using Bxes.Writer;
+
 namespace Bxes.Models;
 
 public interface IEvent : IEquatable<IEvent>
@@ -6,7 +8,7 @@ public interface IEvent : IEquatable<IEvent>
   string Name { get; }
   IEventLifecycle Lifecycle { get; }
 
-  IEnumerable<KeyValuePair<BxesStringValue, BxesValue>> Attributes { get; }
+  IEnumerable<AttributeKeyValue> Attributes { get; }
 }
 
 public static class EventUtil
@@ -24,13 +26,13 @@ public class InMemoryEventImpl(
   long timestamp,
   BxesStringValue name,
   IEventLifecycle lifecycle,
-  IEnumerable<KeyValuePair<BxesStringValue, BxesValue>> attributes
+  IEnumerable<AttributeKeyValue> attributes
 ) : IEvent
 {
   public long Timestamp { get; } = timestamp;
   public IEventLifecycle Lifecycle { get; } = lifecycle;
   public string Name => name.Value;
-  public IEnumerable<KeyValuePair<BxesStringValue, BxesValue>> Attributes { get; } = attributes;
+  public IEnumerable<AttributeKeyValue> Attributes { get; } = attributes;
 
 
   public bool Equals(IEvent? other) => other is { } && EventUtil.Equals(this, other);

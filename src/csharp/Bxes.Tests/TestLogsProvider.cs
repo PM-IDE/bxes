@@ -1,4 +1,5 @@
 using Bxes.Models;
+using Bxes.Writer;
 
 namespace Bxes.Tests;
 
@@ -37,12 +38,12 @@ public static class TestLogsProvider
       GenerateRandomAttributes()
     );
 
-  private static IEnumerable<KeyValuePair<BxesStringValue, BxesValue>> GenerateRandomAttributes() => 
+  private static IEnumerable<AttributeKeyValue> GenerateRandomAttributes() => 
     GenerateRandomMetadata();
 
-  private static IEnumerable<KeyValuePair<BxesStringValue, BxesValue>> GenerateRandomMetadata()
+  private static IEnumerable<AttributeKeyValue> GenerateRandomMetadata()
   {
-    var metadata = new List<KeyValuePair<BxesStringValue, BxesValue>>();
+    var metadata = new List<AttributeKeyValue>();
     var metadataCount = Random.Shared.Next(5);
 
     for (var i = 0; i < metadataCount; ++i)

@@ -2,17 +2,19 @@ using Bxes.Models;
 
 namespace Bxes.Writer;
 
+public record AttributeKeyValue(BxesStringValue Key, BxesValue Value);
+
 internal readonly struct BxesWriteContext(BinaryWriter binaryWriter)
 {
   public BinaryWriter Writer { get; } = binaryWriter;
   public Dictionary<BxesValue, uint> ValuesIndices { get; } = new();
-  public Dictionary<KeyValuePair<BxesStringValue, BxesValue>, uint> KeyValueIndices { get; } = new();
+  public Dictionary<AttributeKeyValue, uint> KeyValueIndices { get; } = new();
 
 
   private BxesWriteContext(
     BinaryWriter writer,
     Dictionary<BxesValue, uint> valuesIndices,
-    Dictionary<KeyValuePair<BxesStringValue, BxesValue>, uint> keyValueIndices) : this(writer)
+    Dictionary<AttributeKeyValue, uint> keyValueIndices) : this(writer)
   {
     ValuesIndices = valuesIndices;
     KeyValueIndices = keyValueIndices;

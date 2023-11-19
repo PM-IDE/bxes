@@ -1,4 +1,3 @@
-using System.Runtime;
 using Bxes.Models;
 
 namespace Bxes.Writer;
@@ -96,13 +95,13 @@ internal static class BxesWriteUtils
     return writtenCount;
   }
 
-  private static IEnumerable<KeyValuePair<BxesStringValue, BxesValue>> EnumerateEventKeyValuePairs(IEvent @event)
+  private static IEnumerable<AttributeKeyValue> EnumerateEventKeyValuePairs(IEvent @event)
   {
     return @event.Attributes;
   }
 
   private static IndexType WriteKeyValuePair(
-    KeyValuePair<BxesStringValue, BxesValue> pair, BxesWriteContext context)
+    AttributeKeyValue pair, BxesWriteContext context)
   {
     return WriteKeyValuePairIfNeeded(pair, context) switch
     {
@@ -112,7 +111,7 @@ internal static class BxesWriteUtils
   }
 
   public static bool WriteKeyValuePairIfNeeded(
-    KeyValuePair<BxesStringValue, BxesValue> pair, BxesWriteContext context)
+    AttributeKeyValue pair, BxesWriteContext context)
   {
     if (!context.KeyValueIndices.TryAdd(pair, (IndexType)context.KeyValueIndices.Count)) return false;
 
@@ -131,7 +130,7 @@ internal static class BxesWriteUtils
     });
   }
 
-  public static void WriteKeyValueIndex(KeyValuePair<BxesStringValue, BxesValue> tuple, BxesWriteContext context)
+  public static void WriteKeyValueIndex(AttributeKeyValue tuple, BxesWriteContext context)
   {
     context.Writer.Write(context.KeyValueIndices[tuple]);
   }
@@ -171,7 +170,7 @@ internal static class BxesWriteUtils
   }
 
   private static IEnumerable<BxesValue> EnumerateMetadataValues(
-    IEnumerable<KeyValuePair<BxesStringValue, BxesValue>> metadata)
+    IEnumerable<AttributeKeyValue> metadata)
   {
     foreach (var (key, value) in metadata)
     {

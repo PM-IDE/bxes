@@ -1,4 +1,5 @@
 using Bxes.Models;
+using Bxes.Writer;
 
 namespace Bxes.Reader;
 
@@ -30,11 +31,11 @@ public static class BxesReadUtils
     return keyValues;
   }
 
-  public static IEnumerable<KeyValuePair<BxesStringValue, BxesValue>> ReadMetadata(
+  public static IEnumerable<AttributeKeyValue> ReadMetadata(
     BinaryReader reader, List<KeyValuePair<uint, uint>> keyValues, List<BxesValue> values)
   {
     var metadataCount = reader.ReadUInt32();
-    var metadata = new List<KeyValuePair<BxesStringValue, BxesValue>>();
+    var metadata = new List<AttributeKeyValue>();
     for (uint i = 0; i < metadataCount; ++i)
     {
       var kv = keyValues[(int)reader.ReadUInt32()];
@@ -63,7 +64,7 @@ public static class BxesReadUtils
         var lifecycle = (IEventLifecycle)BxesValue.Parse(reader);
 
         var attributesCount = reader.ReadUInt32();
-        var eventAttributes = new List<KeyValuePair<BxesStringValue, BxesValue>>();
+        var eventAttributes = new List<AttributeKeyValue>();
 
         for (uint k = 0; k < attributesCount; ++k)
         {
