@@ -5,7 +5,7 @@ use num_derive::FromPrimitive;
 use crate::num::FromPrimitive;
 use crate::type_ids;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum BxesValue {
     Int32(i32),
     Int64(i64),
@@ -20,13 +20,13 @@ pub enum BxesValue {
     StandardLifecycle(StandardLifecycle)
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Lifecycle {
     Braf(BrafLifecycle),
     Standard(StandardLifecycle)
 }
 
-#[derive(FromPrimitive, Clone)]
+#[derive(FromPrimitive, Clone, Debug)]
 pub enum BrafLifecycle {
     Unspecified = 0,
     Closed = 1,
@@ -50,7 +50,7 @@ pub enum BrafLifecycle {
     OpenRunningSuspended = 19,
 }
 
-#[derive(FromPrimitive, Clone)]
+#[derive(FromPrimitive, Clone, Debug)]
 pub enum StandardLifecycle {
     Unspecified = 0,
     Assign = 1,
@@ -68,17 +68,20 @@ pub enum StandardLifecycle {
     Withdraw = 13,
 }
 
+#[derive(Debug)]
 pub struct BxesEventLog {
     pub version: u32,
     pub metadata: Option<Vec<(Rc<Box<String>>, BxesValue)>>,
     pub variants: Vec<BxesTraceVariant>
 }
 
+#[derive(Debug)]
 pub struct BxesTraceVariant {
     pub traces_count: u32,
     pub events: Vec<BxesEvent>
 }
 
+#[derive(Debug)]
 pub struct BxesEvent {
     pub name: Rc<Box<String>>,
     pub timestamp: u64,
