@@ -49,9 +49,7 @@ public static class EventLogUtil
     }
   }
 
-  public static bool Equals(
-    ICollection<KeyValuePair<BxesStringValue, BxesValue>> first,
-    ICollection<KeyValuePair<BxesStringValue, BxesValue>> second)
+  public static bool Equals(ICollection<AttributeKeyValue> first, ICollection<AttributeKeyValue> second)
   {
     return first.Count == second.Count &&
            first.Zip(second).All(pair => pair.First.Key.Equals(pair.Second.Key) && pair.First.Value.Equals(pair.Second.Value));
