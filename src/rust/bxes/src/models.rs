@@ -1,6 +1,7 @@
-use std::rc::Rc;
-
 use num_derive::FromPrimitive;
+use std::hash::Hash;
+use std::mem::discriminant;
+use std::rc::Rc;
 
 #[derive(Clone, Debug)]
 pub enum BxesValue {
@@ -17,13 +18,40 @@ pub enum BxesValue {
     StandardLifecycle(StandardLifecycle),
 }
 
+impl Hash for BxesValue {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        discriminant(self).hash(state);
+    }
+}
+
+impl PartialEq for BxesValue {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::Int32(left), Self::Int32(right)) => left == right,
+            (Self::Int64(left), Self::Int64(right)) => left == right,
+            (Self::Uint32(left), Self::Uint32(right)) => left == right,
+            (Self::Uint64(left), Self::Uint64(right)) => left == right,
+            (Self::Float32(left), Self::Float32(right)) => left == right,
+            (Self::Float64(left), Self::Float64(right)) => left == right,
+            (Self::String(left), Self::String(right)) => left == right,
+            (Self::Bool(left), Self::Bool(right)) => left == right,
+            (Self::Timestamp(left), Self::Timestamp(right)) => left == right,
+            (Self::BrafLifecycle(left), Self::BrafLifecycle(right)) => left == right,
+            (Self::StandardLifecycle(left), Self::StandardLifecycle(right)) => left == right,
+            _ => false,
+        }
+    }
+}
+
+impl Eq for BxesValue {}
+
 #[derive(Clone, Debug)]
 pub enum Lifecycle {
     Braf(BrafLifecycle),
     Standard(StandardLifecycle),
 }
 
-#[derive(FromPrimitive, Clone, Debug)]
+#[derive(FromPrimitive, ToPrimitive, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum BrafLifecycle {
     Unspecified = 0,
     Closed = 1,
@@ -47,7 +75,7 @@ pub enum BrafLifecycle {
     OpenRunningSuspended = 19,
 }
 
-#[derive(FromPrimitive, Clone, Debug)]
+#[derive(FromPrimitive, ToPrimitive, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum StandardLifecycle {
     Unspecified = 0,
     Assign = 1,
