@@ -25,7 +25,7 @@ pub fn write_bxes(path: &str, log: &BxesEventLog) -> Result<(), BxesWriteError> 
     let mut stream = try_open_write(path)?;
     let mut writer = BinaryWriter::new(&mut stream, Endian::Little);
 
-    let mut context = &mut BxesWriteContext {
+    let context = &mut BxesWriteContext {
         values_indices: HashMap::new(),
         kv_indices: HashMap::new(),
         writer: &mut writer,
@@ -43,16 +43,10 @@ pub fn try_write_values(
     context: &mut BxesWriteContext,
 ) -> Result<(), BxesWriteError> {
     write_collection_and_count(context, |context| {
-        let mut count = 0;
         if let Some(metadata) = log.metadata.as_ref() {
             for (key, value) in metadata {
-                if try_write_value(&BxesValue::String(key.clone()), context)? {
-                    count += 1
-                }
-
-                if try_write_value(&value, context)? {
-                    count += 1
-                }
+                try_write_value(&BxesValue::String(key.clone()), context)?;
+                try_write_value(&value, context)?;
             }
         }
 
@@ -60,19 +54,14 @@ pub fn try_write_values(
             for event in &variant.events {
                 if let Some(attributes) = event.attributes.as_ref() {
                     for (key, value) in attributes {
-                        if try_write_value(&BxesValue::String(key.clone()), context)? {
-                            count += 1
-                        }
-
-                        if try_write_value(&value, context)? {
-                            count += 1
-                        }
+                        try_write_value(&BxesValue::String(key.clone()), context)?;
+                        try_write_value(&value, context)?;
                     }
                 }
             }
         }
 
-        Ok(count)
+        Ok(context.values_indices.len() as u32)
     })
 }
 
@@ -212,7 +201,7 @@ fn try_write_enum_value<T: ToPrimitive>(
     value: &T,
 ) -> Result<(), BxesWriteError> {
     try_write_primitive_value(|| {
-        writer.write_u8(type_ids::BRAF_LIFECYCLE)?;
+        writer.write_u8(type_id)?;
         writer.write_u8(T::to_u8(value).unwrap())
     })
 }
