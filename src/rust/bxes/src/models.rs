@@ -96,7 +96,7 @@ pub enum StandardLifecycle {
 #[derive(Debug)]
 pub struct BxesEventLog {
     pub version: u32,
-    pub metadata: Option<Vec<(Rc<Box<String>>, BxesValue)>>,
+    pub metadata: Option<Vec<(BxesValue, BxesValue)>>,
     pub variants: Vec<BxesTraceVariant>,
 }
 
@@ -111,5 +111,5 @@ pub struct BxesEvent {
     pub name: Rc<Box<String>>,
     pub timestamp: i64,
     pub lifecycle: Lifecycle,
-    pub attributes: Option<Vec<(Rc<Box<String>>, BxesValue)>>,
+    pub attributes: Option<Vec<(BxesValue, BxesValue)>>,
 }

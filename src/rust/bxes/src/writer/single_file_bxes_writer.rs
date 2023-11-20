@@ -1,10 +1,10 @@
-use std::collections::HashMap;
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use binary_rw::{BinaryError, BinaryWriter, Endian, FileStream, SeekStream};
 use num_traits::ToPrimitive;
 
 use crate::{
-    models::{BrafLifecycle, BxesEventLog, BxesValue, StandardLifecycle},
+    models::{BrafLifecycle, BxesEvent, BxesEventLog, BxesValue, Lifecycle, StandardLifecycle},
     type_ids,
 };
 
@@ -13,11 +13,13 @@ pub enum BxesWriteError {
     WriteError(BinaryError),
     FailedToGetWriterPosition(String),
     FailedToSeek(String),
+    FailedToFindKeyValueIndex((BxesValue, BxesValue)),
+    FailedToFindValueIndex(BxesValue),
 }
 
 pub struct BxesWriteContext<'a> {
-    pub values_indices: HashMap<BxesValue, usize>,
-    pub kv_indices: HashMap<(BxesValue, BxesValue), usize>,
+    pub values_indices: HashMap<&'a BxesValue, usize>,
+    pub kv_indices: HashMap<(&'a BxesValue, &'a BxesValue), usize>,
     pub writer: &'a mut BinaryWriter<'a>,
 }
 
@@ -25,60 +27,163 @@ pub fn write_bxes(path: &str, log: &BxesEventLog) -> Result<(), BxesWriteError> 
     let mut stream = try_open_write(path)?;
     let mut writer = BinaryWriter::new(&mut stream, Endian::Little);
 
-    let context = &mut BxesWriteContext {
+    let context = Rc::new(RefCell::new(BxesWriteContext {
         values_indices: HashMap::new(),
         kv_indices: HashMap::new(),
         writer: &mut writer,
-    };
+    }));
 
-    try_write_values(log, context)
+    try_write_values(log, context.clone())?;
+    try_write_key_values(log, context.clone())?;
+    try_write_log_metadata(log, context.clone())?;
+    try_write_variants(log, context.clone())?;
+
+    Ok(())
+}
+
+pub fn try_write_variants(
+    log: &BxesEventLog,
+    context: Rc<RefCell<BxesWriteContext>>,
+) -> Result<(), BxesWriteError> {
+    write_collection_and_count(context.clone(), || {
+        for variant in &log.variants {
+            try_write_u32(context.borrow_mut().writer, variant.traces_count)?;
+            write_collection_and_count(context.clone(), || {
+                for event in &variant.events {
+                    try_write_event(event, context.clone())?;
+                }
+
+                Ok(variant.events.len() as u32)
+            })?;
+        }
+
+        Ok(log.variants.len() as u32)
+    })
+}
+
+pub fn try_write_event(
+    event: &BxesEvent,
+    context: Rc<RefCell<BxesWriteContext>>,
+) -> Result<(), BxesWriteError> {
+    let name_value = BxesValue::String(event.name.clone());
+    if let Some(index) = context.borrow_mut().values_indices.get(&name_value) {
+        try_write_u32(context.borrow_mut().writer, *index as u32)?;
+    } else {
+        return Err(BxesWriteError::FailedToFindValueIndex(name_value));
+    }
+
+    try_write_i64(context.borrow_mut().writer, event.timestamp)?;
+    try_write_lifecycle(context.borrow_mut().writer, &event.lifecycle)?;
+    try_write_attributes(context, event.attributes.as_ref())
+}
+
+pub fn try_write_log_metadata(
+    log: &BxesEventLog,
+    context: Rc<RefCell<BxesWriteContext>>,
+) -> Result<(), BxesWriteError> {
+    try_write_attributes(context, log.metadata.as_ref())
+}
+
+pub fn try_write_attributes(
+    context: Rc<RefCell<BxesWriteContext>>,
+    attributes: Option<&Vec<(BxesValue, BxesValue)>>,
+) -> Result<(), BxesWriteError> {
+    write_collection_and_count(context.clone(), || {
+        if let Some(attributes) = attributes {
+            for (key, value) in attributes {
+                if let Some(index) = context.borrow().kv_indices.get(&(key, value)) {
+                    try_write_u32(context.borrow_mut().writer, *index as u32)?;
+                } else {
+                    return Err(BxesWriteError::FailedToFindKeyValueIndex((
+                        key.clone(),
+                        value.clone(),
+                    )));
+                }
+            }
+
+            Ok(attributes.len() as u32)
+        } else {
+            Ok(0)
+        }
+    })
+}
+
+pub fn try_write_key_values<'a: 'b, 'b>(
+    log: &'a BxesEventLog,
+    context: Rc<RefCell<BxesWriteContext<'b>>>,
+) -> Result<(), BxesWriteError> {
+    write_collection_and_count(context.clone(), || {
+        execute_with_kv_pairs(log, |key, value| {
+            if !context.borrow().kv_indices.contains_key(&(key, value)) {
+                let count = context.borrow().kv_indices.len();
+                try_write_u32(context.borrow_mut().writer, count as u32)?;
+                context.borrow_mut().kv_indices.insert((key, value), count);
+            }
+
+            Ok(())
+        })?;
+
+        Ok(context.borrow().kv_indices.len() as u32)
+    })
+}
+
+fn execute_with_kv_pairs<'a>(
+    log: &'a BxesEventLog,
+    mut action: impl FnMut(&'a BxesValue, &'a BxesValue) -> Result<(), BxesWriteError>,
+) -> Result<(), BxesWriteError> {
+    if let Some(metadata) = log.metadata.as_ref() {
+        for (key, value) in metadata {
+            action(key, value)?;
+        }
+    }
+
+    for variant in &log.variants {
+        for event in &variant.events {
+            if let Some(attributes) = event.attributes.as_ref() {
+                for (key, value) in attributes {
+                    action(key, value)?;
+                }
+            }
+        }
+    }
+
+    Ok(())
 }
 
 pub fn try_write_version(writer: &mut BinaryWriter, version: u32) -> Result<(), BxesWriteError> {
     try_write_u32(writer, version)
 }
 
-pub fn try_write_values(
-    log: &BxesEventLog,
-    context: &mut BxesWriteContext,
+pub fn try_write_values<'a: 'b, 'b>(
+    log: &'a BxesEventLog,
+    context: Rc<RefCell<BxesWriteContext<'b>>>,
 ) -> Result<(), BxesWriteError> {
-    write_collection_and_count(context, |context| {
-        if let Some(metadata) = log.metadata.as_ref() {
-            for (key, value) in metadata {
-                try_write_value(&BxesValue::String(key.clone()), context)?;
-                try_write_value(&value, context)?;
-            }
-        }
+    write_collection_and_count(context.clone(), || {
+        execute_with_kv_pairs(log, |key, value| {
+            try_write_value(key, &mut context.borrow_mut())?;
+            try_write_value(value, &mut context.borrow_mut())?;
 
-        for variant in &log.variants {
-            for event in &variant.events {
-                if let Some(attributes) = event.attributes.as_ref() {
-                    for (key, value) in attributes {
-                        try_write_value(&BxesValue::String(key.clone()), context)?;
-                        try_write_value(&value, context)?;
-                    }
-                }
-            }
-        }
+            Ok(())
+        })?;
 
-        Ok(context.values_indices.len() as u32)
+        Ok(context.borrow().values_indices.len() as u32)
     })
 }
 
 fn write_collection_and_count(
-    context: &mut BxesWriteContext,
-    mut writer_action: impl FnMut(&mut BxesWriteContext) -> Result<u32, BxesWriteError>,
+    context: Rc<RefCell<BxesWriteContext>>,
+    mut writer_action: impl FnMut() -> Result<u32, BxesWriteError>,
 ) -> Result<(), BxesWriteError> {
-    let pos = try_tell_pos(context.writer)?;
+    let pos = try_tell_pos(context.borrow_mut().writer)?;
 
-    try_write_u32(context.writer, 0)?;
+    try_write_u32(context.borrow_mut().writer, 0)?;
 
-    let count = writer_action(context)?;
+    let count = writer_action()?;
 
-    let current_pos = try_tell_pos(context.writer)?;
-    try_seek(context.writer, pos)?;
-    try_write_u32(context.writer, count)?;
-    try_seek(context.writer, current_pos)
+    let current_pos = try_tell_pos(context.borrow_mut().writer)?;
+    try_seek(context.borrow_mut().writer, pos)?;
+    try_write_u32(context.borrow_mut().writer, count)?;
+    try_seek(context.borrow_mut().writer, current_pos)
 }
 
 fn try_seek(writer: &mut BinaryWriter, pos: usize) -> Result<(), BxesWriteError> {
@@ -95,9 +200,9 @@ fn try_tell_pos(writer: &mut BinaryWriter) -> Result<usize, BxesWriteError> {
     }
 }
 
-pub fn try_write_value(
-    value: &BxesValue,
-    context: &mut BxesWriteContext,
+pub fn try_write_value<'a: 'b, 'b>(
+    value: &'a BxesValue,
+    context: &mut BxesWriteContext<'b>,
 ) -> Result<bool, BxesWriteError> {
     if context.values_indices.contains_key(value) {
         return Ok(false);
@@ -105,7 +210,7 @@ pub fn try_write_value(
 
     context
         .values_indices
-        .insert(value.clone(), context.values_indices.len());
+        .insert(value, context.values_indices.len());
 
     match value {
         BxesValue::Int32(value) => try_write_i32(context.writer, *value),
@@ -186,6 +291,18 @@ pub fn try_write_string(writer: &mut BinaryWriter, value: &str) -> Result<(), Bx
         writer.write_u64(value.len() as u64)?;
         writer.write_bytes(value.as_bytes())
     })
+}
+
+pub fn try_write_lifecycle(
+    writer: &mut BinaryWriter,
+    lifecycle: &Lifecycle,
+) -> Result<(), BxesWriteError> {
+    match lifecycle {
+        Lifecycle::Braf(braf_lifecycle) => try_write_braf_lifecycle(writer, braf_lifecycle),
+        Lifecycle::Standard(standard_lifecycle) => {
+            try_write_standard_lifecycle(writer, standard_lifecycle)
+        }
+    }
 }
 
 pub fn try_write_braf_lifecycle(

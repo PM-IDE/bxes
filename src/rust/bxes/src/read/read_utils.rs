@@ -11,7 +11,7 @@ pub fn try_read_event_log_metadata(
     reader: &mut BinaryReader,
     values: &Vec<BxesValue>,
     kv_pairs: &Vec<(u32, u32)>,
-) -> Result<Option<Vec<(Rc<Box<String>>, BxesValue)>>, BxesReadError> {
+) -> Result<Option<Vec<(BxesValue, BxesValue)>>, BxesReadError> {
     let metadata_count = try_read_u32(reader)?;
     if metadata_count == 0 {
         Ok(None)
@@ -96,7 +96,7 @@ fn try_read_event_attributes(
     reader: &mut BinaryReader,
     values: &Vec<BxesValue>,
     kv_pairs: &Vec<(u32, u32)>,
-) -> Result<Option<Vec<(Rc<Box<String>>, BxesValue)>>, BxesReadError> {
+) -> Result<Option<Vec<(BxesValue, BxesValue)>>, BxesReadError> {
     let attributes_count = try_read_u32(reader)?;
     if attributes_count == 0 {
         Ok(None)
@@ -115,7 +115,7 @@ fn try_read_kv_pair(
     reader: &mut BinaryReader,
     values: &Vec<BxesValue>,
     kv_pairs: &Vec<(u32, u32)>,
-) -> Result<(Rc<Box<String>>, BxesValue), BxesReadError> {
+) -> Result<(BxesValue, BxesValue), BxesReadError> {
     let kv_index = try_read_u32(reader)? as usize;
     let kv_pair = match kv_pairs.get(kv_index) {
         None => return Err(BxesReadError::FailedToIndexKeyValue(kv_index)),
@@ -128,18 +128,13 @@ fn try_read_kv_pair(
         Some(value) => value,
     };
 
-    let key_string = match key {
-        BxesValue::String(string) => string.clone(),
-        _ => return Err(BxesReadError::EventAttributeKeyIsNotAString),
-    };
-
     let value_index = kv_pair.1 as usize;
     let value = match values.get(value_index) {
         None => return Err(BxesReadError::FailedToIndexValue(value_index)),
         Some(value) => value,
     };
 
-    Ok((key_string, value.clone()))
+    Ok((key.clone(), value.clone()))
 }
 
 pub fn try_read_key_values(reader: &mut BinaryReader) -> Result<Vec<(u32, u32)>, BxesReadError> {
