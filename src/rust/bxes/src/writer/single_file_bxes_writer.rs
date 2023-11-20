@@ -35,7 +35,7 @@ pub fn write_bxes(path: &str, log: &BxesEventLog) -> Result<(), BxesWriteError> 
 }
 
 pub fn try_write_version(writer: &mut BinaryWriter, version: u32) -> Result<(), BxesWriteError> {
-    write_u32(writer, version)
+    try_write_u32(writer, version)
 }
 
 pub fn try_write_values(
@@ -82,13 +82,13 @@ fn write_collection_and_count(
 ) -> Result<(), BxesWriteError> {
     let pos = try_tell_pos(context.writer)?;
 
-    write_u32(context.writer, 0)?;
+    try_write_u32(context.writer, 0)?;
 
     let count = writer_action(context)?;
 
     let current_pos = try_tell_pos(context.writer)?;
     try_seek(context.writer, pos)?;
-    write_u32(context.writer, count)?;
+    try_write_u32(context.writer, count)?;
     try_seek(context.writer, current_pos)
 }
 
@@ -119,79 +119,79 @@ pub fn try_write_value(
         .insert(value.clone(), context.values_indices.len());
 
     match value {
-        BxesValue::Int32(value) => write_i32(context.writer, *value),
-        BxesValue::Int64(value) => write_i64(context.writer, *value),
-        BxesValue::Uint32(value) => write_u32(context.writer, *value),
-        BxesValue::Uint64(value) => write_u64(context.writer, *value),
-        BxesValue::Float32(value) => write_f32(context.writer, *value),
-        BxesValue::Float64(value) => write_f64(context.writer, *value),
-        BxesValue::String(value) => write_string(context.writer, value.as_str()),
-        BxesValue::Bool(value) => write_bool(context.writer, *value),
-        BxesValue::Timestamp(value) => write_timestamp(context.writer, *value),
-        BxesValue::BrafLifecycle(value) => write_braf_lifecycle(context.writer, value),
-        BxesValue::StandardLifecycle(value) => write_standard_lifecycle(context.writer, value),
+        BxesValue::Int32(value) => try_write_i32(context.writer, *value),
+        BxesValue::Int64(value) => try_write_i64(context.writer, *value),
+        BxesValue::Uint32(value) => try_write_u32(context.writer, *value),
+        BxesValue::Uint64(value) => try_write_u64(context.writer, *value),
+        BxesValue::Float32(value) => try_write_f32(context.writer, *value),
+        BxesValue::Float64(value) => try_write_f64(context.writer, *value),
+        BxesValue::String(value) => try_write_string(context.writer, value.as_str()),
+        BxesValue::Bool(value) => try_write_bool(context.writer, *value),
+        BxesValue::Timestamp(value) => try_write_timestamp(context.writer, *value),
+        BxesValue::BrafLifecycle(value) => try_write_braf_lifecycle(context.writer, value),
+        BxesValue::StandardLifecycle(value) => try_write_standard_lifecycle(context.writer, value),
     }?;
 
     Ok(true)
 }
 
-pub fn write_i32(writer: &mut BinaryWriter, value: i32) -> Result<(), BxesWriteError> {
+pub fn try_write_i32(writer: &mut BinaryWriter, value: i32) -> Result<(), BxesWriteError> {
     try_write_primitive_value(|| {
         writer.write_u8(type_ids::I_32)?;
         writer.write_i32(value)
     })
 }
 
-pub fn write_i64(writer: &mut BinaryWriter, value: i64) -> Result<(), BxesWriteError> {
+pub fn try_write_i64(writer: &mut BinaryWriter, value: i64) -> Result<(), BxesWriteError> {
     try_write_primitive_value(|| {
         writer.write_u8(type_ids::I_64)?;
         writer.write_i64(value)
     })
 }
 
-pub fn write_u32(writer: &mut BinaryWriter, value: u32) -> Result<(), BxesWriteError> {
+pub fn try_write_u32(writer: &mut BinaryWriter, value: u32) -> Result<(), BxesWriteError> {
     try_write_primitive_value(|| {
         writer.write_u8(type_ids::I_64)?;
         writer.write_u32(value)
     })
 }
 
-pub fn write_u64(writer: &mut BinaryWriter, value: u64) -> Result<(), BxesWriteError> {
+pub fn try_write_u64(writer: &mut BinaryWriter, value: u64) -> Result<(), BxesWriteError> {
     try_write_primitive_value(|| {
         writer.write_u8(type_ids::I_32)?;
         writer.write_u64(value)
     })
 }
 
-pub fn write_u8(writer: &mut BinaryWriter, value: u8) -> Result<(), BxesWriteError> {
+pub fn try_write_u8(writer: &mut BinaryWriter, value: u8) -> Result<(), BxesWriteError> {
     try_write_primitive_value(|| {
         writer.write_u8(type_ids::I_32)?;
         writer.write_u8(value)
     })
 }
 
-pub fn write_f32(writer: &mut BinaryWriter, value: f32) -> Result<(), BxesWriteError> {
+pub fn try_write_f32(writer: &mut BinaryWriter, value: f32) -> Result<(), BxesWriteError> {
     try_write_primitive_value(|| {
         writer.write_u8(type_ids::I_32)?;
         writer.write_f32(value)
     })
 }
 
-pub fn write_f64(writer: &mut BinaryWriter, value: f64) -> Result<(), BxesWriteError> {
+pub fn try_write_f64(writer: &mut BinaryWriter, value: f64) -> Result<(), BxesWriteError> {
     try_write_primitive_value(|| {
         writer.write_u8(type_ids::I_32)?;
         writer.write_f64(value)
     })
 }
 
-pub fn write_bool(writer: &mut BinaryWriter, value: bool) -> Result<(), BxesWriteError> {
+pub fn try_write_bool(writer: &mut BinaryWriter, value: bool) -> Result<(), BxesWriteError> {
     try_write_primitive_value(|| {
         writer.write_u8(type_ids::I_32)?;
-        writer.write_bool(value)
+        writer.write_u8(if value { 1 } else { 0 })
     })
 }
 
-pub fn write_string(writer: &mut BinaryWriter, value: &str) -> Result<(), BxesWriteError> {
+pub fn try_write_string(writer: &mut BinaryWriter, value: &str) -> Result<(), BxesWriteError> {
     try_write_primitive_value(|| {
         writer.write_u8(type_ids::STRING)?;
         writer.write_u64(value.len() as u64)?;
@@ -199,7 +199,7 @@ pub fn write_string(writer: &mut BinaryWriter, value: &str) -> Result<(), BxesWr
     })
 }
 
-pub fn write_braf_lifecycle(
+pub fn try_write_braf_lifecycle(
     writer: &mut BinaryWriter,
     value: &BrafLifecycle,
 ) -> Result<(), BxesWriteError> {
@@ -217,14 +217,14 @@ fn try_write_enum_value<T: ToPrimitive>(
     })
 }
 
-pub fn write_standard_lifecycle(
+pub fn try_write_standard_lifecycle(
     writer: &mut BinaryWriter,
     value: &StandardLifecycle,
 ) -> Result<(), BxesWriteError> {
     try_write_enum_value(writer, type_ids::STANDARD_LIFECYCLE, value)
 }
 
-pub fn write_timestamp(writer: &mut BinaryWriter, value: i64) -> Result<(), BxesWriteError> {
+pub fn try_write_timestamp(writer: &mut BinaryWriter, value: i64) -> Result<(), BxesWriteError> {
     try_write_primitive_value(|| {
         writer.write_u8(type_ids::TIMESTAMP)?;
         writer.write_i64(value)
