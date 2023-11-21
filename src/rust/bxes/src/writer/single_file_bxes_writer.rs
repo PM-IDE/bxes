@@ -34,6 +34,7 @@ pub fn write_bxes(path: &str, log: &BxesEventLog) -> Result<(), BxesWriteError> 
         writer: &mut writer,
     }));
 
+    try_write_version(context.borrow_mut().writer, log.version)?;
     try_write_values(log, context.clone())?;
     try_write_key_values(log, context.clone())?;
     try_write_log_metadata(log, context.clone())?;
@@ -76,7 +77,7 @@ pub fn try_write_event(
         }
     }
 
-    try_write_i64(context.borrow_mut().writer, event.timestamp)?;
+    try_write_i64_no_type_id(context.borrow_mut().writer, event.timestamp)?;
     try_write_lifecycle(context.borrow_mut().writer, &event.lifecycle)?;
     try_write_attributes(context, event.attributes.as_ref())
 }
@@ -98,7 +99,7 @@ pub fn try_write_attributes(
                 let mut context = context.borrow_mut();
                 if let Some(index) = context.kv_indices.get(&(key, value)) {
                     let index = *index as u32;
-                    try_write_u32(context.writer, index)?;
+                    try_write_u32_no_type_id(context.writer, index)?;
                 } else {
                     return Err(BxesWriteError::FailedToFindKeyValueIndex((
                         key.clone(),
@@ -125,7 +126,7 @@ pub fn try_write_key_values<'a: 'b, 'b>(
                 ValueOrKeyValue::KeyValue((key, value)) => {
                     if !context.borrow().kv_indices.contains_key(&(key, value)) {
                         let count = context.borrow().kv_indices.len();
-                        try_write_u32(context.borrow_mut().writer, count as u32)?;
+                        try_write_u32_no_type_id(context.borrow_mut().writer, count as u32)?;
                         context.borrow_mut().kv_indices.insert((key, value), count);
                     }
                 },
@@ -174,7 +175,7 @@ fn execute_with_kv_pairs<'a>(
 }
 
 pub fn try_write_version(writer: &mut BinaryWriter, version: u32) -> Result<(), BxesWriteError> {
-    try_write_u32(writer, version)
+    try_write_u32_no_type_id(writer, version)
 }
 
 pub fn try_write_values<'a: 'b, 'b>(
@@ -203,13 +204,13 @@ fn write_collection_and_count(
 ) -> Result<(), BxesWriteError> {
     let pos = try_tell_pos(context.borrow_mut().writer)?;
 
-    try_write_u32(context.borrow_mut().writer, 0)?;
+    try_write_u32_no_type_id(context.borrow_mut().writer, 0)?;
 
     let count = writer_action()?;
 
     let current_pos = try_tell_pos(context.borrow_mut().writer)?;
     try_seek(context.borrow_mut().writer, pos)?;
-    try_write_u32(context.borrow_mut().writer, count)?;
+    try_write_u32_no_type_id(context.borrow_mut().writer, count)?;
     try_seek(context.borrow_mut().writer, current_pos)
 }
 
@@ -263,10 +264,22 @@ pub fn try_write_i32(writer: &mut BinaryWriter, value: i32) -> Result<(), BxesWr
     })
 }
 
+pub fn try_write_i64_no_type_id(writer: &mut BinaryWriter, value: i64) -> Result<(), BxesWriteError> {
+    try_write_primitive_value(|| {
+        writer.write_i64(value)
+    })
+}
+
 pub fn try_write_i64(writer: &mut BinaryWriter, value: i64) -> Result<(), BxesWriteError> {
     try_write_primitive_value(|| {
         writer.write_u8(type_ids::I_64)?;
         writer.write_i64(value)
+    })
+}
+
+pub fn try_write_u32_no_type_id(writer: &mut BinaryWriter, value: u32) -> Result<(), BxesWriteError> {
+    try_write_primitive_value(|| {
+        writer.write_u32(value)
     })
 }
 
