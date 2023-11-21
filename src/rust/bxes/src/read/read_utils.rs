@@ -72,11 +72,6 @@ fn try_read_event(
         return Err(BxesReadError::FailedToIndexValue(name_index));
     }
 
-    let name_string = match name.unwrap() {
-        BxesValue::String(string) => string,
-        _ => return Err(BxesReadError::NameOfEventIsNotAString),
-    };
-
     let timestamp = try_read_i64(reader)?;
     let lifecycle = match try_read_bxes_value(reader)? {
         BxesValue::StandardLifecycle(lifecycle) => Lifecycle::Standard(lifecycle),
@@ -85,7 +80,7 @@ fn try_read_event(
     };
 
     Ok(BxesEvent {
-        name: name_string.clone(),
+        name: name.unwrap().clone(),
         timestamp,
         lifecycle,
         attributes: try_read_event_attributes(reader, values, kv_pairs)?,

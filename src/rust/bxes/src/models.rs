@@ -108,7 +108,7 @@ pub struct BxesTraceVariant {
 
 #[derive(Debug)]
 pub struct BxesEvent {
-    pub name: Rc<Box<String>>,
+    pub name: BxesValue,
     pub timestamp: i64,
     pub lifecycle: Lifecycle,
     pub attributes: Option<Vec<(BxesValue, BxesValue)>>,
