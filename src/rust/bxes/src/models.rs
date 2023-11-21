@@ -1,6 +1,6 @@
 use num_derive::FromPrimitive;
+use num_traits::ToBytes;
 use std::hash::Hash;
-use std::mem::discriminant;
 use std::rc::Rc;
 
 #[derive(Clone, Debug)]
@@ -20,7 +20,19 @@ pub enum BxesValue {
 
 impl Hash for BxesValue {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        discriminant(self).hash(state);
+        match self {
+            BxesValue::Int32(value) => state.write_i32(*value),
+            BxesValue::Int64(value) => state.write_i64(*value),
+            BxesValue::Uint32(value) => state.write_u32(*value),
+            BxesValue::Uint64(value) => state.write_u64(*value),
+            BxesValue::Float32(value) => state.write(value.to_le_bytes().as_slice()),
+            BxesValue::Float64(value) => state.write(value.to_le_bytes().as_slice()),
+            BxesValue::String(value) => state.write(value.as_bytes()),
+            BxesValue::Bool(value) => state.write(if *value { &[1] } else { &[0] }),
+            BxesValue::Timestamp(value) => state.write_i64(*value),
+            BxesValue::BrafLifecycle(value) => value.hash(state),
+            BxesValue::StandardLifecycle(value) => value.hash(state),
+        }
     }
 }
 
