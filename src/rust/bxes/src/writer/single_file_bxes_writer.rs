@@ -17,13 +17,9 @@ pub fn write_bxes(path: &str, log: &BxesEventLog) -> Result<(), BxesWriteError> 
     let mut stream = try_open_write(path)?;
     let mut writer = BinaryWriter::new(&mut stream, Endian::Little);
 
-    let context = Rc::new(RefCell::new(BxesWriteContext {
-        values_indices: Rc::new(RefCell::new(HashMap::new())),
-        kv_indices: Rc::new(RefCell::new(HashMap::new())),
-        writer: &mut writer,
-    }));
+    let context = Rc::new(RefCell::new(BxesWriteContext::new(&mut writer)));
 
-    try_write_version(context.borrow_mut().writer, log.version)?;
+    try_write_version(context.borrow_mut().writer.as_mut().unwrap(), log.version)?;
     try_write_values(log, context.clone())?;
     try_write_key_values(log, context.clone())?;
     try_write_log_metadata(log, context.clone())?;

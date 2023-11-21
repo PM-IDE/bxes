@@ -15,7 +15,10 @@ pub fn try_write_variants(
 ) -> Result<(), BxesWriteError> {
     write_collection_and_count(context.clone(), || {
         for variant in &log.variants {
-            try_write_u32_no_type_id(context.borrow_mut().writer, variant.traces_count)?;
+            try_write_u32_no_type_id(
+                context.borrow_mut().writer.as_mut().unwrap(),
+                variant.traces_count,
+            )?;
             write_collection_and_count(context.clone(), || {
                 for event in &variant.events {
                     try_write_event(event, context.clone())?;
@@ -46,14 +49,20 @@ pub fn try_write_event(
                 .borrow()
                 .get(&event.name)
                 .unwrap();
-            try_write_u32_no_type_id(context.borrow_mut().writer, index as u32)?;
+            try_write_u32_no_type_id(context.borrow_mut().writer.as_mut().unwrap(), index as u32)?;
         } else {
             return Err(BxesWriteError::FailedToFindValueIndex(event.name.clone()));
         };
     }
 
-    try_write_i64_no_type_id(context.borrow_mut().writer, event.timestamp)?;
-    try_write_lifecycle(context.borrow_mut().writer, &event.lifecycle)?;
+    try_write_i64_no_type_id(
+        context.borrow_mut().writer.as_mut().unwrap(),
+        event.timestamp,
+    )?;
+    try_write_lifecycle(
+        context.borrow_mut().writer.as_mut().unwrap(),
+        &event.lifecycle,
+    )?;
     try_write_attributes(context, event.attributes.as_ref())
 }
 
@@ -74,7 +83,10 @@ pub fn try_write_attributes(
                 let pair = (key, value);
                 if context.borrow().kv_indices.borrow().contains_key(&pair) {
                     let index = *context.borrow().kv_indices.borrow().get(&pair).unwrap();
-                    try_write_u32_no_type_id(context.borrow_mut().writer, index as u32)?;
+                    try_write_u32_no_type_id(
+                        context.borrow_mut().writer.as_mut().unwrap(),
+                        index as u32,
+                    )?;
                 } else {
                     return Err(BxesWriteError::FailedToFindKeyValueIndex((
                         key.clone(),
@@ -92,7 +104,7 @@ pub fn try_write_attributes(
 
 pub fn try_write_key_values<'a: 'b, 'b>(
     log: &'a BxesEventLog,
-    context: Rc<RefCell<BxesWriteContext<'b>>>,
+    context: Rc<RefCell<BxesWriteContext<'a, 'b>>>,
 ) -> Result<(), BxesWriteError> {
     write_collection_and_count(context.clone(), || {
         execute_with_kv_pairs(log, |value| {
@@ -110,8 +122,14 @@ pub fn try_write_key_values<'a: 'b, 'b>(
                         let value_index =
                             *context.borrow().values_indices.borrow().get(value).unwrap();
 
-                        try_write_u32_no_type_id(context.borrow_mut().writer, key_index as u32)?;
-                        try_write_u32_no_type_id(context.borrow_mut().writer, value_index as u32)?;
+                        try_write_u32_no_type_id(
+                            context.borrow_mut().writer.as_mut().unwrap(),
+                            key_index as u32,
+                        )?;
+                        try_write_u32_no_type_id(
+                            context.borrow_mut().writer.as_mut().unwrap(),
+                            value_index as u32,
+                        )?;
 
                         context
                             .borrow_mut()
@@ -170,7 +188,7 @@ pub fn try_write_version(writer: &mut BinaryWriter, version: u32) -> Result<(), 
 
 pub fn try_write_values<'a: 'b, 'b>(
     log: &'a BxesEventLog,
-    context: Rc<RefCell<BxesWriteContext<'b>>>,
+    context: Rc<RefCell<BxesWriteContext<'a, 'b>>>,
 ) -> Result<(), BxesWriteError> {
     write_collection_and_count(context.clone(), || {
         execute_with_kv_pairs(log, |value| {
@@ -192,16 +210,16 @@ fn write_collection_and_count(
     context: Rc<RefCell<BxesWriteContext>>,
     mut writer_action: impl FnMut() -> Result<u32, BxesWriteError>,
 ) -> Result<(), BxesWriteError> {
-    let pos = try_tell_pos(context.borrow_mut().writer)?;
+    let pos = try_tell_pos(context.borrow_mut().writer.as_mut().unwrap())?;
 
-    try_write_u32_no_type_id(context.borrow_mut().writer, 0)?;
+    try_write_u32_no_type_id(context.borrow_mut().writer.as_mut().unwrap(), 0)?;
 
     let count = writer_action()?;
 
-    let current_pos = try_tell_pos(context.borrow_mut().writer)?;
-    try_seek(context.borrow_mut().writer, pos)?;
-    try_write_u32_no_type_id(context.borrow_mut().writer, count)?;
-    try_seek(context.borrow_mut().writer, current_pos)
+    let current_pos = try_tell_pos(context.borrow_mut().writer.as_mut().unwrap())?;
+    try_seek(context.borrow_mut().writer.as_mut().unwrap(), pos)?;
+    try_write_u32_no_type_id(context.borrow_mut().writer.as_mut().unwrap(), count)?;
+    try_seek(context.borrow_mut().writer.as_mut().unwrap(), current_pos)
 }
 
 fn try_seek(writer: &mut BinaryWriter, pos: usize) -> Result<(), BxesWriteError> {
@@ -220,7 +238,7 @@ fn try_tell_pos(writer: &mut BinaryWriter) -> Result<usize, BxesWriteError> {
 
 pub fn try_write_value<'a: 'b, 'b>(
     value: &'a BxesValue,
-    context: &mut BxesWriteContext<'b>,
+    context: &mut BxesWriteContext<'a, 'b>,
 ) -> Result<bool, BxesWriteError> {
     if context.values_indices.borrow().contains_key(value) {
         return Ok(false);
@@ -230,17 +248,25 @@ pub fn try_write_value<'a: 'b, 'b>(
     context.values_indices.borrow_mut().insert(value, len);
 
     match value {
-        BxesValue::Int32(value) => try_write_i32(context.writer, *value),
-        BxesValue::Int64(value) => try_write_i64(context.writer, *value),
-        BxesValue::Uint32(value) => try_write_u32(context.writer, *value),
-        BxesValue::Uint64(value) => try_write_u64(context.writer, *value),
-        BxesValue::Float32(value) => try_write_f32(context.writer, *value),
-        BxesValue::Float64(value) => try_write_f64(context.writer, *value),
-        BxesValue::String(value) => try_write_string(context.writer, value.as_str()),
-        BxesValue::Bool(value) => try_write_bool(context.writer, *value),
-        BxesValue::Timestamp(value) => try_write_timestamp(context.writer, *value),
-        BxesValue::BrafLifecycle(value) => try_write_braf_lifecycle(context.writer, value),
-        BxesValue::StandardLifecycle(value) => try_write_standard_lifecycle(context.writer, value),
+        BxesValue::Int32(value) => try_write_i32(context.writer.as_mut().unwrap(), *value),
+        BxesValue::Int64(value) => try_write_i64(context.writer.as_mut().unwrap(), *value),
+        BxesValue::Uint32(value) => try_write_u32(context.writer.as_mut().unwrap(), *value),
+        BxesValue::Uint64(value) => try_write_u64(context.writer.as_mut().unwrap(), *value),
+        BxesValue::Float32(value) => try_write_f32(context.writer.as_mut().unwrap(), *value),
+        BxesValue::Float64(value) => try_write_f64(context.writer.as_mut().unwrap(), *value),
+        BxesValue::String(value) => {
+            try_write_string(context.writer.as_mut().unwrap(), value.as_str())
+        }
+        BxesValue::Bool(value) => try_write_bool(context.writer.as_mut().unwrap(), *value),
+        BxesValue::Timestamp(value) => {
+            try_write_timestamp(context.writer.as_mut().unwrap(), *value)
+        }
+        BxesValue::BrafLifecycle(value) => {
+            try_write_braf_lifecycle(context.writer.as_mut().unwrap(), value)
+        }
+        BxesValue::StandardLifecycle(value) => {
+            try_write_standard_lifecycle(context.writer.as_mut().unwrap(), value)
+        }
     }?;
 
     Ok(true)
