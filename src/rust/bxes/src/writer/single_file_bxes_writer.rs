@@ -272,42 +272,35 @@ pub fn try_write_i64(writer: &mut BinaryWriter, value: i64) -> Result<(), BxesWr
 
 pub fn try_write_u32(writer: &mut BinaryWriter, value: u32) -> Result<(), BxesWriteError> {
     try_write_primitive_value(|| {
-        writer.write_u8(type_ids::I_64)?;
+        writer.write_u8(type_ids::U_32)?;
         writer.write_u32(value)
     })
 }
 
 pub fn try_write_u64(writer: &mut BinaryWriter, value: u64) -> Result<(), BxesWriteError> {
     try_write_primitive_value(|| {
-        writer.write_u8(type_ids::I_32)?;
+        writer.write_u8(type_ids::U_64)?;
         writer.write_u64(value)
-    })
-}
-
-pub fn try_write_u8(writer: &mut BinaryWriter, value: u8) -> Result<(), BxesWriteError> {
-    try_write_primitive_value(|| {
-        writer.write_u8(type_ids::I_32)?;
-        writer.write_u8(value)
     })
 }
 
 pub fn try_write_f32(writer: &mut BinaryWriter, value: f32) -> Result<(), BxesWriteError> {
     try_write_primitive_value(|| {
-        writer.write_u8(type_ids::I_32)?;
+        writer.write_u8(type_ids::F_32)?;
         writer.write_f32(value)
     })
 }
 
 pub fn try_write_f64(writer: &mut BinaryWriter, value: f64) -> Result<(), BxesWriteError> {
     try_write_primitive_value(|| {
-        writer.write_u8(type_ids::I_32)?;
+        writer.write_u8(type_ids::F_64)?;
         writer.write_f64(value)
     })
 }
 
 pub fn try_write_bool(writer: &mut BinaryWriter, value: bool) -> Result<(), BxesWriteError> {
     try_write_primitive_value(|| {
-        writer.write_u8(type_ids::I_32)?;
+        writer.write_u8(type_ids::BOOL)?;
         writer.write_u8(if value { 1 } else { 0 })
     })
 }
