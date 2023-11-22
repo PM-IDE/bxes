@@ -57,7 +57,7 @@ impl PartialEq for BxesValue {
 
 impl Eq for BxesValue {}
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Lifecycle {
     Braf(BrafLifecycle),
     Standard(StandardLifecycle),
@@ -124,4 +124,96 @@ pub struct BxesEvent {
     pub timestamp: i64,
     pub lifecycle: Lifecycle,
     pub attributes: Option<Vec<(BxesValue, BxesValue)>>,
+}
+
+impl PartialEq for BxesEvent {
+    fn eq(&self, other: &Self) -> bool {
+        if !self.compare_events_by_properties(other) {
+            return false;
+        }
+
+        compare_list_of_attributes(&self.attributes, &other.attributes)
+    }
+}
+
+impl BxesEvent {
+    fn compare_events_by_properties(&self, other: &Self) -> bool {
+        self.name == other.name
+            && self.timestamp == other.timestamp
+            && self.lifecycle == other.lifecycle
+    }
+}
+
+fn compare_list_of_attributes(
+    first_attributes: &Option<Vec<(BxesValue, BxesValue)>>,
+    second_attributes: &Option<Vec<(BxesValue, BxesValue)>>,
+) -> bool {
+    if first_attributes.is_none() && second_attributes.is_none() {
+        return true;
+    }
+
+    if let Some(self_attributes) = first_attributes.as_ref() {
+        if let Some(other_attributes) = second_attributes.as_ref() {
+            if self_attributes.len() != other_attributes.len() {
+                return false;
+            }
+
+            for (self_attribute, other_attribute) in self_attributes.iter().zip(other_attributes) {
+                if !(attributes_equals(self_attribute, other_attribute)) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+    }
+
+    return false;
+}
+
+fn attributes_equals(
+    first_attribute: &(BxesValue, BxesValue),
+    second_attribute: &(BxesValue, BxesValue),
+) -> bool {
+    first_attribute.0.eq(&second_attribute.0) && first_attribute.1.eq(&second_attribute.1)
+}
+
+impl PartialEq for BxesTraceVariant {
+    fn eq(&self, other: &Self) -> bool {
+        if self.traces_count != other.traces_count {
+            return false;
+        }
+
+        if self.events.len() != other.events.len() {
+            return false;
+        }
+
+        for (self_event, other_event) in self.events.iter().zip(&other.events) {
+            if !self_event.eq(&other_event) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+}
+
+impl PartialEq for BxesEventLog {
+    fn eq(&self, other: &Self) -> bool {
+        if self.version != other.version {
+            return false;
+        }
+
+        if !compare_list_of_attributes(&self.metadata, &other.metadata) {
+            return false;
+        }
+
+        for (self_variant, other_variant) in self.variants.iter().zip(&other.variants) {
+            if !self_variant.eq(&other_variant) {
+                return false;
+            }
+        }
+
+        return true;
+    }
 }
