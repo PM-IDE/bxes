@@ -90,6 +90,17 @@ XES-sprcific types:
     - suspend = `11`
     - unknown = `12`
     - withdraw = `13`
+- `artifact` (type id = 11, `1 byte`) xes artifact extension
+    - the number of models is written (`u32`, `4 bytes`)
+    - then the models are written
+        - each model is a value-value pair, which indicates the values of `artifactlifecycle:instance` and `artifactlifecycle:transition`
+- `cost`
+
+- Reserved value indices:
+    - `concept:instance` = 0
+    - `artifact:Moves` = 1
+    - `cost:`
+
 
 Type id is one byte length. In case of string the length of a string in bytes is also serialized, the length of string takes 8 bytes.
 Type id + additional type info (i.e. length of a string) forms a header of a value, followed by the actual value
