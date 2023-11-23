@@ -90,17 +90,86 @@ XES-sprcific types:
     - suspend = `11`
     - unknown = `12`
     - withdraw = `13`
-- `artifact` (type id = 11, `1 byte`) xes artifact extension
+- `artifact` (type id = `11`) xes artifact extension
     - the number of models is written (`u32`, `4 bytes`)
     - then the models are written
         - each model is a value-value pair, which indicates the values of `artifactlifecycle:instance` and `artifactlifecycle:transition`
-- `cost`
+- `cost:dirvers` (type id = `12`) xes cost extension. The list of drivers with following attributes:
+    - the number of drivers is written (`u32`, `4 bytes`), each list item is the following:
+      - the amount is written (`f64`, `8 bytes`)
+      - the driver name index is written (`u32`, `4 bytes`)
+      - the type index is written (`u32`, `4 bytes`)
+- `guid` (type id = `13`) the guid written in LE order, `16 bytes`
+- `software event type` (type id = `14`, `1 byte`) - enum:
+    - NULL = `0`,
+    - Call = `1`
+    - Return = `2`
+    - Throws = `3`
+    - Handle = `4`
+    - Calling = `5`
+    - Returning = `6`
 
 - Reserved value indices:
     - `concept:instance` = 0
     - `artifact:Moves` = 1
-    - `cost:`
-
+    - `cost:total` = 2
+    - `cost:currency` = 3
+    - `cost:drivers` = 4
+    - `identity:id` = 5
+    - `micro:level` = 6
+    - `micro:parentId` = 7
+    - `micro:length` = 8
+    - `org:resource` = 9
+    - `org:role` = 10
+    - `org:group` = 11
+    - `semantic:modelReference` = 12
+    - `swcomm:localHost` = 13
+    - `swcomm:localPort` = 14
+    - `swcomm:remoteHost` = 15
+    - `swcomm:remotePort` = 16
+    - `swevent:type` = 17
+    - `swevent:callee-package` = 18
+    - `swevent:caller-package` = 19
+    - `swevent:callee-class` = 20
+    - `swevent:caller-class` = 21
+    - `swevent:callee-method` = 22
+    - `swevent:caller-method` = 23
+    - `swevent:callee-paramSig` = 24
+    - `swevent:caller-paramSig` = 25
+    - `swevent:callee-returnSig` = 26
+    - `swevent:caller-returnSig` = 27
+    - `swevent:callee-isConstructor` = 28
+    - `swevent:caller-isConstructor` = 29
+    - `swevent:callee-instanceID` = 30
+    - `swevent:caller-instanceID` = 31
+    - `swevent:callee-filename` = 32
+    - `swevent:caller-filename` = 33
+    - `swevent:callee-lineNr` = 34
+    - `swevent:caller-lineNr` = 35
+    - `swevent:hasData` = 36
+    - `swevent:returnValue` = 37
+    - `swevent:params` = 38
+    - `swevent:paramValue` = 39
+    - `swevent:valueType` = 40
+    - `swevent:appName` = 41
+    - `swevent:appTier` = 42
+    - `swevent:appNode` = 43
+    - `swevent:appSession` = 44
+    - `swevent:threadId` = 45
+    - `swevent:nanotime` = 46
+    - `swevent:hasException` = 47
+    - `swevent:exCaught` = 48
+    - `swevent:exThrown` = 49
+    - `swtelemetry:cpuTotal` = 50
+    - `swtelemetry:cpuTotalKernel` = 51
+    - `swtelemetry:cpuTotalIdle` = 52
+    - `swtelemetry:cpuLoadUser` = 53
+    - `swtelemetry:cpuLoadKernel` = 54
+    - `swtelemetry:threadTotal` = 55
+    - `swtelemetry:threadDaemon` = 56
+    - `swtelemetry:memoryUsed` = 57
+    - `swtelemetry:memoryTotal` = 58
+    - `swtelemetry:memoryLoad` = 59
 
 Type id is one byte length. In case of string the length of a string in bytes is also serialized, the length of string takes 8 bytes.
 Type id + additional type info (i.e. length of a string) forms a header of a value, followed by the actual value
