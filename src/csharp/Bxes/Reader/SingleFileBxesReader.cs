@@ -6,7 +6,8 @@ public class SingleFileBxesReader : IBxesReader
 {
   public IEventLog Read(string path)
   {
-    using var br = new BinaryReader(File.OpenRead(path));
+    using var cookie = BxesReadUtils.ReadZipArchive(path);
+    using var br = new BinaryReader(cookie.Stream);
 
     var version = br.ReadUInt32();
     var values = BxesReadUtils.ReadValues(br);

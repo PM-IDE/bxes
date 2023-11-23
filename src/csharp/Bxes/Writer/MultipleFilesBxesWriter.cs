@@ -5,7 +5,7 @@ namespace Bxes.Writer;
 
 public class MultipleFilesBxesWriter : IBxesWriter
 {
-  public async Task WriteAsync(IEventLog log, string savePath)
+  public void Write(IEventLog log, string savePath)
   {
     if (!Directory.Exists(savePath))
     {
@@ -18,18 +18,18 @@ public class MultipleFilesBxesWriter : IBxesWriter
       writeAction(log, context.WithWriter(writer));
 
     var version = log.Version;
-    await ExecuteWithFile(savePath, BxesConstants.ValuesFileName, version, bw => Write(bw, BxesWriteUtils.WriteValues));
-    await ExecuteWithFile(savePath, BxesConstants.KVPairsFileName, version, bw => Write(bw, BxesWriteUtils.WriteKeyValuePairs));
-    await ExecuteWithFile(savePath, BxesConstants.MetadataFileName, version, bw => Write(bw, BxesWriteUtils.WriteEventLogMetadata));
-    await ExecuteWithFile(savePath, BxesConstants.TracesFileName, version, bw => Write(bw, BxesWriteUtils.WriteTracesVariants));
+    ExecuteWithFile(savePath, BxesConstants.ValuesFileName, version, bw => Write(bw, BxesWriteUtils.WriteValues));
+    ExecuteWithFile(savePath, BxesConstants.KVPairsFileName, version, bw => Write(bw, BxesWriteUtils.WriteKeyValuePairs));
+    ExecuteWithFile(savePath, BxesConstants.MetadataFileName, version, bw => Write(bw, BxesWriteUtils.WriteEventLogMetadata));
+    ExecuteWithFile(savePath, BxesConstants.TracesFileName, version, bw => Write(bw, BxesWriteUtils.WriteTracesVariants));
   }
 
-  private static Task ExecuteWithFile(string saveDirectory, string fileName, uint version, Action<BinaryWriter> writeAction)
+  private static void ExecuteWithFile(string saveDirectory, string fileName, uint version, Action<BinaryWriter> writeAction)
   {
     var path = Path.Combine(saveDirectory, fileName);
     PathUtil.EnsureDeleted(path);
     
-    return BxesWriteUtils.ExecuteWithFile(path, writer =>
+    BxesWriteUtils.ExecuteWithFile(path, writer =>
     {
       BxesWriteUtils.WriteBxesVersion(writer, version);
       writeAction(writer);

@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using Bxes.Models;
 using Bxes.Utils;
 
@@ -5,11 +6,12 @@ namespace Bxes.Writer;
 
 public class SingleFileBxesWriter : IBxesWriter
 {
-  public Task WriteAsync(IEventLog log, string savePath)
+  public void Write(IEventLog log, string savePath)
   {
     PathUtil.EnsureDeleted(savePath);
 
-    return BxesWriteUtils.ExecuteWithFile(savePath, writer =>
+    using var cookie = new TempFilePathContainer();
+    BxesWriteUtils.ExecuteWithFile(cookie.Path, writer =>
     {
       var context = new BxesWriteContext(writer);
 
@@ -19,5 +21,7 @@ public class SingleFileBxesWriter : IBxesWriter
       BxesWriteUtils.WriteEventLogMetadata(log, context);
       BxesWriteUtils.WriteTracesVariants(log, context);
     });
+    
+    BxesWriteUtils.CreateZipArchive(new [] { cookie.Path }, savePath);
   }
 }

@@ -17,7 +17,7 @@ public class MultipleFilesSimpleWriteTest
   {
     TestUtils.ExecuteTestWithTempFolder(log, testDirectory =>
     {
-      new MultipleFilesBxesWriter().WriteAsync(log, testDirectory).GetAwaiter().GetResult();
+      new MultipleFilesBxesWriter().Write(log, testDirectory);
       return new MultiFileBxesReader().Read(testDirectory);
     });
   }

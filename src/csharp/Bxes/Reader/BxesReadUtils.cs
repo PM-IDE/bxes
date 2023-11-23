@@ -1,10 +1,33 @@
+using System.IO.Compression;
 using Bxes.Models;
+using Bxes.Utils;
 using Bxes.Writer;
 
 namespace Bxes.Reader;
 
+public readonly struct ExtractedFileCookie(string filePath) : IDisposable
+{
+  public FileStream Stream { get; } = File.OpenRead(filePath);
+
+
+  public void Dispose()
+  {
+    Stream.Dispose();
+    File.Delete(filePath);
+  }
+}
+
 public static class BxesReadUtils
 {
+  public static ExtractedFileCookie ReadZipArchive(string path)
+  {
+    var filePath = Path.GetTempFileName();
+    PathUtil.EnsureDeleted(filePath);
+
+    ZipFile.OpenRead(path).Entries.First().ExtractToFile(filePath);
+    return new ExtractedFileCookie(filePath);
+  }
+
   public static List<BxesValue> ReadValues(BinaryReader reader)
   {
     var valuesCount = reader.ReadUInt32();

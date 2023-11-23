@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using Bxes.Models;
 
 namespace Bxes.Writer;
@@ -179,11 +180,23 @@ internal static class BxesWriteUtils
     }
   }
 
-  public static async Task ExecuteWithFile(string filePath, Action<BinaryWriter> writeAction)
+  public static void ExecuteWithFile(string filePath, Action<BinaryWriter> writeAction)
   {
-    await using var fs = File.OpenWrite(filePath);
-    await using var bw = new BinaryWriter(fs, BxesConstants.BxesEncoding);
+    using var fs = File.OpenWrite(filePath);
+    using var bw = new BinaryWriter(fs, BxesConstants.BxesEncoding);
 
     writeAction(bw);
+  }
+
+  public static void CreateZipArchive(IEnumerable<string> filesPaths, string outputPath)
+  {
+    using var fs = File.OpenWrite(outputPath);
+    using var archive = new ZipArchive(fs, ZipArchiveMode.Create);
+
+    foreach (var filePath in filesPaths)
+    {
+      var fileName = Path.GetFileName(filePath);
+      archive.CreateEntryFromFile(filePath, fileName, CompressionLevel.Optimal);
+    }
   }
 }

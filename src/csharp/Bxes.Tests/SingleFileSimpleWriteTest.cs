@@ -17,7 +17,7 @@ public class SingleFileSimpleWriteTest
   {
     TestUtils.ExecuteTestWithTempFile(log, testPath =>
     {
-      new SingleFileBxesWriter().WriteAsync(log, testPath).GetAwaiter().GetResult();
+      new SingleFileBxesWriter().Write(log, testPath);
       return new SingleFileBxesReader().Read(testPath);
     });
   }

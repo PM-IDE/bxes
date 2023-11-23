@@ -34,15 +34,22 @@ public class SingleFileBxesStreamWriterImpl<TEvent> : IBxesStreamWriter where TE
   private void MergeFilesIntoOne()
   {
     PathUtil.EnsureDeleted(mySavePath);
-    using var writer = new BinaryWriter(File.OpenWrite(mySavePath));
-    writer.Write(myBxesVersion);
 
-    BinaryReader OpenRead(string fileName) => new(File.OpenRead(Path.Join(myFolderContainer.Path, fileName)));
+    using var tempFileCookie = new TempFilePathContainer();
 
-    SkipVersionAndCopyContents(OpenRead(BxesConstants.ValuesFileName), writer);
-    SkipVersionAndCopyContents(OpenRead(BxesConstants.KVPairsFileName), writer);
-    SkipVersionAndCopyContents(OpenRead(BxesConstants.MetadataFileName), writer);
-    SkipVersionAndCopyContents(OpenRead(BxesConstants.TracesFileName), writer);
+    using (var writer = new BinaryWriter(File.OpenWrite(tempFileCookie.Path)))
+    {
+      writer.Write(myBxesVersion);
+
+      BinaryReader OpenRead(string fileName) => new(File.OpenRead(Path.Join(myFolderContainer.Path, fileName)));
+
+      SkipVersionAndCopyContents(OpenRead(BxesConstants.ValuesFileName), writer);
+      SkipVersionAndCopyContents(OpenRead(BxesConstants.KVPairsFileName), writer);
+      SkipVersionAndCopyContents(OpenRead(BxesConstants.MetadataFileName), writer);
+      SkipVersionAndCopyContents(OpenRead(BxesConstants.TracesFileName), writer); 
+    }
+    
+    BxesWriteUtils.CreateZipArchive(new [] { tempFileCookie.Path }, mySavePath);
   }
 
   private static void SkipVersionAndCopyContents(BinaryReader reader, BinaryWriter writer)
