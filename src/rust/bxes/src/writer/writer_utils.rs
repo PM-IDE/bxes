@@ -1,6 +1,13 @@
 use binary_rw::{BinaryWriter, FileStream, SeekStream};
 use num_traits::ToPrimitive;
-use std::{cell::RefCell, rc::Rc};
+use std::{
+    cell::RefCell,
+    fs::{self, File},
+    io::Write,
+    path::Path,
+    rc::Rc,
+};
+use zip::{write::FileOptions, ZipWriter};
 
 use crate::{
     models::{BrafLifecycle, BxesEvent, BxesEventLog, BxesValue, Lifecycle, StandardLifecycle},
@@ -88,10 +95,9 @@ pub fn try_write_attributes(
                         index as u32,
                     )?;
                 } else {
-                    return Err(BxesWriteError::FailedToFindKeyValueIndex((
-                        key.clone(),
-                        value.clone(),
-                    )));
+                    return Err(
+                        BxesWriteError::FailedToFindKeyValueIndex((key.clone(), value.clone()))
+                    );
                 }
             }
 
@@ -401,4 +407,26 @@ pub fn try_open_write(path: &str) -> Result<FileStream, BxesWriteError> {
         Ok(stream) => Ok(stream),
         Err(err) => Err(BxesWriteError::FailedToOpenFileForWriting(err.to_string())),
     }
+}
+
+pub fn compress_to_archive(log_path: &str, save_path: &str) -> Result<(), BxesWriteError> {
+    let file = File::create(save_path).or_else(|_| Err(BxesWriteError::FailedToCreateArchive))?;
+    let mut zip_writer = ZipWriter::new(file);
+
+    let archive_log_name = Path::new(save_path).file_name().unwrap().to_str().unwrap();
+    let options = FileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+
+    zip_writer
+        .start_file(archive_log_name, options)
+        .or_else(|_| Err(BxesWriteError::FailedToCreateArchive))?;
+
+    zip_writer
+        .write(&fs::read(log_path).unwrap())
+        .or_else(|_| Err(BxesWriteError::FailedToCreateArchive))?;
+
+    zip_writer
+        .finish()
+        .or_else(|_| Err(BxesWriteError::FailedToCreateArchive))?;
+
+    Ok(())
 }

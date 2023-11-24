@@ -1,4 +1,4 @@
-use std::{cell::RefCell, path::Path, ptr::null, rc::Rc};
+use std::{cell::RefCell, path::Path, rc::Rc};
 
 use binary_rw::{BinaryWriter, Endian};
 

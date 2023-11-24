@@ -10,4 +10,6 @@ pub enum BxesWriteError {
     FailedToSeek(String),
     FailedToFindKeyValueIndex((BxesValue, BxesValue)),
     FailedToFindValueIndex(BxesValue),
+    FailedToCreateTempFile,
+    FailedToCreateArchive,
 }
