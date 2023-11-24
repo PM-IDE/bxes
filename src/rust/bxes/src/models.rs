@@ -2,6 +2,7 @@ use num_derive::FromPrimitive;
 use num_traits::ToBytes;
 use std::hash::Hash;
 use std::rc::Rc;
+use variant_count::VariantCount;
 
 #[derive(Clone, Debug)]
 pub enum BxesValue {
@@ -63,7 +64,7 @@ pub enum Lifecycle {
     Standard(StandardLifecycle),
 }
 
-#[derive(FromPrimitive, ToPrimitive, Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(FromPrimitive, ToPrimitive, Clone, Debug, PartialEq, Eq, Hash, VariantCount)]
 pub enum BrafLifecycle {
     Unspecified = 0,
     Closed = 1,
@@ -87,7 +88,7 @@ pub enum BrafLifecycle {
     OpenRunningSuspended = 19,
 }
 
-#[derive(FromPrimitive, ToPrimitive, Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(FromPrimitive, ToPrimitive, Clone, Debug, PartialEq, Eq, Hash, VariantCount)]
 pub enum StandardLifecycle {
     Unspecified = 0,
     Assign = 1,

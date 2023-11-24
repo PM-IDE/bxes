@@ -9,3 +9,7 @@ pub const BOOL: u8 = 7;
 pub const TIMESTAMP: u8 = 8;
 pub const BRAF_LIFECYCLE: u8 = 9;
 pub const STANDARD_LIFECYCLE: u8 = 10;
+
+pub fn types_count() -> usize {
+    10
+}
