@@ -196,7 +196,7 @@ internal static class BxesWriteUtils
     foreach (var filePath in filesPaths)
     {
       var fileName = Path.GetFileName(filePath);
-      archive.CreateEntryFromFile(filePath, fileName, CompressionLevel.Optimal);
+      archive.CreateEntryFromFile(filePath, fileName, CompressionLevel.SmallestSize);
     }
   }
 }
