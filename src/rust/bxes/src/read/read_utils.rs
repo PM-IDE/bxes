@@ -167,14 +167,12 @@ fn try_read_bxes_value(reader: &mut BinaryReader) -> Result<BxesValue, BxesReadE
         type_ids::F_32 => Ok(BxesValue::Float32(try_read_f32(reader)?)),
         type_ids::F_64 => Ok(BxesValue::Float64(try_read_f64(reader)?)),
         type_ids::BOOL => Ok(BxesValue::Bool(try_read_bool(reader)?)),
-        type_ids::STRING => Ok(BxesValue::String(Rc::new(Box::new(try_read_string(
-            reader,
-        )?)))),
+        type_ids::STRING => Ok(BxesValue::String(Rc::new(Box::new(try_read_string(reader)?)))),
         type_ids::TIMESTAMP => Ok(BxesValue::Timestamp(try_read_i64(reader)?)),
         type_ids::BRAF_LIFECYCLE => Ok(BxesValue::BrafLifecycle(try_read_braf_lifecycle(reader)?)),
-        type_ids::STANDARD_LIFECYCLE => Ok(BxesValue::StandardLifecycle(
-            try_read_standard_lifecycle(reader)?,
-        )),
+        type_ids::STANDARD_LIFECYCLE => {
+            Ok(BxesValue::StandardLifecycle(try_read_standard_lifecycle(reader)?))
+        }
         _ => Err(BxesReadError::FailedToParseTypeId(type_id)),
     }
 }
@@ -225,9 +223,9 @@ fn try_read_bytes(reader: &mut BinaryReader, length: usize) -> Result<Vec<u8>, B
     let offset = try_tell_pos(reader)?;
     match reader.read_bytes(length) {
         Ok(bytes) => Ok(bytes),
-        Err(err) => Err(BxesReadError::FailedToReadValue(
-            FailedToReadValueError::new(offset, err.to_string()),
-        )),
+        Err(err) => Err(
+            BxesReadError::FailedToReadValue(FailedToReadValueError::new(offset, err.to_string()))
+        ),
     }
 }
 
@@ -239,9 +237,9 @@ fn try_read_enum<T: FromPrimitive>(reader: &mut BinaryReader) -> Result<T, BxesR
     let offset = try_tell_pos(reader)?;
     match reader.read_u8() {
         Ok(byte) => Ok(T::from_u8(byte).unwrap()),
-        Err(err) => Err(BxesReadError::FailedToReadValue(
-            FailedToReadValueError::new(offset, err.to_string()),
-        )),
+        Err(err) => Err(
+            BxesReadError::FailedToReadValue(FailedToReadValueError::new(offset, err.to_string()))
+        ),
     }
 }
 

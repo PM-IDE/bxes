@@ -16,7 +16,7 @@ pub enum BxesReadError {
     FailedToExtractArchive,
     TooManyFilesInArchive,
     FailedToCreateTempDir,
-    InvalidArchive(String)
+    InvalidArchive(String),
 }
 
 #[derive(Debug)]
