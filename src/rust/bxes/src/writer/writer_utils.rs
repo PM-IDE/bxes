@@ -420,9 +420,12 @@ pub fn compress_to_archive(log_path: &str, save_path: &str) -> Result<(), BxesWr
         .start_file(archive_log_name, options)
         .or_else(|_| Err(BxesWriteError::FailedToCreateArchive))?;
 
+    let bytes = fs::read(log_path).unwrap();
     zip_writer
-        .write(&fs::read(log_path).unwrap())
+        .write_all(&bytes)
         .or_else(|_| Err(BxesWriteError::FailedToCreateArchive))?;
+
+    zip_writer.flush().or_else(|_| Err(BxesWriteError::FailedToCreateArchive))?;
 
     zip_writer
         .finish()
