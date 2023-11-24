@@ -20,7 +20,7 @@ pub fn generate_random_log() -> BxesEventLog {
 }
 
 fn generate_random_variants(rng: &mut ThreadRng) -> Vec<BxesTraceVariant> {
-    let variants_count = rng.gen_range(0..10);
+    let variants_count = rng.gen_range(0..5);
     let mut variants = vec![];
 
     for _ in 0..variants_count {
@@ -55,7 +55,7 @@ fn generate_random_event(rng: &mut ThreadRng) -> BxesEvent {
 }
 
 fn generate_random_attributes(rng: &mut ThreadRng) -> Option<Vec<(BxesValue, BxesValue)>> {
-    let attributes_count = rng.gen::<usize>();
+    let attributes_count = rng.gen_range(0..20);
     if attributes_count == 0 {
         None
     } else {
@@ -80,7 +80,7 @@ fn generate_random_string_bxes_value(rng: &mut ThreadRng) -> BxesValue {
 }
 
 fn generate_random_string(rng: &mut ThreadRng) -> String {
-    let length = rng.gen_range(0..100);
+    let length = rng.gen_range(0..20);
     rng.sample_iter(&Alphanumeric)
         .take(length)
         .map(char::from)
@@ -118,7 +118,7 @@ fn generate_random_braf_lifecycle() -> BrafLifecycle {
 }
 
 fn generate_random_enum<T: FromPrimitive>(variant_count: usize) -> T {
-    T::from_usize(variant_count).unwrap()
+    T::from_usize(variant_count - 1).unwrap()
 }
 
 fn generate_random_standard_lifecycle() -> StandardLifecycle {
