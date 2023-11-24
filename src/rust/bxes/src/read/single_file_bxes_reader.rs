@@ -1,9 +1,24 @@
+use std::fs;
+
 use super::{errors::BxesReadError, read_utils::*};
 use crate::models::*;
 use binary_rw::{BinaryReader, Endian};
 
 pub fn read_bxes(path: &str) -> Result<BxesEventLog, BxesReadError> {
-    let mut stream = try_open_file_stream(path)?;
+    let extracted_files_dir = try_extract_archive(path)?;
+    let extracted_files_dir = extracted_files_dir.path();
+
+    let files = fs::read_dir(extracted_files_dir)
+        .unwrap()
+        .into_iter()
+        .map(|r| r.unwrap().path().to_str().unwrap().to_string())
+        .collect::<Vec<String>>();
+    
+    if files.len() != 0 {
+        return Err(BxesReadError::InvalidArchive(format!("Expected one file, got {:?}", files)));
+    }
+
+    let mut stream = try_open_file_stream(files[0].as_str())?;
     let mut reader = BinaryReader::new(&mut stream, Endian::Little);
     let version = try_read_u32(&mut reader)?;
 

@@ -1,7 +1,9 @@
-use std::rc::Rc;
+use std::{fs::File, rc::Rc};
 
 use binary_rw::{BinaryReader, FileStream, SeekStream};
 use num_traits::FromPrimitive;
+use tempfile::TempDir;
+use zip::ZipArchive;
 
 use crate::{models::*, type_ids};
 
@@ -247,6 +249,30 @@ fn try_read_standard_lifecycle(
     reader: &mut BinaryReader,
 ) -> Result<StandardLifecycle, BxesReadError> {
     try_read_enum::<StandardLifecycle>(reader)
+}
+
+pub fn try_extract_archive(path: &str) -> Result<TempDir, BxesReadError> {
+    let fs = match File::open(path) {
+        Ok(fs) => fs,
+        Err(err) => return Err(BxesReadError::FailedToOpenFile(err.to_string())),
+    };
+
+    let mut archive = match ZipArchive::new(fs) {
+        Ok(archive) => archive,
+        Err(err) => return Err(BxesReadError::FailedToOpenFile(err.to_string())),
+    };
+
+    let temp_dir = match TempDir::new() {
+        Ok(temp_dir) => temp_dir,
+        Err(_) => return Err(BxesReadError::FailedToCreateTempDir),
+    };
+
+    match archive.extract(temp_dir.path()) {
+        Ok(_) => {}
+        Err(_) => return Err(BxesReadError::FailedToExtractArchive),
+    };
+
+    return Ok(temp_dir);
 }
 
 pub fn try_open_file_stream(path: &str) -> Result<FileStream, BxesReadError> {

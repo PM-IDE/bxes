@@ -13,6 +13,10 @@ pub enum BxesReadError {
     LifecycleOfEventOutOfRange,
     EventAttributeKeyIsNotAString,
     VersionsMismatchError(VersionsMismatchError),
+    FailedToExtractArchive,
+    TooManyFilesInArchive,
+    FailedToCreateTempDir,
+    InvalidArchive(String)
 }
 
 #[derive(Debug)]
