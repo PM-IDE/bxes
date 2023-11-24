@@ -414,7 +414,9 @@ pub fn compress_to_archive(log_path: &str, save_path: &str) -> Result<(), BxesWr
     let mut zip_writer = ZipWriter::new(file);
 
     let archive_log_name = Path::new(save_path).file_name().unwrap().to_str().unwrap();
-    let options = FileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+    let options = FileOptions::default()
+        .compression_method(zip::CompressionMethod::Deflated)
+        .compression_level(Some(8));
 
     zip_writer
         .start_file(archive_log_name, options)
@@ -425,7 +427,9 @@ pub fn compress_to_archive(log_path: &str, save_path: &str) -> Result<(), BxesWr
         .write_all(&bytes)
         .or_else(|_| Err(BxesWriteError::FailedToCreateArchive))?;
 
-    zip_writer.flush().or_else(|_| Err(BxesWriteError::FailedToCreateArchive))?;
+    zip_writer
+        .flush()
+        .or_else(|_| Err(BxesWriteError::FailedToCreateArchive))?;
 
     zip_writer
         .finish()
