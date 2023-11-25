@@ -5,7 +5,7 @@ namespace Bxes.Models;
 
 public class BxesInt32Value(int value) : BxesValue<int>(value)
 {
-  public override byte TypeId => TypeIds.I32;
+  public override TypeIds TypeId => TypeIds.I32;
 
 
   public override void WriteTo(BxesWriteContext context)
@@ -17,7 +17,7 @@ public class BxesInt32Value(int value) : BxesValue<int>(value)
 
 public class BxesInt64Value(long value) : BxesValue<long>(value)
 {
-  public override byte TypeId => TypeIds.I64;
+  public override TypeIds TypeId => TypeIds.I64;
 
 
   public override void WriteTo(BxesWriteContext context)
@@ -29,7 +29,7 @@ public class BxesInt64Value(long value) : BxesValue<long>(value)
 
 public class BxesUint32Value(uint value) : BxesValue<uint>(value)
 {
-  public override byte TypeId => TypeIds.U32;
+  public override TypeIds TypeId => TypeIds.U32;
 
 
   public override void WriteTo(BxesWriteContext context)
@@ -41,7 +41,7 @@ public class BxesUint32Value(uint value) : BxesValue<uint>(value)
 
 public class BxesUint64Value(ulong value) : BxesValue<ulong>(value)
 {
-  public override byte TypeId => TypeIds.U64;
+  public override TypeIds TypeId => TypeIds.U64;
 
 
   public override void WriteTo(BxesWriteContext context)
@@ -53,7 +53,7 @@ public class BxesUint64Value(ulong value) : BxesValue<ulong>(value)
 
 public class BxesFloat32Value(float value) : BxesValue<float>(value)
 {
-  public override byte TypeId => TypeIds.F32;
+  public override TypeIds TypeId => TypeIds.F32;
 
 
   public override void WriteTo(BxesWriteContext context)
@@ -65,7 +65,7 @@ public class BxesFloat32Value(float value) : BxesValue<float>(value)
 
 public class BxesFloat64Value(double value) : BxesValue<double>(value)
 {
-  public override byte TypeId => TypeIds.F64;
+  public override TypeIds TypeId => TypeIds.F64;
 
 
   public override void WriteTo(BxesWriteContext context)
@@ -77,7 +77,7 @@ public class BxesFloat64Value(double value) : BxesValue<double>(value)
 
 public class BxesBoolValue(bool value) : BxesValue<bool>(value)
 {
-  public override byte TypeId => TypeIds.Bool;
+  public override TypeIds TypeId => TypeIds.Bool;
 
 
   public override void WriteTo(BxesWriteContext context)
@@ -89,7 +89,7 @@ public class BxesBoolValue(bool value) : BxesValue<bool>(value)
 
 public class BxesStringValue(string value) : BxesValue<string>(value)
 {
-  public override byte TypeId => TypeIds.String;
+  public override TypeIds TypeId => TypeIds.String;
 
 
   public override void WriteTo(BxesWriteContext context)
@@ -104,7 +104,7 @@ public class BxesStringValue(string value) : BxesValue<string>(value)
 
 public class BxesTimeStampValue(long value) : BxesValue<long>(value)
 {
-  public override byte TypeId => TypeIds.Timestamp;
+  public override TypeIds TypeId => TypeIds.Timestamp;
 
   public DateTime Timestamp { get; } = new(value, DateTimeKind.Utc);
 
@@ -124,7 +124,7 @@ public class BxesArtifactItem
 
 public class BxesArtifactModelsListValue(List<BxesArtifactItem> items) : BxesValue<List<BxesArtifactItem>>(items)
 {
-  public override byte TypeId => TypeIds.Artifact;
+  public override TypeIds TypeId => TypeIds.Artifact;
 
   public override void WriteTo(BxesWriteContext context)
   {
@@ -151,7 +151,7 @@ public class BxesDriver
 
 public class BxesDriversListValue(List<BxesDriver> drivers) : BxesValue<List<BxesDriver>>(drivers)
 {
-  public override byte TypeId => TypeIds.Drivers;
+  public override TypeIds TypeId => TypeIds.Drivers;
 
 
   public override void WriteTo(BxesWriteContext context)
@@ -170,7 +170,7 @@ public class BxesDriversListValue(List<BxesDriver> drivers) : BxesValue<List<Bxe
 
 public class BxesGuidValue(Guid guid) : BxesValue<Guid>(guid)
 {
-  public override byte TypeId => TypeIds.Guid;
+  public override TypeIds TypeId => TypeIds.Guid;
 
 
   public override unsafe void WriteTo(BxesWriteContext context)
@@ -203,7 +203,7 @@ public class BxesSoftwareEventTypeValue(SoftwareEventTypeValues values) : BxesVa
     false => throw new IndexOutOfRangeException()
   };
   
-  public override byte TypeId => TypeIds.SoftwareEventType;
+  public override TypeIds TypeId => TypeIds.SoftwareEventType;
 
   public override void WriteTo(BxesWriteContext context)
   {

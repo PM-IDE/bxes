@@ -56,7 +56,7 @@ public static class TestLogsProvider
 
   private static BxesValue GenerateRandomBxesValue()
   {
-    var typeId = Random.Shared.Next(0, 11);
+    var typeId = (TypeIds)Random.Shared.Next(Enum.GetValues<TypeIds>().Length);
     return typeId switch
     {
       TypeIds.I32 => new BxesInt32Value(Random.Shared.Next(10000)),

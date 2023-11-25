@@ -4,14 +4,14 @@ namespace Bxes.Models;
 
 public abstract class BxesValue
 {
-  public abstract byte TypeId { get; }
+  public abstract TypeIds TypeId { get; }
   public abstract void WriteTo(BxesWriteContext context);
 
   public static unsafe BxesValue Parse(BinaryReader reader, List<BxesValue> parsedValues)
   {
     var valuesOffset = reader.BaseStream.Position;
 
-    var typeId = reader.ReadByte();
+    var typeId = (TypeIds)reader.ReadByte();
 
     switch (typeId)
     {
@@ -112,7 +112,7 @@ public abstract class BxesValue<TValue>(TValue value) : BxesValue
 
   public override void WriteTo(BxesWriteContext context)
   {
-    context.Writer.Write(TypeId);
+    context.Writer.Write((byte)TypeId);
   }
 
   public override bool Equals(object? obj) => obj is BxesValue<TValue> otherValue && otherValue.Value.Equals(Value);

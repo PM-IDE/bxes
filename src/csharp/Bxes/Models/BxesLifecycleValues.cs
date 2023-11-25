@@ -60,7 +60,7 @@ public class StandardXesLifecycle(StandardLifecycleValues value) : EventLifecycl
     false => throw new IndexOutOfRangeException()
   };
 
-  public override byte TypeId => TypeIds.StandardLifecycle;
+  public override TypeIds TypeId => TypeIds.StandardLifecycle;
 
 
   public override void WriteTo(BxesWriteContext context)
@@ -78,7 +78,7 @@ public class BrafLifecycle(BrafLifecycleValues value) : EventLifecycle<BrafLifec
     false => throw new IndexOutOfRangeException()
   };
 
-  public override byte TypeId => TypeIds.BrafLifecycle;
+  public override TypeIds TypeId => TypeIds.BrafLifecycle;
 
 
   public override void WriteTo(BxesWriteContext context)
