@@ -34,7 +34,7 @@ public static class TestLogsProvider
     new(
       Random.Shared.Next(10123123),
       new BxesStringValue(GenerateRandomString()),
-      new BrafLifecycle(GenerateRandomBrafLifecycle()),
+      new BrafLifecycle(GenerateRandomEnum<BrafLifecycleValues>()),
       GenerateRandomAttributes()
     );
 
@@ -68,9 +68,60 @@ public static class TestLogsProvider
       TypeIds.String => new BxesStringValue(GenerateRandomString()),
       TypeIds.Bool => new BxesBoolValue(GenerateRandomBool()),
       TypeIds.Timestamp => new BxesInt64Value(Random.Shared.Next(10000)),
-      TypeIds.BrafLifecycle => new BrafLifecycle(GenerateRandomBrafLifecycle()),
-      TypeIds.StandardLifecycle => new StandardXesLifecycle(GenerateStandardLifecycleValues()),
+      TypeIds.BrafLifecycle => new BrafLifecycle(GenerateRandomEnum<BrafLifecycleValues>()),
+      TypeIds.StandardLifecycle => new StandardXesLifecycle(GenerateRandomEnum<StandardLifecycleValues>()),
+      TypeIds.Artifact => GenerateRandomArtifact(),
+      TypeIds.Drivers => GenerateRandomDrivers(),
+      TypeIds.Guid => GenerateGuidValue(),
+      TypeIds.SoftwareEventType => new BxesSoftwareEventTypeValue(GenerateRandomEnum<SoftwareEventTypeValues>()),
       _ => throw new ArgumentOutOfRangeException()
+    };
+  }
+
+  private static BxesGuidValue GenerateGuidValue() => new(Guid.NewGuid());
+
+  private static BxesDriversListValue GenerateRandomDrivers()
+  {
+    var artifactCount = Random.Shared.Next(100);
+    var drivers = new List<BxesDriver>();
+
+    for (var i = 0; i < artifactCount; ++i)
+    {
+      drivers.Add(GenerateRandomDriver());
+    }
+
+    return new BxesDriversListValue(drivers);
+  }
+
+  private static BxesDriver GenerateRandomDriver()
+  {
+    return new BxesDriver
+    {
+      Amount = Random.Shared.NextDouble(),
+      Name = GenerateRandomString(),
+      Type = GenerateRandomString()
+    };
+  }
+  
+  private static BxesArtifactModelsListValue GenerateRandomArtifact()
+  {
+    var artifactsCount = Random.Shared.Next(100);
+    var models = new List<BxesArtifactItem>();
+
+    for (var i = 0; i < artifactsCount; ++i)
+    {
+      models.Add(GenerateRandomArtifactItem());
+    }
+
+    return new BxesArtifactModelsListValue(models);
+  }
+
+  private static BxesArtifactItem GenerateRandomArtifactItem()
+  {
+    return new BxesArtifactItem
+    {
+      Instance = GenerateRandomString(),
+      Transition = GenerateRandomString()
     };
   }
 
@@ -87,8 +138,6 @@ public static class TestLogsProvider
 
   private static char GenerateRandomChar() => (char)('a' + Random.Shared.Next('z' - 'a' + 1));
 
-  private static BrafLifecycleValues GenerateRandomBrafLifecycle() => (BrafLifecycleValues)Random.Shared.Next(20);
-
-  private static StandardLifecycleValues GenerateStandardLifecycleValues() =>
-    (StandardLifecycleValues)Random.Shared.Next(14);
+  private static T GenerateRandomEnum<T>() where T : struct, Enum => 
+     Enum.GetValues<T>()[Random.Shared.Next(Enum.GetValues<T>().Length)];
 }
