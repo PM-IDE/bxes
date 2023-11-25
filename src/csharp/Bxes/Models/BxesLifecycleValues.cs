@@ -1,3 +1,5 @@
+using Bxes.Writer;
+
 namespace Bxes.Models;
 
 public enum BrafLifecycleValues : byte
@@ -44,7 +46,7 @@ public enum StandardLifecycleValues : byte
 
 public interface IEventLifecycle
 {
-  void WriteTo(BinaryWriter bw);
+  void WriteTo(BxesWriteContext context);
 }
 
 public abstract class EventLifecycle<TLifecycleValue>(TLifecycleValue value)
@@ -61,10 +63,10 @@ public class StandardXesLifecycle(StandardLifecycleValues value) : EventLifecycl
   public override byte TypeId => TypeIds.StandardLifecycle;
 
 
-  public override void WriteTo(BinaryWriter bw)
+  public override void WriteTo(BxesWriteContext context)
   {
-    base.WriteTo(bw);
-    bw.Write((byte)Value);
+    base.WriteTo(context);
+    context.Writer.Write((byte)Value);
   }
 }
 
@@ -79,9 +81,9 @@ public class BrafLifecycle(BrafLifecycleValues value) : EventLifecycle<BrafLifec
   public override byte TypeId => TypeIds.BrafLifecycle;
 
 
-  public override void WriteTo(BinaryWriter bw)
+  public override void WriteTo(BxesWriteContext context)
   {
-    base.WriteTo(bw);
-    bw.Write((byte)Value);
+    base.WriteTo(context);
+    context.Writer.Write((byte)Value);
   }
 }

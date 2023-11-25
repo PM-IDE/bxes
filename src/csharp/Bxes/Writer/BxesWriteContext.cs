@@ -4,7 +4,7 @@ namespace Bxes.Writer;
 
 public record AttributeKeyValue(BxesStringValue Key, BxesValue Value);
 
-internal readonly struct BxesWriteContext(BinaryWriter binaryWriter)
+public readonly struct BxesWriteContext(BinaryWriter binaryWriter)
 {
   public BinaryWriter Writer { get; } = binaryWriter;
   public Dictionary<BxesValue, uint> ValuesIndices { get; } = new();

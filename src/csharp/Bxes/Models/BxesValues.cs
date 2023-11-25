@@ -1,9 +1,11 @@
+using Bxes.Writer;
+
 namespace Bxes.Models;
 
 public abstract class BxesValue
 {
   public abstract byte TypeId { get; }
-  public abstract void WriteTo(BinaryWriter bw);
+  public abstract void WriteTo(BxesWriteContext context);
 
   public static unsafe BxesValue Parse(BinaryReader reader, List<BxesValue> parsedValues)
   {
@@ -108,9 +110,9 @@ public abstract class BxesValue<TValue>(TValue value) : BxesValue
   public TValue Value { get; } = value;
 
 
-  public override void WriteTo(BinaryWriter bw)
+  public override void WriteTo(BxesWriteContext context)
   {
-    bw.Write(TypeId);
+    context.Writer.Write(TypeId);
   }
 
   public override bool Equals(object? obj) => obj is BxesValue<TValue> otherValue && otherValue.Value.Equals(Value);

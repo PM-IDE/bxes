@@ -69,7 +69,7 @@ internal static class BxesWriteUtils
   {
     if (!context.ValuesIndices.TryAdd(value, (IndexType)context.ValuesIndices.Count)) return false;
 
-    value.WriteTo(context.Writer);
+    value.WriteTo(context);
     return true;
   }
 
@@ -150,7 +150,7 @@ internal static class BxesWriteUtils
   {
     context.Writer.Write(context.ValuesIndices[new BxesStringValue(@event.Name)]);
     context.Writer.Write(@event.Timestamp);
-    @event.Lifecycle.WriteTo(context.Writer);
+    @event.Lifecycle.WriteTo(context);
 
     WriteCollectionAndCount(@event.Attributes, context, (pair, writeContext) =>
     {
