@@ -13,4 +13,8 @@ public static class TypeIds
   public const byte Timestamp = 8;
   public const byte BrafLifecycle = 9;
   public const byte StandardLifecycle = 10;
+  public const byte Artifact = 11;
+  public const byte Drivers = 12;
+  public const byte Guid = 13;
+  public const byte SoftwareEventType = 14;
 }

@@ -1,5 +1,3 @@
-using System.Text;
-
 namespace Bxes.Models;
 
 public abstract class BxesValue
@@ -7,7 +5,7 @@ public abstract class BxesValue
   public abstract byte TypeId { get; }
   public abstract void WriteTo(BinaryWriter bw);
 
-  public static BxesValue Parse(BinaryReader reader)
+  public static unsafe BxesValue Parse(BinaryReader reader, List<BxesValue> parsedValues)
   {
     var valuesOffset = reader.BaseStream.Position;
 
@@ -53,6 +51,47 @@ public abstract class BxesValue
         return BrafLifecycle.Parse(reader.ReadByte());
       case TypeIds.StandardLifecycle:
         return StandardXesLifecycle.Parse(reader.ReadByte());
+      case TypeIds.Artifact:
+        var modelsCount = reader.ReadUInt32();
+        var models = new List<BxesArtifactItem>();
+        for (var i = 0; i < modelsCount; ++i)
+        {
+          var instance = (BxesStringValue)parsedValues[(int)reader.ReadUInt32()];
+          var transition = (BxesStringValue)parsedValues[(int)reader.ReadUInt32()];
+          
+          models.Add(new BxesArtifactItem
+          {
+            Instance = instance.Value,
+            Transition = transition.Value
+          });
+        }
+
+        return new BxesArtifactModelsListValue(models);
+      case TypeIds.Drivers:
+        var driversCount = reader.ReadUInt32();
+        var drivers = new List<BxesDriver>();
+        for (var i = 0; i < driversCount; ++i)
+        {
+          drivers.Add(new BxesDriver
+          {
+            Amount = reader.ReadDouble(),
+            Name = ((BxesStringValue)parsedValues[(int)reader.ReadUInt32()]).Value,
+            Type = ((BxesStringValue)parsedValues[(int)reader.ReadUInt32()]).Value
+          });
+        }
+
+        return new BxesDriversListValue(drivers);
+      case TypeIds.Guid:
+        Span<byte> guidSpan = stackalloc byte[16];
+        var readBytes = reader.Read(guidSpan);
+        if (readBytes != guidSpan.Length)
+        {
+          throw new ParseException(valuesOffset, $"Failed to read guid, read {readBytes}, expected {guidSpan.Length}");
+        }
+
+        return new BxesGuidValue(new Guid(guidSpan));
+      case TypeIds.SoftwareEventType:
+        return BxesSoftwareEventTypeValue.Parse(reader.ReadByte());
     }
 
     throw new ParseException(valuesOffset, $"Failed to find type for type id {typeId}");

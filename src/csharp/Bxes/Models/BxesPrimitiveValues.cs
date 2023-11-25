@@ -112,3 +112,53 @@ public class BxesTimeStampValue(long value) : BxesValue<long>(value)
     bw.Write(value);
   }
 }
+
+public class BxesArtifactItem
+{
+  public required string Instance { get; init; }
+  public required string Transition { get; init; }
+}
+
+public class BxesArtifactModelsListValue(List<BxesArtifactItem> items) : BxesValue<List<BxesArtifactItem>>(items)
+{
+  public override byte TypeId => TypeIds.Artifact;
+}
+
+public class BxesDriver
+{
+  public required double Amount { get; init; }
+  public required string Name { get; init; }
+  public required string Type { get; init; }
+}
+
+public class BxesDriversListValue(List<BxesDriver> drivers) : BxesValue<List<BxesDriver>>(drivers)
+{
+  public override byte TypeId => TypeIds.Drivers;
+}
+
+public class BxesGuidValue(Guid guid) : BxesValue<Guid>(guid)
+{
+  public override byte TypeId => TypeIds.Guid;
+}
+
+public enum SoftwareEventTypeValues
+{ 
+  Unspecified = 0,
+  Call = 1,
+  Return = 2,
+  Throws = 3,
+  Handle = 4,
+  Calling = 5,
+  Returning = 6,
+}
+
+public class BxesSoftwareEventTypeValue(SoftwareEventTypeValues values) : BxesValue<SoftwareEventTypeValues>(values)
+{
+  public static BxesSoftwareEventTypeValue Parse(byte value) => Enum.IsDefined(typeof(SoftwareEventTypeValues), value) switch
+  {
+    true => new BxesSoftwareEventTypeValue((SoftwareEventTypeValues)value),
+    false => throw new IndexOutOfRangeException()
+  };
+  
+  public override byte TypeId => TypeIds.SoftwareEventType;
+}

@@ -35,7 +35,7 @@ public static class BxesReadUtils
 
     for (uint i = 0; i < valuesCount; ++i)
     {
-      values.Add(BxesValue.Parse(reader));
+      values.Add(BxesValue.Parse(reader, values));
     }
 
     return values;
@@ -84,7 +84,7 @@ public static class BxesReadUtils
       {
         var name = (BxesStringValue)values[(int)reader.ReadUInt32()];
         var timestamp = reader.ReadInt64();
-        var lifecycle = (IEventLifecycle)BxesValue.Parse(reader);
+        var lifecycle = (IEventLifecycle)BxesValue.Parse(reader, values);
 
         var attributesCount = reader.ReadUInt32();
         var eventAttributes = new List<AttributeKeyValue>();
