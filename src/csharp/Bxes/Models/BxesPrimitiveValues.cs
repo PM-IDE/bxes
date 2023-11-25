@@ -127,16 +127,20 @@ public class BxesArtifactModelsListValue(List<BxesArtifactItem> items) : BxesVal
 
   public override void WriteTo(BxesWriteContext context)
   {
+    foreach (var item in items)
+    {
+      BxesWriteUtils.WriteValueIfNeeded(new BxesStringValue(item.Instance), context);
+      BxesWriteUtils.WriteValueIfNeeded(new BxesStringValue(item.Transition), context);
+    }
+    
     base.WriteTo(context);
 
     context.Writer.Write((uint)items.Count);
+
     foreach (var item in items)
     {
-      var instanceIndex = context.GetOrWriteValueIndex(new BxesStringValue(item.Instance));
-      var transitionIndex = context.GetOrWriteValueIndex(new BxesStringValue(item.Transition));
-      
-      context.Writer.Write(instanceIndex);
-      context.Writer.Write(transitionIndex);
+      context.Writer.Write(context.ValuesIndices[new BxesStringValue(item.Instance)]);
+      context.Writer.Write(context.ValuesIndices[new BxesStringValue(item.Transition)]);
     }
   }
 }
@@ -155,18 +159,21 @@ public class BxesDriversListValue(List<BxesDriver> drivers) : BxesValue<List<Bxe
 
   public override void WriteTo(BxesWriteContext context)
   {
-    base.WriteTo(context);
-    context.Writer.Write((uint)drivers.Count);
+    foreach (var driver in drivers)
+    {
+      BxesWriteUtils.WriteValueIfNeeded(new BxesStringValue(driver.Name), context);
+      BxesWriteUtils.WriteValueIfNeeded(new BxesStringValue(driver.Type), context);
+    }
     
+    base.WriteTo(context);
+    
+    context.Writer.Write((uint)drivers.Count);
+
     foreach (var driver in drivers)
     {
       context.Writer.Write(driver.Amount);
-
-      var nameIndex = context.GetOrWriteValueIndex(new BxesStringValue(driver.Name));
-      context.Writer.Write(nameIndex);
-
-      var typeIndex = context.GetOrWriteValueIndex(new BxesStringValue(driver.Type));
-      context.Writer.Write(typeIndex);
+      context.Writer.Write(context.ValuesIndices[new BxesStringValue(driver.Name)]);
+      context.Writer.Write(context.ValuesIndices[new BxesStringValue(driver.Type)]);
     }
   }
 }
