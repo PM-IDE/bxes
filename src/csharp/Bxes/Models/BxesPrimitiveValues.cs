@@ -1,4 +1,3 @@
-using System.Buffers.Binary;
 using Bxes.Writer;
 
 namespace Bxes.Models;
@@ -133,8 +132,8 @@ public class BxesArtifactModelsListValue(List<BxesArtifactItem> items) : BxesVal
     context.Writer.Write((uint)items.Count);
     foreach (var item in items)
     {
-      var instanceIndex = context.ValuesIndices[new BxesStringValue(item.Instance)];
-      var transitionIndex = context.ValuesIndices[new BxesStringValue(item.Transition)];
+      var instanceIndex = context.GetOrWriteValueIndex(new BxesStringValue(item.Instance));
+      var transitionIndex = context.GetOrWriteValueIndex(new BxesStringValue(item.Transition));
       
       context.Writer.Write(instanceIndex);
       context.Writer.Write(transitionIndex);
@@ -162,8 +161,12 @@ public class BxesDriversListValue(List<BxesDriver> drivers) : BxesValue<List<Bxe
     foreach (var driver in drivers)
     {
       context.Writer.Write(driver.Amount);
-      context.Writer.Write(context.ValuesIndices[new BxesStringValue(driver.Name)]);
-      context.Writer.Write(context.ValuesIndices[new BxesStringValue(driver.Type)]);
+
+      var nameIndex = context.GetOrWriteValueIndex(new BxesStringValue(driver.Name));
+      context.Writer.Write(nameIndex);
+
+      var typeIndex = context.GetOrWriteValueIndex(new BxesStringValue(driver.Type));
+      context.Writer.Write(typeIndex);
     }
   }
 }
@@ -184,7 +187,7 @@ public class BxesGuidValue(Guid guid) : BxesValue<Guid>(guid)
   }
 }
 
-public enum SoftwareEventTypeValues
+public enum SoftwareEventTypeValues : byte
 { 
   Unspecified = 0,
   Call = 1,

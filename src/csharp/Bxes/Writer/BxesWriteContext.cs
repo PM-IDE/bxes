@@ -22,4 +22,10 @@ public readonly struct BxesWriteContext(BinaryWriter binaryWriter)
 
 
   public BxesWriteContext WithWriter(BinaryWriter writer) => new(writer, ValuesIndices, KeyValueIndices);
+
+  public uint GetOrWriteValueIndex(BxesValue value)
+  {
+    BxesWriteUtils.WriteValueIfNeeded(value, this);
+    return ValuesIndices[value];
+  }
 }

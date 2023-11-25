@@ -74,11 +74,15 @@ public abstract class BxesValue
         var drivers = new List<BxesDriver>();
         for (var i = 0; i < driversCount; ++i)
         {
+          var amount = reader.ReadDouble();
+          var nameIndex = reader.ReadUInt32();
+          var typeIndex = reader.ReadUInt32();
+
           drivers.Add(new BxesDriver
           {
-            Amount = reader.ReadDouble(),
-            Name = ((BxesStringValue)parsedValues[(int)reader.ReadUInt32()]).Value,
-            Type = ((BxesStringValue)parsedValues[(int)reader.ReadUInt32()]).Value
+            Amount = amount,
+            Name = ((BxesStringValue)parsedValues[(int)nameIndex]).Value,
+            Type = ((BxesStringValue)parsedValues[(int)typeIndex]).Value
           });
         }
 
