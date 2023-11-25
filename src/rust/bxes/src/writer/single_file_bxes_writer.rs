@@ -1,7 +1,7 @@
-use std::{cell::RefCell, rc::Rc, io::Write};
+use std::{cell::RefCell, rc::Rc};
 
 use binary_rw::{BinaryWriter, Endian};
-use tempfile::{tempfile, NamedTempFile, TempPath};
+use tempfile::NamedTempFile;
 
 use crate::models::BxesEventLog;
 

@@ -1,4 +1,4 @@
-use binary_rw::{BinaryWriter, FileStream, SeekStream};
+use binary_rw::{BinaryError, BinaryWriter, FileStream, SeekStream};
 use num_traits::ToPrimitive;
 use std::{
     cell::RefCell,
@@ -10,7 +10,10 @@ use std::{
 use zip::{write::FileOptions, ZipWriter};
 
 use crate::{
-    models::{BrafLifecycle, BxesEvent, BxesEventLog, BxesValue, Lifecycle, StandardLifecycle},
+    models::{
+        BrafLifecycle, BxesArtifact, BxesDrivers, BxesEvent, BxesEventLog, BxesValue, Lifecycle,
+        SoftwareEventType, StandardLifecycle,
+    },
     type_ids,
 };
 
@@ -273,13 +276,92 @@ pub fn try_write_value<'a: 'b, 'b>(
         BxesValue::StandardLifecycle(value) => {
             try_write_standard_lifecycle(context.writer.as_mut().unwrap(), value)
         }
+        BxesValue::Artifact(artifacts) => try_write_artifact(context, artifacts),
+        BxesValue::Drivers(drivers) => try_write_drivers(context, drivers),
+        BxesValue::Guid(guid) => try_write_guid(context.writer.as_mut().unwrap(), guid),
+        BxesValue::SoftwareEventType(value) => {
+            try_write_software_event_type(context.writer.as_mut().unwrap(), value)
+        }
     }?;
 
     Ok(true)
 }
 
+pub fn try_write_software_event_type(
+    writer: &mut BinaryWriter,
+    value: &SoftwareEventType,
+) -> Result<(), BxesWriteError> {
+    try_write_enum_value(writer, type_ids::SOFTWARE_EVENT_TYPE, value)
+}
+
+pub fn try_write_guid(writer: &mut BinaryWriter, guid: &uuid::Uuid) -> Result<(), BxesWriteError> {
+    try_write(|| {
+        writer.write_u8(type_ids::GUID);
+        writer.write_bytes(guid.as_bytes())
+    })
+}
+
+pub fn try_write_artifact<'a: 'b, 'b>(
+    context: &mut BxesWriteContext<'a, 'b>,
+    artifacts: &'a BxesArtifact,
+) -> Result<(), BxesWriteError> {
+    try_write_u8_no_type_id(context.writer.as_mut().unwrap(), type_ids::ARTIFACT)?;
+    try_write_u32_no_type_id(
+        context.writer.as_mut().unwrap(),
+        artifacts.items.len() as u32,
+    )?;
+
+    for artifact in &artifacts.items {
+        let instance_index = get_or_write_value_index(&artifact.instance, context)?;
+        try_write_u32_no_type_id(context.writer.as_mut().unwrap(), instance_index as u32)?;
+
+        let transition_index = get_or_write_value_index(&artifact.transition, context)?;
+        try_write_u32_no_type_id(context.writer.as_mut().unwrap(), transition_index as u32)?;
+    }
+
+    Ok(())
+}
+
+fn get_or_write_value_index<'a: 'b, 'b>(
+    value: &'a BxesValue,
+    context: &mut BxesWriteContext<'a, 'b>,
+) -> Result<u32, BxesWriteError> {
+    if let Some(index) = context.values_indices.borrow().get(&value) {
+        return Ok(*index as u32);
+    }
+
+    let index = context.values_indices.borrow().len() as u32;
+    try_write_value(value, context)?;
+
+    Ok(index)
+}
+
+pub fn try_write_drivers<'a: 'b, 'b>(
+    context: &mut BxesWriteContext<'a, 'b>,
+    drivers: &'a BxesDrivers,
+) -> Result<(), BxesWriteError> {
+    try_write_u8_no_type_id(context.writer.as_mut().unwrap(), type_ids::DRIVERS)?;
+    try_write_u32_no_type_id(
+        context.writer.as_mut().unwrap(),
+        drivers.drivers.len() as u32,
+    )?;
+
+    for driver in &drivers.drivers {
+        try_write_f64_no_type_id(context.writer.as_mut().unwrap(), driver.amount())?;
+
+        let name_index = get_or_write_value_index(&driver.name, context)?;
+
+        let driver_type_index = get_or_write_value_index(&driver.driver_type, context)?;
+
+        try_write_u32_no_type_id(context.writer.as_mut().unwrap(), name_index)?;
+        try_write_u32_no_type_id(context.writer.as_mut().unwrap(), driver_type_index)?;
+    }
+
+    Ok(())
+}
+
 pub fn try_write_i32(writer: &mut BinaryWriter, value: i32) -> Result<(), BxesWriteError> {
-    try_write_primitive_value(|| {
+    try_write(|| {
         writer.write_u8(type_ids::I_32)?;
         writer.write_i32(value)
     })
@@ -289,11 +371,11 @@ pub fn try_write_i64_no_type_id(
     writer: &mut BinaryWriter,
     value: i64,
 ) -> Result<(), BxesWriteError> {
-    try_write_primitive_value(|| writer.write_i64(value))
+    try_write(|| writer.write_i64(value))
 }
 
 pub fn try_write_i64(writer: &mut BinaryWriter, value: i64) -> Result<(), BxesWriteError> {
-    try_write_primitive_value(|| {
+    try_write(|| {
         writer.write_u8(type_ids::I_64)?;
         writer.write_i64(value)
     })
@@ -303,46 +385,57 @@ pub fn try_write_u32_no_type_id(
     writer: &mut BinaryWriter,
     value: u32,
 ) -> Result<(), BxesWriteError> {
-    try_write_primitive_value(|| writer.write_u32(value))
+    try_write(|| writer.write_u32(value))
 }
 
 pub fn try_write_u32(writer: &mut BinaryWriter, value: u32) -> Result<(), BxesWriteError> {
-    try_write_primitive_value(|| {
+    try_write(|| {
         writer.write_u8(type_ids::U_32)?;
         writer.write_u32(value)
     })
 }
 
 pub fn try_write_u64(writer: &mut BinaryWriter, value: u64) -> Result<(), BxesWriteError> {
-    try_write_primitive_value(|| {
+    try_write(|| {
         writer.write_u8(type_ids::U_64)?;
         writer.write_u64(value)
     })
 }
 
 pub fn try_write_f32(writer: &mut BinaryWriter, value: f32) -> Result<(), BxesWriteError> {
-    try_write_primitive_value(|| {
+    try_write(|| {
         writer.write_u8(type_ids::F_32)?;
         writer.write_f32(value)
     })
 }
 
+pub fn try_write_u8_no_type_id(writer: &mut BinaryWriter, value: u8) -> Result<(), BxesWriteError> {
+    try_write(|| writer.write_u8(value))
+}
+
 pub fn try_write_f64(writer: &mut BinaryWriter, value: f64) -> Result<(), BxesWriteError> {
-    try_write_primitive_value(|| {
+    try_write(|| {
         writer.write_u8(type_ids::F_64)?;
         writer.write_f64(value)
     })
 }
 
+pub fn try_write_f64_no_type_id(
+    writer: &mut BinaryWriter,
+    value: f64,
+) -> Result<(), BxesWriteError> {
+    try_write(|| writer.write_f64(value))
+}
+
 pub fn try_write_bool(writer: &mut BinaryWriter, value: bool) -> Result<(), BxesWriteError> {
-    try_write_primitive_value(|| {
+    try_write(|| {
         writer.write_u8(type_ids::BOOL)?;
         writer.write_u8(if value { 1 } else { 0 })
     })
 }
 
 pub fn try_write_string(writer: &mut BinaryWriter, value: &str) -> Result<(), BxesWriteError> {
-    try_write_primitive_value(|| {
+    try_write(|| {
         writer.write_u8(type_ids::STRING)?;
         writer.write_u64(value.len() as u64)?;
         writer.write_bytes(value.as_bytes())
@@ -373,7 +466,7 @@ fn try_write_enum_value<T: ToPrimitive>(
     type_id: u8,
     value: &T,
 ) -> Result<(), BxesWriteError> {
-    try_write_primitive_value(|| {
+    try_write(|| {
         writer.write_u8(type_id)?;
         writer.write_u8(T::to_u8(value).unwrap())
     })
@@ -387,13 +480,13 @@ pub fn try_write_standard_lifecycle(
 }
 
 pub fn try_write_timestamp(writer: &mut BinaryWriter, value: i64) -> Result<(), BxesWriteError> {
-    try_write_primitive_value(|| {
+    try_write(|| {
         writer.write_u8(type_ids::TIMESTAMP)?;
         writer.write_i64(value)
     })
 }
 
-fn try_write_primitive_value(
+fn try_write(
     mut write_func: impl FnMut() -> binary_rw::Result<usize>,
 ) -> Result<(), BxesWriteError> {
     match write_func() {
