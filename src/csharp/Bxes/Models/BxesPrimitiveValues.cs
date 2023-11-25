@@ -1,3 +1,4 @@
+using Bxes.Utils;
 using Bxes.Writer;
 
 namespace Bxes.Models;
@@ -115,7 +116,7 @@ public class BxesTimeStampValue(long value) : BxesValue<long>(value)
   }
 }
 
-public class BxesArtifactItem
+public record BxesArtifactItem
 {
   public required string Instance { get; init; }
   public required string Transition { get; init; }
@@ -143,9 +144,18 @@ public class BxesArtifactModelsListValue(List<BxesArtifactItem> items) : BxesVal
       context.Writer.Write(context.ValuesIndices[new BxesStringValue(item.Transition)]);
     }
   }
+
+  public override bool Equals(object? obj)
+  {
+    return obj is BxesArtifactModelsListValue other &&
+           Value.Count == other.Value.Count &&
+           other.Value.Zip(Value).All(pair => pair.First.Equals(pair.Second));
+  }
+
+  public override int GetHashCode() => Value.CalculateHashCode();
 }
 
-public class BxesDriver
+public record BxesDriver
 {
   public required double Amount { get; init; }
   public required string Name { get; init; }
@@ -176,6 +186,15 @@ public class BxesDriversListValue(List<BxesDriver> drivers) : BxesValue<List<Bxe
       context.Writer.Write(context.ValuesIndices[new BxesStringValue(driver.Type)]);
     }
   }
+
+  public override bool Equals(object? obj)
+  {
+    return obj is BxesDriversListValue other &&
+           Value.Count == other.Value.Count &&
+           other.Value.Zip(Value).All(pair => pair.First.Equals(pair.Second));
+  }
+
+  public override int GetHashCode() => Value.CalculateHashCode();
 }
 
 public class BxesGuidValue(Guid guid) : BxesValue<Guid>(guid)
