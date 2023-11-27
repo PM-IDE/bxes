@@ -252,7 +252,7 @@ pub fn try_read_artifact_item(
 pub fn try_read_guid(reader: &mut BinaryReader) -> Result<Uuid, BxesReadError> {
     try_read(try_tell_pos(reader)?, || {
         let bytes = reader.read_bytes(16)?;
-        Ok(Uuid::from_slice(bytes.as_slice()).unwrap())
+        Ok(Uuid::from_slice_le(bytes.as_slice()).unwrap())
     })
 }
 
