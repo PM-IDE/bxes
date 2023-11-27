@@ -189,16 +189,18 @@ Type id + additional type info (i.e. length of a string) forms a header of a val
 - The number of metadata values is written (`u32`)
 - The key-values pairs are written
 - The number of properties is written (`u32`)
-- The properties are written: key-value pairs
+- The properties are written: key-value pairs, key must be of type string 
 - The number of extensions is written (`u32`)
 - The extensions are written. The extension is tuple of three elements (name index (`u32`), prefix index (`u32`), uri index (`u32`))
-- The number of properties is written (`u32`)
-- The properties are written, key-value pairs
 - The number of entities for globals are written (`u8`)
 - The globals are written:
     - The entity identifier (`u8`)
     - The number globals is written (`u32`)
     - The globals are written: key-value pairs
+    - Type of entities:
+        - event = `0`
+        - trace = `1`
+        - log = `2`
 - The number of classifiers is written (`u32`)
 - The classifiers are written
     - The name index of a classifier is written
