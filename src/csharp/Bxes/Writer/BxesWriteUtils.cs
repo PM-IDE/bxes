@@ -68,7 +68,7 @@ internal static class BxesWriteUtils
   {
     var pairs = log.Traces
       .SelectMany(variant => variant.Events.SelectMany(EnumerateEventKeyValuePairs))
-      .Concat(log.Metadata);
+      .Concat(log.Metadata.EnumerateKeyValuePairs());
 
     WriteCollectionAndCount(pairs, context, WriteKeyValuePairIfNeeded, () => (IndexType)context.KeyValueIndices.Count);
   }
@@ -96,9 +96,51 @@ internal static class BxesWriteUtils
     context.KeyValueIndices[pair] = (IndexType)context.KeyValueIndices.Count;
   }
 
-  public static void WriteEventLogMetadata(IEventLog log, BxesWriteContext context)
+  public static void WriteEventLogMetadata(IEventLogMetadata metadata, BxesWriteContext context)
   {
-    WriteCollectionAndCount(log.Metadata, context, WriteKeyValueIndex, () => (IndexType)log.Metadata.Count());
+    context.Writer.Write((IndexType)metadata.Metadata.Count);
+    foreach (var pair in metadata.Metadata)
+    {
+      context.Writer.Write(context.KeyValueIndices[pair]);
+    }
+    
+    context.Writer.Write((IndexType)metadata.Properties.Count);
+    foreach (var pair in metadata.Properties)
+    {
+      context.Writer.Write(context.KeyValueIndices[pair]);
+    }
+    
+    context.Writer.Write((IndexType)metadata.Extensions.Count);
+    foreach (var extension in metadata.Extensions)
+    {
+      context.Writer.Write(context.ValuesIndices[extension.Name]);
+      context.Writer.Write(context.ValuesIndices[extension.Prefix]);
+      context.Writer.Write(context.ValuesIndices[extension.Uri]);
+    }
+    
+    context.Writer.Write((IndexType)metadata.Globals.Count);
+    foreach (var entityGlobal in metadata.Globals)
+    {
+      context.Writer.Write((byte)entityGlobal.Kind);
+      context.Writer.Write((IndexType)entityGlobal.Globals.Count);
+
+      foreach (var global in entityGlobal.Globals)
+      {
+        context.Writer.Write(context.KeyValueIndices[global]);
+      }
+    }
+    
+    context.Writer.Write((IndexType)metadata.Classifiers.Count);
+    foreach (var classifier in metadata.Classifiers)
+    {
+      context.Writer.Write(context.ValuesIndices[classifier.Name]);
+      context.Writer.Write((IndexType)classifier.Keys.Count);
+
+      foreach (var key in classifier.Keys)
+      {
+        context.Writer.Write(context.ValuesIndices[new BxesStringValue(key.Value)]);
+      }
+    }
   }
 
   public static void WriteKeyValueIndex(AttributeKeyValue tuple, BxesWriteContext context)
@@ -128,7 +170,7 @@ internal static class BxesWriteUtils
   {
     var values = log.Traces
       .SelectMany(variant => variant.Events.SelectMany(EnumerateEventValues))
-      .Concat(EnumerateMetadataValues(log.Metadata))
+      .Concat(log.Metadata.EnumerateValues())
       .ToList();
 
     WriteCollectionAndCount(values, context, WriteValueIfNeeded, () => (IndexType)context.ValuesIndices.Count);

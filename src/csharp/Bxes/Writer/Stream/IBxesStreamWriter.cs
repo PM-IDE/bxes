@@ -20,8 +20,18 @@ public sealed class BxesEventEvent<TEvent>(TEvent @event) : BxesStreamEvent
   public TEvent Event { get; set; } = @event;
 }
 
-public sealed class BxesLogMetadataKeyValueEvent(AttributeKeyValue metadataKeyValue)
+public sealed class BxesKeyValueEvent(AttributeKeyValue metadataKeyValue)
   : BxesStreamEvent
 {
   public AttributeKeyValue MetadataKeyValue { get; } = metadataKeyValue;
+}
+
+public sealed class BxesValueEvent(BxesValue value) : BxesStreamEvent
+{
+  public BxesValue Value { get; } = value;
+}
+
+public sealed class BxesLogMetadataEvent(IEventLogMetadata metadata) : BxesStreamEvent
+{
+  public IEventLogMetadata Metadata { get; } = metadata;
 }

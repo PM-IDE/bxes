@@ -54,17 +54,70 @@ public static class BxesReadUtils
     return keyValues;
   }
 
-  public static IEnumerable<AttributeKeyValue> ReadMetadata(
+  public static IEventLogMetadata ReadMetadata(
     BinaryReader reader, List<KeyValuePair<uint, uint>> keyValues, List<BxesValue> values)
   {
-    var metadataCount = reader.ReadUInt32();
-    var metadata = new List<AttributeKeyValue>();
-    for (uint i = 0; i < metadataCount; ++i)
+    var metadata = new EventLogMetadata();
+
+    var metadataKvCount = reader.ReadUInt32();
+    for (uint i = 0; i < metadataKvCount; ++i)
     {
       var kv = keyValues[(int)reader.ReadUInt32()];
-      metadata.Add(new((BxesStringValue)values[(int)kv.Key], values[(int)kv.Value]));
+      metadata.Metadata.Add(new((BxesStringValue)values[(int)kv.Key], values[(int)kv.Value]));
     }
 
+    var propertiesCount = reader.ReadUInt32();
+    for (uint i = 0; i < propertiesCount; ++i)
+    {
+      var kv = keyValues[(int)reader.ReadUInt32()];
+      metadata.Properties.Add(new AttributeKeyValue((BxesStringValue)values[(int)kv.Key], values[(int)kv.Value]));
+    }
+
+    var extensionsCount = reader.ReadUInt32();
+    for (uint i = 0; i < extensionsCount; ++i)
+    {
+      metadata.Extensions.Add(new BxesExtension
+      {
+        Name = (BxesStringValue)values[(int)reader.ReadUInt32()],
+        Prefix = (BxesStringValue)values[(int)reader.ReadUInt32()],
+        Uri = (BxesStringValue)values[(int)reader.ReadUInt32()],
+      });
+    }
+
+    var globalsEntitiesCount = reader.ReadUInt32();
+    for (uint i = 0; i < globalsEntitiesCount; ++i)
+    {
+      var entityType = (GlobalsEntityKind)reader.ReadByte();
+      var globalsCount = reader.ReadUInt32();
+      var entityGlobals = new List<AttributeKeyValue>();
+
+      for (uint j = 0; j < globalsCount; ++j)
+      {
+        var kv = keyValues[(int)reader.ReadUInt32()];
+        entityGlobals.Add(new AttributeKeyValue((BxesStringValue)values[(int)kv.Key], values[(int)kv.Value]));
+      }
+      
+      metadata.Globals.Add((entityType, entityGlobals));
+    }
+
+    var classifiersCount = reader.ReadUInt32();
+    for (uint i = 0; i < classifiersCount; ++i)
+    {
+      var classifierName = (BxesStringValue)values[(int)reader.ReadUInt32()];
+      var classifier = new BxesClassifier
+      {
+        Name = classifierName
+      };
+      
+      var keysCount = reader.ReadUInt32();
+      for (uint j = 0; j < keysCount; ++j)
+      {
+        classifier.Keys.Add((BxesStringValue)values[(int)reader.ReadUInt32()]);
+      }
+      
+      metadata.Classifiers.Add(classifier);
+    }
+    
     return metadata;
   }
 

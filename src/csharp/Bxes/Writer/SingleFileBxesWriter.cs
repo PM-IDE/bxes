@@ -1,4 +1,3 @@
-using System.IO.Compression;
 using Bxes.Models;
 using Bxes.Utils;
 
@@ -18,7 +17,7 @@ public class SingleFileBxesWriter : IBxesWriter
       BxesWriteUtils.WriteBxesVersion(writer, log.Version);
       BxesWriteUtils.WriteValues(log, context);
       BxesWriteUtils.WriteKeyValuePairs(log, context);
-      BxesWriteUtils.WriteEventLogMetadata(log, context);
+      BxesWriteUtils.WriteEventLogMetadata(log.Metadata, context);
       BxesWriteUtils.WriteTracesVariants(log, context);
     });
     

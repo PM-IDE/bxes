@@ -38,20 +38,82 @@ public static class TestLogsProvider
       GenerateRandomAttributes()
     );
 
-  private static IEnumerable<AttributeKeyValue> GenerateRandomAttributes() => 
-    GenerateRandomMetadata();
-
-  private static IEnumerable<AttributeKeyValue> GenerateRandomMetadata()
+  private static IEnumerable<AttributeKeyValue> GenerateRandomAttributes()
   {
-    var metadata = new List<AttributeKeyValue>();
-    var metadataCount = Random.Shared.Next(5);
+    var attributes = new List<AttributeKeyValue>();
+    var attributesCount = Random.Shared.Next(5);
 
-    for (var i = 0; i < metadataCount; ++i)
+    for (var i = 0; i < attributesCount; ++i)
     {
-      metadata.Add(new(new BxesStringValue(GenerateRandomString()), GenerateRandomBxesValue()));
+      attributes.Add(new(new BxesStringValue(GenerateRandomString()), GenerateRandomBxesValue()));
     }
 
+    return attributes;
+  }
+
+  private static IEventLogMetadata GenerateRandomMetadata()
+  {
+    var metadata = new EventLogMetadata();
+    metadata.Metadata.AddRange(GenerateRandomAttributes());
+    metadata.Properties.AddRange(GenerateRandomAttributes());
+    metadata.Classifiers.AddRange(GenerateRandomClassifiers());
+    metadata.Extensions.AddRange(GenerateRandomExtensions());
+    metadata.Globals.AddRange(GenerateRandomGlobals());
+
     return metadata;
+  }
+
+  private static List<BxesClassifier> GenerateRandomClassifiers()
+  {
+    var classifiers = new List<BxesClassifier>();
+    var classifiersCount = Random.Shared.Next(10);
+
+    for (var i = 0; i > classifiersCount; ++i)
+    {
+      var keysCount = Random.Shared.Next(5);
+      var keys = Enumerable.Range(0, keysCount).Select(_ => GenerateRandomBxesStringValue());
+      var classifier = new BxesClassifier
+      {
+        Name = GenerateRandomBxesStringValue(),
+      };
+      
+      classifier.Keys.AddRange(keys);
+      classifiers.Add(classifier);
+    }
+
+    return classifiers;
+  }
+
+  private static List<BxesExtension> GenerateRandomExtensions()
+  {
+    var extensions = new List<BxesExtension>();
+    var extensionsCount = Random.Shared.Next(10);
+
+    for (var i = 0; i < extensionsCount; ++i)
+    {
+      extensions.Add(new BxesExtension
+      {
+        Name = GenerateRandomBxesStringValue(),
+        Prefix = GenerateRandomBxesStringValue(),
+        Uri =GenerateRandomBxesStringValue(),
+      });
+    }
+
+    return extensions;
+  }
+
+  private static List<(GlobalsEntityKind, List<AttributeKeyValue>)> GenerateRandomGlobals()
+  {
+    var globals = new List<(GlobalsEntityKind, List<AttributeKeyValue>)>();
+    var globalsCount = Random.Shared.Next(10);
+    var kindValues = Enum.GetValues<GlobalsEntityKind>();
+      
+    for (var i = 0; i < globalsCount; ++i)
+    {
+      globals.Add((kindValues[Random.Shared.Next(kindValues.Length)], GenerateRandomAttributes().ToList()));
+    }
+
+    return globals;
   }
 
   private static BxesValue GenerateRandomBxesValue()
@@ -129,6 +191,8 @@ public static class TestLogsProvider
   {
     return Random.Shared.Next(2) == 1;
   }
+
+  private static BxesStringValue GenerateRandomBxesStringValue() => new BxesStringValue(GenerateRandomString());
 
   private static string GenerateRandomString()
   {

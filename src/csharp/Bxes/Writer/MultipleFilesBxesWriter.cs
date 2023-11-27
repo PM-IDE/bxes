@@ -20,7 +20,12 @@ public class MultipleFilesBxesWriter : IBxesWriter
     var version = log.Version;
     ExecuteWithFile(savePath, BxesConstants.ValuesFileName, version, bw => Write(bw, BxesWriteUtils.WriteValues));
     ExecuteWithFile(savePath, BxesConstants.KVPairsFileName, version, bw => Write(bw, BxesWriteUtils.WriteKeyValuePairs));
-    ExecuteWithFile(savePath, BxesConstants.MetadataFileName, version, bw => Write(bw, BxesWriteUtils.WriteEventLogMetadata));
+    
+    ExecuteWithFile(
+      savePath, 
+      BxesConstants.MetadataFileName, 
+      version, bw => Write(bw, (log, context) => BxesWriteUtils.WriteEventLogMetadata(log.Metadata, context)));
+    
     ExecuteWithFile(savePath, BxesConstants.TracesFileName, version, bw => Write(bw, BxesWriteUtils.WriteTracesVariants));
   }
 

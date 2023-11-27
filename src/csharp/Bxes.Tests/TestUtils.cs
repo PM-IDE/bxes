@@ -1,6 +1,5 @@
 using Bxes.Models;
 using Bxes.Utils;
-using Microsoft.VisualStudio.TestPlatform.Utilities;
 
 namespace Bxes.Tests;
 

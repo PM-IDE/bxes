@@ -14,7 +14,6 @@ public class MultipleFilesBxesStreamWriterImpl<TEvent> : IBxesStreamWriter where
   private readonly BxesWriteContext myContext = new(null!);
 
 
-  private uint myMetadataValuesCount;
   private uint myTracesVariantsCount;
 
   private uint? myLastTraceVariantEventCount;
@@ -50,7 +49,6 @@ public class MultipleFilesBxesStreamWriterImpl<TEvent> : IBxesStreamWriter where
     myValuesWriter.Write(myBxesVersion);
 
     myTracesWriter.Write((uint)0);
-    myMetadataWriter.Write((uint)0);
     myKeyValuesWriter.Write((uint)0);
     myValuesWriter.Write((uint)0);
   }
@@ -62,7 +60,13 @@ public class MultipleFilesBxesStreamWriterImpl<TEvent> : IBxesStreamWriter where
       case BxesEventEvent<TEvent> eventEvent:
         HandleEventEvent(eventEvent);
         break;
-      case BxesLogMetadataKeyValueEvent metadataEvent:
+      case BxesKeyValueEvent metadataEvent:
+        HandleKeyValueEvent(metadataEvent);
+        break;
+      case BxesValueEvent valueEvent:
+        HandleValueEvent(valueEvent);
+        break;
+      case BxesLogMetadataEvent metadataEvent:
         HandleMetadataEvent(metadataEvent);
         break;
       case BxesTraceVariantStartEvent variantStartEvent:
@@ -71,6 +75,26 @@ public class MultipleFilesBxesStreamWriterImpl<TEvent> : IBxesStreamWriter where
       default:
         throw new ArgumentOutOfRangeException(nameof(@event));
     }
+  }
+
+  private void HandleMetadataEvent(BxesLogMetadataEvent metadataEvent)
+  {
+    foreach (var value in metadataEvent.Metadata.EnumerateValues())
+    {
+      BxesWriteUtils.WriteValueIfNeeded(value, myContext.WithWriter(myValuesWriter));
+    }
+
+    foreach (var kv in metadataEvent.Metadata.EnumerateKeyValuePairs())
+    {
+      BxesWriteUtils.WriteKeyValuePairIfNeeded(kv, myContext.WithWriter(myKeyValuesWriter));
+    }
+    
+    BxesWriteUtils.WriteEventLogMetadata(metadataEvent.Metadata, myContext.WithWriter(myMetadataWriter));
+  }
+
+  private void HandleValueEvent(BxesValueEvent valueEvent)
+  {
+    BxesWriteUtils.WriteValueIfNeeded(valueEvent.Value, myContext.WithWriter(myValuesWriter));
   }
 
   private void HandleEventEvent(BxesEventEvent<TEvent> @event)
@@ -82,17 +106,13 @@ public class MultipleFilesBxesStreamWriterImpl<TEvent> : IBxesStreamWriter where
     ++myLastTraceVariantEventCount;
   }
 
-  private void HandleMetadataEvent(BxesLogMetadataKeyValueEvent @event)
+  private void HandleKeyValueEvent(BxesKeyValueEvent @event)
   {
     var valuesContext = myContext.WithWriter(myValuesWriter);
     BxesWriteUtils.WriteValueIfNeeded(@event.MetadataKeyValue.Key, valuesContext);
     BxesWriteUtils.WriteValueIfNeeded(@event.MetadataKeyValue.Value, valuesContext);
 
     BxesWriteUtils.WriteKeyValuePairIfNeeded(@event.MetadataKeyValue, myContext.WithWriter(myKeyValuesWriter));
-
-    BxesWriteUtils.WriteKeyValueIndex(@event.MetadataKeyValue, myContext.WithWriter(myMetadataWriter));
-
-    ++myMetadataValuesCount;
   }
 
   private void HandleTraceVariantStart(BxesTraceVariantStartEvent @event)
@@ -132,7 +152,6 @@ public class MultipleFilesBxesStreamWriterImpl<TEvent> : IBxesStreamWriter where
     const int CountPos = sizeof(uint);
 
     BxesWriteUtils.WriteCount(myTracesWriter, CountPos, myTracesVariantsCount);
-    BxesWriteUtils.WriteCount(myMetadataWriter, CountPos, myMetadataValuesCount);
     BxesWriteUtils.WriteCount(myValuesWriter, CountPos, (uint)myContext.ValuesIndices.Count);
     BxesWriteUtils.WriteCount(myKeyValuesWriter, CountPos, (uint)myContext.KeyValueIndices.Count);
   }
