@@ -181,25 +181,49 @@ Type id + additional type info (i.e. length of a string) forms a header of a val
 - Then there is a sequence of values [(Header[type-id + metainfo], value)]
 - Then there is a number of attribute key-values pairs (`u32`) - `4 bytes`
 - After that there is a sequence of pairs (index(`u32`, `4 bytes`), index(`u32`, `4 bytes`)), which indicates the attributes key-value pairs.
-- The number of event log metadata key-value pairs is written (`u32`, `4 bytes`)
-- The event log metadata is written [key-value pair index (`u32`, `4 bytes`)]
+- The event log metadata is written
 - Then the number of traces variants is written (`u32`) - `4 bytes`
 - Then the sequence of traces variants is written.
-  Each variant is a pair (number_of_traces(`u32`, `4 bytes`), number_of_events(`u32`, `4 bytes`), [Event])
+
+### Event log metadata format
+- The number of metadata values is written (`u32`)
+- The key-values pairs are written
+- The number of properties is written (`u32`)
+- The properties are written: key-value pairs
+- The number of extensions is written (`u32`)
+- The extensions are written. The extension is tuple of three elements (name index (`u32`), prefix index (`u32`), uri index (`u32`))
+- The number of properties is written (`u32`)
+- The properties are written, key-value pairs
+- The number of entities for globals are written (`u8`)
+- The globals are written:
+    - The entity identifier (`u8`)
+    - The number globals is written (`u32`)
+    - The globals are written: key-value pairs
+- The number of classifiers is written (`u32`)
+- The classifiers are written
+    - The name index of a classifier is written
+    - The number of keys is written (`u32`)
+    - The keys are written (value-index `u32`)
+
+### Trace variant format
+- The number of traces is written (`u32`)
+- The number of trace metadata is written (`u32`)
+- The metadata is written: key-value pairs
+- The number of events is written (`u32`)
+- The events are written
 
 ### Event description
-  - name value index: (`u32`, `4 bytes`)
-  - timestamp value (`i64`, `8 bytes`)
-  - lifecycle value (`2 bytes`, type id (`1 byte`) + value (`1 byte`), `0` if unspecified)
-  - number of attributes (`u32`, `4 bytes`)
-  - sequence of key value indices (size * `4 bytes`)
+- name value index: (`u32`, `4 bytes`)
+- timestamp value (`i64`, `8 bytes`)
+- lifecycle value (`2 bytes`, type id (`1 byte`) + value (`1 byte`), `0` if unspecified)
+- number of attributes (`u32`, `4 bytes`)
+- sequence of key value indices (size * `4 bytes`)
 
 ### Multiple files format description
 
 - Metadata file
     - The version of bxes is written (`u32`, `4 bytes`)
-    - The number of metadata key-value pairs is written (`u32`, `4 bytes`)
-    - The indices of key-value pairs in "Values file" is written [index(`u32`, `4 bytes`)]
+    - The metadata is written
 - Values file
     - The version of bxes is written (`u32`, `4 bytes`)
     - The number of values is written (`u32`, `4 bytes`)
@@ -210,8 +234,7 @@ Type id + additional type info (i.e. length of a string) forms a header of a val
     - The key-value pairs are written (index(`u32`, `4 bytes`), index(`u32`, `4 bytes`))
 - Traces file
     - The version of bxes is written (`u32`, `4 bytes`)
-    - The number of traces variants is written (`u32`, `4 bytes`)
-    - Traces variants are written: (number_of_traces(`u32`, `4 bytes`), number_of_events(`u32`, `4 bytes`), [Event])
+    - The trace variant is written
 
 ### Online event log transfer
 
