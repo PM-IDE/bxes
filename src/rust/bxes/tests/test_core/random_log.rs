@@ -1,11 +1,11 @@
-use std::rc::Rc;
+use std::{any::TypeId, rc::Rc};
 
 use bxes::{
     models::{
         BrafLifecycle, BxesEvent, BxesEventLog, BxesTraceVariant, BxesValue, Lifecycle,
         StandardLifecycle,
     },
-    type_ids::{self, types_count},
+    type_ids::{self, TypeIds},
 };
 use num_traits::FromPrimitive;
 use rand::{distributions::Alphanumeric, rngs::ThreadRng, Rng};
@@ -88,18 +88,18 @@ fn generate_random_string(rng: &mut ThreadRng) -> String {
 }
 
 fn generate_random_bxes_value(rng: &mut ThreadRng) -> BxesValue {
-    match rng.gen_range(0..types_count()) as u8 {
-        type_ids::I_32 => BxesValue::Int32(rng.gen()),
-        type_ids::I_64 => BxesValue::Int64(rng.gen()),
-        type_ids::U_32 => BxesValue::Uint32(rng.gen()),
-        type_ids::U_64 => BxesValue::Uint64(rng.gen()),
-        type_ids::F_32 => BxesValue::Float32(rng.gen()),
-        type_ids::F_64 => BxesValue::Float64(rng.gen()),
-        type_ids::BOOL => BxesValue::Bool(rng.gen()),
-        type_ids::STRING => BxesValue::String(Rc::new(Box::new(generate_random_string(rng)))),
-        type_ids::TIMESTAMP => BxesValue::Timestamp(rng.gen()),
-        type_ids::BRAF_LIFECYCLE => BxesValue::BrafLifecycle(generate_random_braf_lifecycle()),
-        type_ids::STANDARD_LIFECYCLE => {
+    match TypeIds::from_u8(rng.gen_range(0..TypeIds::VARIANT_COUNT) as u8).unwrap() {
+        TypeIds::I32 => BxesValue::Int32(rng.gen()),
+        TypeIds::I64 => BxesValue::Int64(rng.gen()),
+        TypeIds::U32 => BxesValue::Uint32(rng.gen()),
+        TypeIds::U64 => BxesValue::Uint64(rng.gen()),
+        TypeIds::F32 => BxesValue::Float32(rng.gen()),
+        TypeIds::F64 => BxesValue::Float64(rng.gen()),
+        TypeIds::Bool => BxesValue::Bool(rng.gen()),
+        TypeIds::String => BxesValue::String(Rc::new(Box::new(generate_random_string(rng)))),
+        TypeIds::Timestamp => BxesValue::Timestamp(rng.gen()),
+        TypeIds::BrafLifecycle => BxesValue::BrafLifecycle(generate_random_braf_lifecycle()),
+        TypeIds::StandardLifecycle => {
             BxesValue::StandardLifecycle(generate_random_standard_lifecycle())
         }
         _ => panic!("Got unknown type id"),

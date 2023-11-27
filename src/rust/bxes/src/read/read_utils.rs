@@ -5,7 +5,10 @@ use num_traits::FromPrimitive;
 use tempfile::TempDir;
 use zip::ZipArchive;
 
-use crate::{models::*, type_ids};
+use crate::{
+    models::*,
+    type_ids::{self, TypeIds},
+};
 
 use super::errors::*;
 
@@ -157,23 +160,24 @@ pub fn try_read_values(reader: &mut BinaryReader) -> Result<Vec<BxesValue>, Bxes
 }
 
 fn try_read_bxes_value(reader: &mut BinaryReader) -> Result<BxesValue, BxesReadError> {
-    let type_id = try_read_u8(reader)?;
+    let type_id_byte = try_read_u8(reader)?;
+    let type_id = TypeIds::from_u8(type_id_byte).unwrap();
 
     match type_id {
-        type_ids::I_32 => Ok(BxesValue::Int32(try_read_i32(reader)?)),
-        type_ids::I_64 => Ok(BxesValue::Int64(try_read_i64(reader)?)),
-        type_ids::U_32 => Ok(BxesValue::Uint32(try_read_u32(reader)?)),
-        type_ids::U_64 => Ok(BxesValue::Uint64(try_read_u64(reader)?)),
-        type_ids::F_32 => Ok(BxesValue::Float32(try_read_f32(reader)?)),
-        type_ids::F_64 => Ok(BxesValue::Float64(try_read_f64(reader)?)),
-        type_ids::BOOL => Ok(BxesValue::Bool(try_read_bool(reader)?)),
-        type_ids::STRING => Ok(BxesValue::String(Rc::new(Box::new(try_read_string(reader)?)))),
-        type_ids::TIMESTAMP => Ok(BxesValue::Timestamp(try_read_i64(reader)?)),
-        type_ids::BRAF_LIFECYCLE => Ok(BxesValue::BrafLifecycle(try_read_braf_lifecycle(reader)?)),
-        type_ids::STANDARD_LIFECYCLE => {
+        TypeIds::I32 => Ok(BxesValue::Int32(try_read_i32(reader)?)),
+        TypeIds::I64 => Ok(BxesValue::Int64(try_read_i64(reader)?)),
+        TypeIds::U32 => Ok(BxesValue::Uint32(try_read_u32(reader)?)),
+        TypeIds::U64 => Ok(BxesValue::Uint64(try_read_u64(reader)?)),
+        TypeIds::F32 => Ok(BxesValue::Float32(try_read_f32(reader)?)),
+        TypeIds::F64 => Ok(BxesValue::Float64(try_read_f64(reader)?)),
+        TypeIds::Bool => Ok(BxesValue::Bool(try_read_bool(reader)?)),
+        TypeIds::String => Ok(BxesValue::String(Rc::new(Box::new(try_read_string(reader)?)))),
+        TypeIds::Timestamp => Ok(BxesValue::Timestamp(try_read_i64(reader)?)),
+        TypeIds::BrafLifecycle => Ok(BxesValue::BrafLifecycle(try_read_braf_lifecycle(reader)?)),
+        TypeIds::StandardLifecycle => {
             Ok(BxesValue::StandardLifecycle(try_read_standard_lifecycle(reader)?))
         }
-        _ => Err(BxesReadError::FailedToParseTypeId(type_id)),
+        _ => Err(BxesReadError::FailedToParseTypeId(type_id_byte)),
     }
 }
 
