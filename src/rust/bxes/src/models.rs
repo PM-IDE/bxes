@@ -17,6 +17,131 @@ pub enum BxesValue {
     Timestamp(i64),
     BrafLifecycle(BrafLifecycle),
     StandardLifecycle(StandardLifecycle),
+    Artifact(BxesArtifact),
+    Drivers(BxesDrivers),
+    Guid(uuid::Uuid),
+    SoftwareEventType(SoftwareEventType),
+}
+
+#[derive(FromPrimitive, ToPrimitive, Clone, Debug, Hash, PartialEq, Eq)]
+pub enum SoftwareEventType {
+    Unspecified = 0,
+    Call = 1,
+    Return = 2,
+    Throws = 3,
+    Handle = 4,
+    Calling = 5,
+    Returning = 6,
+}
+
+#[derive(Debug, Clone)]
+pub struct BxesArtifact {
+    pub items: Vec<ArtifactItem>,
+}
+
+impl Hash for BxesArtifact {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        for item in &self.items {
+            item.hash(state);
+        }
+    }
+}
+
+impl PartialEq for BxesArtifact {
+    fn eq(&self, other: &Self) -> bool {
+        if self.items.len() != other.items.len() {
+            return false;
+        }
+
+        for (self_item, other_item) in self.items.iter().zip(&other.items) {
+            if !self_item.eq(&other_item) {
+                return false;
+            }
+        }
+
+        true
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct ArtifactItem {
+    pub instance: BxesValue,
+    pub transition: BxesValue,
+}
+
+impl Hash for ArtifactItem {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.instance.hash(state);
+        self.transition.hash(state);
+    }
+}
+
+impl PartialEq for ArtifactItem {
+    fn eq(&self, other: &Self) -> bool {
+        self.instance == other.instance && self.transition == other.transition
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct BxesDrivers {
+    pub drivers: Vec<Driver>,
+}
+
+impl Hash for BxesDrivers {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        for driver in &self.drivers {
+            driver.hash(state);
+        }
+    }
+}
+
+impl PartialEq for BxesDrivers {
+    fn eq(&self, other: &Self) -> bool {
+        if self.drivers.len() != other.drivers.len() {
+            return false;
+        }
+
+        for (self_driver, other_driver) in self.drivers.iter().zip(&other.drivers) {
+            if !self_driver.eq(other_driver) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct Driver {
+    pub amount: BxesValue,
+    pub name: BxesValue,
+    pub driver_type: BxesValue,
+}
+
+impl Driver {
+    pub fn amount(&self) -> f64 {
+        if let BxesValue::Float64(amount) = self.amount {
+            return amount;
+        }
+
+        panic!("Expected f64 BxesValue, got {:?}", self.amount)
+    }
+}
+
+impl Hash for Driver {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.amount.hash(state);
+        self.name.hash(state);
+        self.driver_type.hash(state);
+    }
+}
+
+impl PartialEq for Driver {
+    fn eq(&self, other: &Self) -> bool {
+        self.amount == other.amount
+            && self.name == other.name
+            && self.driver_type == other.driver_type
+    }
 }
 
 impl Hash for BxesValue {
@@ -33,6 +158,10 @@ impl Hash for BxesValue {
             BxesValue::Timestamp(value) => state.write_i64(*value),
             BxesValue::BrafLifecycle(value) => value.hash(state),
             BxesValue::StandardLifecycle(value) => value.hash(state),
+            BxesValue::Artifact(artifacts) => artifacts.hash(state),
+            BxesValue::Drivers(drivers) => drivers.hash(state),
+            BxesValue::Guid(guid) => guid.hash(state),
+            BxesValue::SoftwareEventType(event_type) => event_type.hash(state),
         }
     }
 }
@@ -51,6 +180,10 @@ impl PartialEq for BxesValue {
             (Self::Timestamp(left), Self::Timestamp(right)) => left == right,
             (Self::BrafLifecycle(left), Self::BrafLifecycle(right)) => left == right,
             (Self::StandardLifecycle(left), Self::StandardLifecycle(right)) => left == right,
+            (Self::Artifact(left), Self::Artifact(right)) => left == right,
+            (Self::Drivers(left), Self::Drivers(right)) => left == right,
+            (Self::Guid(left), Self::Guid(right)) => left == right,
+            (Self::SoftwareEventType(left), Self::SoftwareEventType(right)) => left == right,
             _ => false,
         }
     }
