@@ -3,6 +3,7 @@ use std::{fs::File, rc::Rc};
 use binary_rw::{BinaryReader, FileStream, SeekStream};
 use num_traits::FromPrimitive;
 use tempfile::TempDir;
+use uuid::Uuid;
 use zip::ZipArchive;
 
 use crate::{
@@ -78,7 +79,7 @@ fn try_read_event(
     }
 
     let timestamp = try_read_i64(reader)?;
-    let lifecycle = match try_read_bxes_value(reader)? {
+    let lifecycle = match try_read_bxes_value(reader, values)? {
         BxesValue::StandardLifecycle(lifecycle) => Lifecycle::Standard(lifecycle),
         BxesValue::BrafLifecycle(lifecycle) => Lifecycle::Braf(lifecycle),
         _ => return Err(BxesReadError::LifecycleOfEventOutOfRange),
@@ -153,13 +154,16 @@ pub fn try_read_values(reader: &mut BinaryReader) -> Result<Vec<BxesValue>, Bxes
 
     let values_count = try_read_u32(reader)?;
     for _ in 0..values_count {
-        values.push(try_read_bxes_value(reader)?);
+        values.push(try_read_bxes_value(reader, &values)?);
     }
 
     Ok(values)
 }
 
-fn try_read_bxes_value(reader: &mut BinaryReader) -> Result<BxesValue, BxesReadError> {
+fn try_read_bxes_value(
+    reader: &mut BinaryReader,
+    values: &Vec<BxesValue>,
+) -> Result<BxesValue, BxesReadError> {
     let type_id_byte = try_read_u8(reader)?;
     let type_id = TypeIds::from_u8(type_id_byte).unwrap();
 
@@ -171,46 +175,123 @@ fn try_read_bxes_value(reader: &mut BinaryReader) -> Result<BxesValue, BxesReadE
         TypeIds::F32 => Ok(BxesValue::Float32(try_read_f32(reader)?)),
         TypeIds::F64 => Ok(BxesValue::Float64(try_read_f64(reader)?)),
         TypeIds::Bool => Ok(BxesValue::Bool(try_read_bool(reader)?)),
-        TypeIds::String => Ok(BxesValue::String(Rc::new(Box::new(try_read_string(reader)?)))),
+        TypeIds::String => Ok(BxesValue::String(Rc::new(Box::new(try_read_string(
+            reader,
+        )?)))),
         TypeIds::Timestamp => Ok(BxesValue::Timestamp(try_read_i64(reader)?)),
         TypeIds::BrafLifecycle => Ok(BxesValue::BrafLifecycle(try_read_braf_lifecycle(reader)?)),
-        TypeIds::StandardLifecycle => {
-            Ok(BxesValue::StandardLifecycle(try_read_standard_lifecycle(reader)?))
-        }
+        TypeIds::StandardLifecycle => Ok(BxesValue::StandardLifecycle(
+            try_read_standard_lifecycle(reader)?,
+        )),
+        TypeIds::Guid => Ok(BxesValue::Guid(try_read_guid(reader)?)),
+        TypeIds::Artifact => Ok(BxesValue::Artifact(try_read_artifact(reader, values)?)),
+        TypeIds::Drivers => Ok(BxesValue::Drivers(try_read_drivers(reader, values)?)),
+        TypeIds::SoftwareEventType => Ok(BxesValue::SoftwareEventType(
+            try_read_software_event_type(reader)?,
+        )),
         _ => Err(BxesReadError::FailedToParseTypeId(type_id_byte)),
     }
 }
 
+pub fn try_read_drivers(
+    reader: &mut BinaryReader,
+    values: &Vec<BxesValue>,
+) -> Result<BxesDrivers, BxesReadError> {
+    let drivers_count = try_read_u32(reader)?;
+    let mut drivers = vec![];
+
+    for _ in 0..drivers_count {
+        drivers.push(try_read_driver(reader, values)?);
+    }
+
+    Ok(BxesDrivers { drivers })
+}
+
+pub fn try_read_driver(
+    reader: &mut BinaryReader,
+    values: &Vec<BxesValue>,
+) -> Result<BxesDriver, BxesReadError> {
+    let amount = try_read_f64(reader)?;
+    let name_index = try_read_u32(reader)? as usize;
+    let driver_type_index = try_read_u32(reader)? as usize;
+
+    Ok(BxesDriver {
+        amount: BxesValue::Float64(amount),
+        name: values[name_index].clone(),
+        driver_type: values[driver_type_index].clone(),
+    })
+}
+
+pub fn try_read_artifact(
+    reader: &mut BinaryReader,
+    values: &Vec<BxesValue>,
+) -> Result<BxesArtifact, BxesReadError> {
+    let artifacts_count = try_read_u32(reader)?;
+    let mut artifacts = vec![];
+
+    for _ in 0..artifacts_count {
+        artifacts.push(try_read_artifact_item(reader, values)?);
+    }
+
+    Ok(BxesArtifact { items: artifacts })
+}
+
+pub fn try_read_artifact_item(
+    reader: &mut BinaryReader,
+    values: &Vec<BxesValue>,
+) -> Result<BxesArtifactItem, BxesReadError> {
+    let instance_index = try_read_u32(reader)? as usize;
+    let transition_index = try_read_u32(reader)? as usize;
+
+    Ok(BxesArtifactItem {
+        instance: values[instance_index].clone(),
+        transition: values[transition_index].clone(),
+    })
+}
+
+pub fn try_read_guid(reader: &mut BinaryReader) -> Result<Uuid, BxesReadError> {
+    try_read(try_tell_pos(reader)?, || {
+        let bytes = reader.read_bytes(16)?;
+        Ok(Uuid::from_slice(bytes.as_slice()).unwrap())
+    })
+}
+
+pub fn try_read_software_event_type(
+    reader: &mut BinaryReader,
+) -> Result<SoftwareEventType, BxesReadError> {
+    try_read_enum::<SoftwareEventType>(reader)
+}
+
 pub fn try_read_i32(reader: &mut BinaryReader) -> Result<i32, BxesReadError> {
-    try_read_primitive_value(try_tell_pos(reader)?, || reader.read_i32())
+    try_read(try_tell_pos(reader)?, || reader.read_i32())
 }
 
 pub fn try_read_i64(reader: &mut BinaryReader) -> Result<i64, BxesReadError> {
-    try_read_primitive_value(try_tell_pos(reader)?, || reader.read_i64())
+    try_read(try_tell_pos(reader)?, || reader.read_i64())
 }
 
 pub fn try_read_u32(reader: &mut BinaryReader) -> Result<u32, BxesReadError> {
-    try_read_primitive_value(try_tell_pos(reader)?, || reader.read_u32())
+    try_read(try_tell_pos(reader)?, || reader.read_u32())
 }
 
 pub fn try_read_u64(reader: &mut BinaryReader) -> Result<u64, BxesReadError> {
-    try_read_primitive_value(try_tell_pos(reader)?, || reader.read_u64())
+    try_read(try_tell_pos(reader)?, || reader.read_u64())
 }
 
 pub fn try_read_f32(reader: &mut BinaryReader) -> Result<f32, BxesReadError> {
-    try_read_primitive_value(try_tell_pos(reader)?, || reader.read_f32())
+    try_read(try_tell_pos(reader)?, || reader.read_f32())
 }
 
 pub fn try_read_f64(reader: &mut BinaryReader) -> Result<f64, BxesReadError> {
-    try_read_primitive_value(try_tell_pos(reader)?, || reader.read_f64())
+    try_read(try_tell_pos(reader)?, || reader.read_f64())
 }
 
 pub fn try_read_bool(reader: &mut BinaryReader) -> Result<bool, BxesReadError> {
-    try_read_primitive_value(try_tell_pos(reader)?, || reader.read_bool())
+    try_read(try_tell_pos(reader)?, || reader.read_bool())
 }
 
 pub fn try_read_u8(reader: &mut BinaryReader) -> Result<u8, BxesReadError> {
-    try_read_primitive_value(try_tell_pos(reader)?, || reader.read_u8())
+    try_read(try_tell_pos(reader)?, || reader.read_u8())
 }
 
 fn try_read_string(reader: &mut BinaryReader) -> Result<String, BxesReadError> {
@@ -227,9 +308,9 @@ fn try_read_bytes(reader: &mut BinaryReader, length: usize) -> Result<Vec<u8>, B
     let offset = try_tell_pos(reader)?;
     match reader.read_bytes(length) {
         Ok(bytes) => Ok(bytes),
-        Err(err) => Err(
-            BxesReadError::FailedToReadValue(FailedToReadValueError::new(offset, err.to_string()))
-        ),
+        Err(err) => Err(BxesReadError::FailedToReadValue(
+            FailedToReadValueError::new(offset, err.to_string()),
+        )),
     }
 }
 
@@ -241,9 +322,9 @@ fn try_read_enum<T: FromPrimitive>(reader: &mut BinaryReader) -> Result<T, BxesR
     let offset = try_tell_pos(reader)?;
     match reader.read_u8() {
         Ok(byte) => Ok(T::from_u8(byte).unwrap()),
-        Err(err) => Err(
-            BxesReadError::FailedToReadValue(FailedToReadValueError::new(offset, err.to_string()))
-        ),
+        Err(err) => Err(BxesReadError::FailedToReadValue(
+            FailedToReadValueError::new(offset, err.to_string()),
+        )),
     }
 }
 
@@ -284,7 +365,7 @@ pub fn try_open_file_stream(path: &str) -> Result<FileStream, BxesReadError> {
     }
 }
 
-fn try_read_primitive_value<T>(
+fn try_read<T>(
     reader_pos: usize,
     mut read_func: impl FnMut() -> binary_rw::Result<T>,
 ) -> Result<T, BxesReadError> {

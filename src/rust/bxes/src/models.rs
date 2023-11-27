@@ -23,7 +23,7 @@ pub enum BxesValue {
     SoftwareEventType(SoftwareEventType),
 }
 
-#[derive(FromPrimitive, ToPrimitive, Clone, Debug, Hash, PartialEq, Eq)]
+#[derive(FromPrimitive, ToPrimitive, VariantCount, Clone, Debug, Hash, PartialEq, Eq)]
 pub enum SoftwareEventType {
     Unspecified = 0,
     Call = 1,
@@ -36,7 +36,7 @@ pub enum SoftwareEventType {
 
 #[derive(Debug, Clone)]
 pub struct BxesArtifact {
-    pub items: Vec<ArtifactItem>,
+    pub items: Vec<BxesArtifactItem>,
 }
 
 impl Hash for BxesArtifact {
@@ -64,19 +64,19 @@ impl PartialEq for BxesArtifact {
 }
 
 #[derive(Clone, Debug)]
-pub struct ArtifactItem {
+pub struct BxesArtifactItem {
     pub instance: BxesValue,
     pub transition: BxesValue,
 }
 
-impl Hash for ArtifactItem {
+impl Hash for BxesArtifactItem {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.instance.hash(state);
         self.transition.hash(state);
     }
 }
 
-impl PartialEq for ArtifactItem {
+impl PartialEq for BxesArtifactItem {
     fn eq(&self, other: &Self) -> bool {
         self.instance == other.instance && self.transition == other.transition
     }
@@ -84,7 +84,7 @@ impl PartialEq for ArtifactItem {
 
 #[derive(Debug, Clone)]
 pub struct BxesDrivers {
-    pub drivers: Vec<Driver>,
+    pub drivers: Vec<BxesDriver>,
 }
 
 impl Hash for BxesDrivers {
@@ -112,13 +112,13 @@ impl PartialEq for BxesDrivers {
 }
 
 #[derive(Clone, Debug)]
-pub struct Driver {
+pub struct BxesDriver {
     pub amount: BxesValue,
     pub name: BxesValue,
     pub driver_type: BxesValue,
 }
 
-impl Driver {
+impl BxesDriver {
     pub fn amount(&self) -> f64 {
         if let BxesValue::Float64(amount) = self.amount {
             return amount;
@@ -128,7 +128,7 @@ impl Driver {
     }
 }
 
-impl Hash for Driver {
+impl Hash for BxesDriver {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.amount.hash(state);
         self.name.hash(state);
@@ -136,7 +136,7 @@ impl Hash for Driver {
     }
 }
 
-impl PartialEq for Driver {
+impl PartialEq for BxesDriver {
     fn eq(&self, other: &Self) -> bool {
         self.amount == other.amount
             && self.name == other.name

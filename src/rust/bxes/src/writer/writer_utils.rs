@@ -98,9 +98,10 @@ pub fn try_write_attributes(
                         index as u32,
                     )?;
                 } else {
-                    return Err(
-                        BxesWriteError::FailedToFindKeyValueIndex((key.clone(), value.clone()))
-                    );
+                    return Err(BxesWriteError::FailedToFindKeyValueIndex((
+                        key.clone(),
+                        value.clone(),
+                    )));
                 }
             }
 
@@ -296,8 +297,8 @@ pub fn try_write_software_event_type(
 
 pub fn try_write_guid(writer: &mut BinaryWriter, guid: &uuid::Uuid) -> Result<(), BxesWriteError> {
     try_write(|| {
-        writer.write_u8(get_type_id_byte(TypeIds::Guid));
-        writer.write_bytes(guid.as_bytes())
+        writer.write_u8(get_type_id_byte(TypeIds::Guid))?;
+        writer.write_bytes(guid.to_bytes_le())
     })
 }
 

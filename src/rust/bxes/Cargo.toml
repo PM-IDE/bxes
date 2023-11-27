@@ -10,9 +10,16 @@ num-derive = "0.4.1"
 num-traits = "0.2.17"
 rand = "0.8.5"
 tempfile = "3.8.1"
-uuid = "1.6.1"
 variant_count = "1.1.0"
 zip = "0.6.6"
+
+[dependencies.uuid]
+version = "1.6.1"
+features = [
+    "v4",                # Lets you generate random UUIDs
+    "fast-rng",          # Use a faster (but still sufficiently random) RNG
+    "macro-diagnostics", # Enable better diagnostics for compile-time UUIDs
+]
 
 [profile.release]
 debug = true
