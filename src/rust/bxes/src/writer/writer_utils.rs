@@ -59,6 +59,7 @@ pub fn try_write_event(
                 .borrow()
                 .get(&event.name)
                 .unwrap();
+
             try_write_u32_no_type_id(context.borrow_mut().writer.as_mut().unwrap(), index as u32)?;
         } else {
             return Err(BxesWriteError::FailedToFindValueIndex(event.name.clone()));
@@ -136,6 +137,7 @@ pub fn try_write_key_values<'a: 'b, 'b>(
                             context.borrow_mut().writer.as_mut().unwrap(),
                             key_index as u32,
                         )?;
+
                         try_write_u32_no_type_id(
                             context.borrow_mut().writer.as_mut().unwrap(),
                             value_index as u32,
@@ -308,46 +310,61 @@ fn get_type_id_byte(type_id: TypeIds) -> u8 {
 
 pub fn try_write_artifact<'a: 'b, 'b>(
     context: &mut BxesWriteContext<'a, 'b>,
-    artifacts: &'a BxesArtifact,
+    artifact: &'a BxesArtifact,
 ) -> Result<(), BxesWriteError> {
+    for artifact in &artifact.items {
+        get_or_write_value_index(&artifact.instance, context)?;
+        get_or_write_value_index(&artifact.transition, context)?;
+    }
+
     try_write_u8_no_type_id(
         context.writer.as_mut().unwrap(),
         get_type_id_byte(TypeIds::Artifact),
     )?;
+
     try_write_u32_no_type_id(
         context.writer.as_mut().unwrap(),
-        artifacts.items.len() as u32,
+        artifact.items.len() as u32,
     )?;
 
-    for artifact in &artifacts.items {
-        let instance_index = get_or_write_value_index(&artifact.instance, context)?;
-        try_write_u32_no_type_id(context.writer.as_mut().unwrap(), instance_index as u32)?;
+    for artifact in &artifact.items {
+        let index = get_index(&artifact.instance, context)?;
+        try_write_u32_no_type_id(context.writer.as_mut().unwrap(), index as u32)?;
 
-        let transition_index = get_or_write_value_index(&artifact.transition, context)?;
-        try_write_u32_no_type_id(context.writer.as_mut().unwrap(), transition_index as u32)?;
+        let index = get_index(&artifact.transition, context)?;
+        try_write_u32_no_type_id(context.writer.as_mut().unwrap(), index as u32)?;
     }
 
     Ok(())
+}
+
+fn get_index(value: &BxesValue, context: &mut BxesWriteContext) -> Result<u32, BxesWriteError> {
+    if let Some(index) = context.values_indices.borrow().get(&value) {
+        return Ok(*index as u32);
+    }
+
+    Err(BxesWriteError::FailedToFindValueIndex(value.clone()))
 }
 
 fn get_or_write_value_index<'a: 'b, 'b>(
     value: &'a BxesValue,
     context: &mut BxesWriteContext<'a, 'b>,
 ) -> Result<u32, BxesWriteError> {
-    if let Some(index) = context.values_indices.borrow().get(&value) {
-        return Ok(*index as u32);
-    }
-
-    let index = context.values_indices.borrow().len() as u32;
     try_write_value(value, context)?;
+    let index = *context.values_indices.borrow().get(value).unwrap() as u32;
 
-    Ok(index)
+    return Ok(index)
 }
 
 pub fn try_write_drivers<'a: 'b, 'b>(
     context: &mut BxesWriteContext<'a, 'b>,
     drivers: &'a BxesDrivers,
 ) -> Result<(), BxesWriteError> {
+    for driver in &drivers.drivers {
+        get_or_write_value_index(&driver.name, context)?;
+        get_or_write_value_index(&driver.driver_type, context)?;
+    }
+
     try_write_u8_no_type_id(
         context.writer.as_mut().unwrap(),
         get_type_id_byte(TypeIds::Drivers),
@@ -361,12 +378,11 @@ pub fn try_write_drivers<'a: 'b, 'b>(
     for driver in &drivers.drivers {
         try_write_f64_no_type_id(context.writer.as_mut().unwrap(), driver.amount())?;
 
-        let name_index = get_or_write_value_index(&driver.name, context)?;
+        let index = get_index(&driver.name, context)?;
+        try_write_u32_no_type_id(context.writer.as_mut().unwrap(), index)?;
 
-        let driver_type_index = get_or_write_value_index(&driver.driver_type, context)?;
-
-        try_write_u32_no_type_id(context.writer.as_mut().unwrap(), name_index)?;
-        try_write_u32_no_type_id(context.writer.as_mut().unwrap(), driver_type_index)?;
+        let index = get_index(&driver.driver_type, context)?;
+        try_write_u32_no_type_id(context.writer.as_mut().unwrap(), index)?;
     }
 
     Ok(())
