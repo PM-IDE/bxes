@@ -256,9 +256,6 @@ pub fn try_write_value<'a: 'b, 'b>(
         return Ok(false);
     }
 
-    let len = context.values_indices.borrow().len();
-    context.values_indices.borrow_mut().insert(value, len);
-
     match value {
         BxesValue::Int32(value) => try_write_i32(context.writer.as_mut().unwrap(), *value),
         BxesValue::Int64(value) => try_write_i64(context.writer.as_mut().unwrap(), *value),
@@ -286,6 +283,9 @@ pub fn try_write_value<'a: 'b, 'b>(
             try_write_software_event_type(context.writer.as_mut().unwrap(), value)
         }
     }?;
+
+    let len = context.values_indices.borrow().len();
+    context.values_indices.borrow_mut().insert(value, len);
 
     Ok(true)
 }
