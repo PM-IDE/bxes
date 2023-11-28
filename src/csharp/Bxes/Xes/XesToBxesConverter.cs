@@ -129,7 +129,7 @@ public class XesToBxesConverter
 
   private void ReadTrace(XmlReader reader, SingleFileBxesStreamWriterImpl<FromXesBxesEvent> writer)
   {
-    writer.HandleEvent(new BxesTraceVariantStartEvent(1));
+    writer.HandleEvent(new BxesTraceVariantStartEvent(1, new List<AttributeKeyValue>()));
 
     while (reader.Read())
     {

@@ -169,7 +169,7 @@ public static class EventLogUtil
 
     foreach (var variant in log.Traces)
     {
-      yield return new BxesTraceVariantStartEvent(variant.Count);
+      yield return new BxesTraceVariantStartEvent(variant.Count, variant.Metadata);
 
       foreach (var @event in variant.Events)
       {

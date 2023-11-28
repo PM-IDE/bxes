@@ -39,20 +39,9 @@ internal static class BxesWriteUtils
 
   public static void WriteEventValues(IEvent @event, BxesWriteContext context)
   {
-    foreach (var value in EnumerateEventValues(@event))
+    foreach (var value in @event.EnumerateValues())
     {
       WriteValueIfNeeded(value, context);
-    }
-  }
-
-  private static IEnumerable<BxesValue> EnumerateEventValues(IEvent @event)
-  {
-    yield return new BxesStringValue(@event.Name);
-
-    foreach (var (key, value) in @event.Attributes)
-    {
-      yield return key;
-      yield return value;
     }
   }
 
@@ -68,7 +57,7 @@ internal static class BxesWriteUtils
   public static void WriteKeyValuePairs(IEventLog log, BxesWriteContext context)
   {
     var pairs = log.Traces
-      .SelectMany(variant => variant.Events.SelectMany(EnumerateEventKeyValuePairs))
+      .SelectMany(variant => variant.EnumerateKeyValuePairs())
       .Concat(log.Metadata.EnumerateKeyValuePairs());
 
     WriteCollectionAndCount(pairs, context, WriteKeyValuePairIfNeeded, () => (IndexType)context.KeyValueIndices.Count);
@@ -80,11 +69,6 @@ internal static class BxesWriteUtils
     {
       WriteKeyValuePairIfNeeded(pair, context);
     }
-  }
-
-  private static IEnumerable<AttributeKeyValue> EnumerateEventKeyValuePairs(IEvent @event)
-  {
-    return @event.Attributes;
   }
 
   public static void WriteKeyValuePairIfNeeded(AttributeKeyValue pair, BxesWriteContext context)
@@ -144,7 +128,7 @@ internal static class BxesWriteUtils
     }
   }
 
-  public static void WriteKeyValueIndex(AttributeKeyValue tuple, BxesWriteContext context)
+  private static void WriteKeyValueIndex(AttributeKeyValue tuple, BxesWriteContext context)
   {
     context.Writer.Write(context.KeyValueIndices[tuple]);
   }
@@ -155,7 +139,19 @@ internal static class BxesWriteUtils
   private static void WriteTraceVariant(ITraceVariant variant, BxesWriteContext context)
   {
     context.Writer.Write(variant.Count);
+    
+    WriteVariantMetadata(variant.Metadata, context);
     WriteCollectionAndCount(variant.Events, context, WriteEvent, () => (IndexType)variant.Events.Count());
+  }
+
+  public static void WriteVariantMetadata(IEnumerable<AttributeKeyValue> metadata, BxesWriteContext context)
+  {
+    var metadataCount = (IndexType)metadata.Count();
+    context.Writer.Write(metadataCount);
+    foreach (var pair in metadata)
+    {
+      context.Writer.Write(context.KeyValueIndices[pair]);
+    }
   }
 
   public static void WriteEvent(IEvent @event, BxesWriteContext context)
@@ -170,21 +166,11 @@ internal static class BxesWriteUtils
   public static void WriteValues(IEventLog log, BxesWriteContext context)
   {
     var values = log.Traces
-      .SelectMany(variant => variant.Events.SelectMany(EnumerateEventValues))
+      .SelectMany(variant => variant.EnumerateValues())
       .Concat(log.Metadata.EnumerateValues())
       .ToList();
 
     WriteCollectionAndCount(values, context, WriteValueIfNeeded, () => (IndexType)context.ValuesIndices.Count);
-  }
-
-  private static IEnumerable<BxesValue> EnumerateMetadataValues(
-    IEnumerable<AttributeKeyValue> metadata)
-  {
-    foreach (var (key, value) in metadata)
-    {
-      yield return key;
-      yield return value;
-    }
   }
 
   public static void ExecuteWithFile(string filePath, Action<BinaryWriter> writeAction)

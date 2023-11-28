@@ -29,7 +29,7 @@ public static class TestLogsProvider
       events.Add(CreateRandomEvent());
     }
 
-    return new TraceVariantImpl((uint)Random.Shared.Next(10000), events);
+    return new TraceVariantImpl((uint)Random.Shared.Next(10000), events, GenerateRandomAttributes().ToList());
   }
 
   private static InMemoryEventImpl CreateRandomEvent() =>

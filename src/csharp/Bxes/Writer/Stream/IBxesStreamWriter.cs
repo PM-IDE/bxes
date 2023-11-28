@@ -9,8 +9,9 @@ public interface IBxesStreamWriter : IDisposable
 
 public abstract class BxesStreamEvent;
 
-public sealed class BxesTraceVariantStartEvent(uint tracesCount) : BxesStreamEvent
+public sealed class BxesTraceVariantStartEvent(uint tracesCount, IEnumerable<AttributeKeyValue> metadata) : BxesStreamEvent
 {
+  public IEnumerable<AttributeKeyValue> Metadata { get; } = metadata;
   public uint TracesCount { get; } = tracesCount;
 }
 

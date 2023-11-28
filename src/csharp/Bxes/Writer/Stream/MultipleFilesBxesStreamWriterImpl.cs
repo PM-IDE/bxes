@@ -121,6 +121,17 @@ public class MultipleFilesBxesStreamWriterImpl<TEvent> : IBxesStreamWriter where
 
     myLastTraceVariantEventCount = 0;
     myTracesWriter.Write(@event.TracesCount);
+
+    foreach (var pair in @event.Metadata)
+    {
+      BxesWriteUtils.WriteValueIfNeeded(pair.Key, myContext.WithWriter(myValuesWriter));
+      BxesWriteUtils.WriteValueIfNeeded(pair.Value, myContext.WithWriter(myValuesWriter));
+      
+      BxesWriteUtils.WriteKeyValuePairIfNeeded(pair, myContext.WithWriter(myKeyValuesWriter));
+    }
+
+    BxesWriteUtils.WriteVariantMetadata(@event.Metadata, myContext.WithWriter(myTracesWriter));
+
     myLastTraceVariantCountPosition = myTracesWriter.BaseStream.Position;
     myTracesWriter.Write((uint)0);
 
