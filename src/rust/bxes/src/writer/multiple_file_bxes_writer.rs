@@ -5,7 +5,7 @@ use binary_rw::{BinaryWriter, Endian};
 use crate::{constants, models::BxesEventLog};
 
 use super::{
-    errors::BxesWriteError,
+    errors::BeesWriteError,
     write_context::BxesWriteContext,
     writer_utils::{
         try_open_write, try_write_key_values, try_write_log_metadata, try_write_u32_no_type_id,
@@ -16,12 +16,12 @@ use super::{
 type WriterFunc = dyn for<'a, 'b> Fn(
     &'a BxesEventLog,
     Rc<RefCell<BxesWriteContext<'a, 'b>>>,
-) -> Result<(), BxesWriteError>;
+) -> Result<(), BeesWriteError>;
 
 pub fn write_bxes_multiple_files<'a>(
     log: &'a BxesEventLog,
     directory_path: &'a str,
-) -> Result<(), BxesWriteError> {
+) -> Result<(), BeesWriteError> {
     let context = BxesWriteContext::empty();
 
     let writer = |file_path: &'static str, action: Box<WriterFunc>| {
@@ -55,12 +55,12 @@ fn execute_with_writer<'a, T>(
     file_name: &'static str,
     context: &'a BxesWriteContext<'a, '_>,
     action: T,
-) -> Result<(), BxesWriteError>
+) -> Result<(), BeesWriteError>
 where
     T: for<'x> Fn(
         &'a BxesEventLog,
         Rc<RefCell<BxesWriteContext<'a, 'x>>>,
-    ) -> Result<(), BxesWriteError>,
+    ) -> Result<(), BeesWriteError>,
 {
     let directory_path = Path::new(directory_path);
     let file_path = directory_path.join(file_name);

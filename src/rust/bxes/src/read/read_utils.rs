@@ -6,10 +6,7 @@ use tempfile::TempDir;
 use uuid::Uuid;
 use zip::ZipArchive;
 
-use crate::{
-    models::*,
-    type_ids::{self, TypeIds},
-};
+use crate::{models::*, type_ids::TypeIds};
 
 use super::errors::*;
 
@@ -17,18 +14,108 @@ pub fn try_read_event_log_metadata(
     reader: &mut BinaryReader,
     values: &Vec<BxesValue>,
     kv_pairs: &Vec<(u32, u32)>,
-) -> Result<Option<Vec<(BxesValue, BxesValue)>>, BxesReadError> {
-    let metadata_count = try_read_u32(reader)?;
-    if metadata_count == 0 {
+) -> Result<BxesEventLogMetadata, BxesReadError> {
+    let attributes = try_read_event_attributes(reader, values, kv_pairs)?;
+    let properties = try_read_event_attributes(reader, values, kv_pairs)?;
+    let extensions = try_read_extensions(reader, values, kv_pairs)?;
+    let globals = try_read_globals(reader, values, kv_pairs)?;
+    let classifiers = try_read_classifiers(reader, values, kv_pairs)?;
+
+    Ok(BxesEventLogMetadata {
+        attributes,
+        extensions,
+        classifiers,
+        properties,
+        globals,
+    })
+}
+
+pub fn try_read_classifiers(
+    reader: &mut BinaryReader,
+    values: &Vec<BxesValue>,
+    kv_pairs: &Vec<(u32, u32)>,
+) -> Result<Option<Vec<BxesClassifier>>, BxesReadError> {
+    let count = try_read_u32(reader)?;
+    if count == 0 {
         Ok(None)
     } else {
-        let mut metadata = vec![];
+        let mut classifiers = vec![];
 
-        for _ in 0..metadata_count {
-            metadata.push(try_read_kv_pair(reader, values, kv_pairs)?);
+        for _ in 0..count {
+            let name = values.get(try_read_u32(reader)? as usize).unwrap().clone();
+
+            let keys_count = try_read_u32(reader)?;
+            let mut keys = vec![];
+            for _ in 0..keys_count {
+                let key_value = values.get(try_read_u32(reader)? as usize).unwrap();
+                keys.push(key_value.clone());
+            }
+
+            classifiers.push(BxesClassifier { name, keys });
         }
 
-        Ok(Some(metadata))
+        Ok(Some(classifiers))
+    }
+}
+
+pub fn try_read_globals(
+    reader: &mut BinaryReader,
+    values: &Vec<BxesValue>,
+    kv_pairs: &Vec<(u32, u32)>,
+) -> Result<Option<Vec<BxesGlobal>>, BxesReadError> {
+    let count = try_read_u32(reader)?;
+    if count == 0 {
+        Ok(None)
+    } else {
+        let mut globals = vec![];
+
+        for _ in 0..count {
+            let entity_kind = BxesGlobalKind::from_u8(try_read_u8(reader)?).unwrap();
+            let globals_count = try_read_u32(reader)?;
+            let mut entity_globals = vec![];
+
+            for _ in 0..globals_count {
+                entity_globals.push(try_read_kv_pair(reader, values, kv_pairs)?);
+            }
+
+            globals.push(BxesGlobal {
+                entity_kind,
+                globals: entity_globals,
+            });
+        }
+
+        Ok(Some(globals))
+    }
+}
+
+pub fn try_read_extensions(
+    reader: &mut BinaryReader,
+    values: &Vec<BxesValue>,
+    kv_pairs: &Vec<(u32, u32)>,
+) -> Result<Option<Vec<BxesExtension>>, BxesReadError> {
+    let count = try_read_u32(reader)?;
+    if count == 0 {
+        Ok(None)
+    } else {
+        let mut extensions = vec![];
+
+        for _ in 0..count {
+            let name = values.get(try_read_u32(reader)? as usize).unwrap().clone();
+            let prefix = values.get(try_read_u32(reader)? as usize).unwrap().clone();
+            let uri = values.get(try_read_u32(reader)? as usize).unwrap().clone();
+
+            extensions.push(BxesExtension { name, prefix, uri })
+        }
+
+        Ok(Some(extensions))
+    }
+}
+
+fn string_or_err(value: &BxesValue) -> Result<Rc<Box<String>>, BxesReadError> {
+    if let BxesValue::String(string) = value {
+        Ok(string.clone())
+    } else {
+        Err(BxesReadError::ExpectedString(value.clone()))
     }
 }
 

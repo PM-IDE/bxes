@@ -1,4 +1,4 @@
-use binary_rw::{BinaryError, BinaryWriter, FileStream, SeekStream};
+use binary_rw::{BinaryWriter, FileStream, SeekStream};
 use num_traits::ToPrimitive;
 use std::{
     cell::RefCell,
@@ -11,18 +11,18 @@ use zip::{write::FileOptions, ZipWriter};
 
 use crate::{
     models::{
-        BrafLifecycle, BxesArtifact, BxesDrivers, BxesEvent, BxesEventLog, BxesValue, Lifecycle,
-        SoftwareEventType, StandardLifecycle,
+        BrafLifecycle, BxesArtifact, BxesClassifier, BxesDrivers, BxesEvent, BxesEventLog,
+        BxesExtension, BxesGlobal, BxesValue, Lifecycle, SoftwareEventType, StandardLifecycle,
     },
     type_ids::{self, TypeIds},
 };
 
-use super::{errors::BxesWriteError, write_context::BxesWriteContext};
+use super::{errors::BeesWriteError, write_context::BxesWriteContext};
 
 pub fn try_write_variants(
     log: &BxesEventLog,
     context: Rc<RefCell<BxesWriteContext>>,
-) -> Result<(), BxesWriteError> {
+) -> Result<(), BeesWriteError> {
     write_collection_and_count(context.clone(), || {
         for variant in &log.variants {
             try_write_u32_no_type_id(
@@ -48,7 +48,7 @@ pub fn try_write_variants(
 pub fn try_write_event(
     event: &BxesEvent,
     context: Rc<RefCell<BxesWriteContext>>,
-) -> Result<(), BxesWriteError> {
+) -> Result<(), BeesWriteError> {
     {
         if context
             .borrow()
@@ -65,7 +65,7 @@ pub fn try_write_event(
 
             try_write_u32_no_type_id(context.borrow_mut().writer.as_mut().unwrap(), index as u32)?;
         } else {
-            return Err(BxesWriteError::FailedToFindValueIndex(event.name.clone()));
+            return Err(BeesWriteError::FailedToFindValueIndex(event.name.clone()));
         };
     }
 
@@ -85,14 +85,133 @@ pub fn try_write_event(
 pub fn try_write_log_metadata(
     log: &BxesEventLog,
     context: Rc<RefCell<BxesWriteContext>>,
-) -> Result<(), BxesWriteError> {
-    try_write_attributes(context, log.metadata.as_ref())
+) -> Result<(), BeesWriteError> {
+    try_write_attributes(context.clone(), log.metadata.attributes.as_ref())?;
+    try_write_properties(context.clone(), log.metadata.properties.as_ref())?;
+    try_write_extensions(context.clone(), log.metadata.extensions.as_ref())?;
+    try_write_globals(context.clone(), log.metadata.globals.as_ref())?;
+    try_write_classifiers(context.clone(), log.metadata.classifiers.as_ref())
+}
+
+pub fn try_write_properties(
+    context: Rc<RefCell<BxesWriteContext>>,
+    properties: Option<&Vec<(BxesValue, BxesValue)>>,
+) -> Result<(), BeesWriteError> {
+    write_collection_and_count(context.clone(), || {
+        if let Some(properties) = properties {
+            for property in properties {
+                try_write_kv_index(context.clone(), &(&property.0, &property.1))?;
+            }
+
+            Ok(properties.len() as u32)
+        } else {
+            Ok(0)
+        }
+    })
+}
+
+pub fn try_write_globals(
+    context: Rc<RefCell<BxesWriteContext>>,
+    globals: Option<&Vec<BxesGlobal>>,
+) -> Result<(), BeesWriteError> {
+    write_collection_and_count(context.clone(), || {
+        if let Some(globals) = globals {
+            for global in globals {
+                try_write_enum_value_no_type_index(
+                    context.borrow_mut().writer.as_mut().unwrap(),
+                    &global.entity_kind,
+                )?;
+
+                write_collection_and_count(context.clone(), || {
+                    for global in &global.globals {
+                        try_write_kv_index(context.clone(), &(&global.0, &global.1))?;
+                    }
+
+                    Ok(global.globals.len() as u32)
+                })?;
+            }
+
+            Ok(globals.len() as u32)
+        } else {
+            Ok(0)
+        }
+    })
+}
+
+pub fn try_write_kv_index(
+    context: Rc<RefCell<BxesWriteContext>>,
+    kv: &(&BxesValue, &BxesValue),
+) -> Result<(), BeesWriteError> {
+    if !context.borrow().kv_indices.borrow().contains_key(kv) {
+        Err(BeesWriteError::FailedToFindKeyValueIndex((
+            kv.0.clone(),
+            kv.1.clone(),
+        )))
+    } else {
+        let index = *context.borrow().kv_indices.borrow().get(kv).unwrap() as u32;
+        try_write_u32_no_type_id(context.borrow_mut().writer.as_mut().unwrap(), index)
+    }
+}
+
+pub fn try_write_extensions(
+    context: Rc<RefCell<BxesWriteContext>>,
+    extensions: Option<&Vec<BxesExtension>>,
+) -> Result<(), BeesWriteError> {
+    write_collection_and_count(context.clone(), || {
+        if let Some(extensions) = extensions {
+            for extension in extensions {
+                try_write_value_index(context.clone(), &extension.name)?;
+                try_write_value_index(context.clone(), &extension.prefix)?;
+                try_write_value_index(context.clone(), &extension.uri)?;
+            }
+
+            Ok(extensions.len() as u32)
+        } else {
+            Ok(0)
+        }
+    })
+}
+
+pub fn try_write_classifiers(
+    context: Rc<RefCell<BxesWriteContext>>,
+    classifiers: Option<&Vec<BxesClassifier>>,
+) -> Result<(), BeesWriteError> {
+    write_collection_and_count(context.clone(), || {
+        if let Some(classifiers) = classifiers {
+            for classifier in classifiers {
+                try_write_value_index(context.clone(), &classifier.name)?;
+                write_collection_and_count(context.clone(), || {
+                    for key in &classifier.keys {
+                        try_write_value_index(context.clone(), &key)?;
+                    }
+
+                    Ok(classifier.keys.len() as u32)
+                })?;
+            }
+
+            Ok(classifiers.len() as u32)
+        } else {
+            Ok(0)
+        }
+    })
+}
+
+fn try_write_value_index(
+    context: Rc<RefCell<BxesWriteContext>>,
+    value: &BxesValue,
+) -> Result<(), BeesWriteError> {
+    if !context.borrow().values_indices.borrow().contains_key(value) {
+        Err(BeesWriteError::FailedToFindValueIndex(value.clone()))
+    } else {
+        let index = *context.borrow().values_indices.borrow().get(value).unwrap() as u32;
+        try_write_u32_no_type_id(context.borrow_mut().writer.as_mut().unwrap(), index)
+    }
 }
 
 pub fn try_write_attributes(
     context: Rc<RefCell<BxesWriteContext>>,
     attributes: Option<&Vec<(BxesValue, BxesValue)>>,
-) -> Result<(), BxesWriteError> {
+) -> Result<(), BeesWriteError> {
     write_collection_and_count(context.clone(), || {
         if let Some(attributes) = attributes {
             for (key, value) in attributes {
@@ -105,7 +224,7 @@ pub fn try_write_attributes(
                     )?;
                 } else {
                     return Err(
-                        BxesWriteError::FailedToFindKeyValueIndex((key.clone(), value.clone()))
+                        BeesWriteError::FailedToFindKeyValueIndex((key.clone(), value.clone()))
                     );
                 }
             }
@@ -120,7 +239,7 @@ pub fn try_write_attributes(
 pub fn try_write_key_values<'a: 'b, 'b>(
     log: &'a BxesEventLog,
     context: Rc<RefCell<BxesWriteContext<'a, 'b>>>,
-) -> Result<(), BxesWriteError> {
+) -> Result<(), BeesWriteError> {
     write_collection_and_count(context.clone(), || {
         execute_with_kv_pairs(log, |value| {
             match value {
@@ -170,10 +289,38 @@ pub enum ValueOrKeyValue<'a> {
 
 fn execute_with_kv_pairs<'a>(
     log: &'a BxesEventLog,
-    mut action: impl FnMut(ValueOrKeyValue<'a>) -> Result<(), BxesWriteError>,
-) -> Result<(), BxesWriteError> {
-    if let Some(metadata) = log.metadata.as_ref() {
-        execute_with_attributes_kv_pairs(metadata, &mut action)?;
+    mut action: impl FnMut(ValueOrKeyValue<'a>) -> Result<(), BeesWriteError>,
+) -> Result<(), BeesWriteError> {
+    if let Some(attributes) = log.metadata.attributes.as_ref() {
+        execute_with_attributes_kv_pairs(attributes, &mut action)?;
+    }
+
+    if let Some(properties) = log.metadata.properties.as_ref() {
+        execute_with_attributes_kv_pairs(properties, &mut action)?;
+    }
+
+    if let Some(extensions) = log.metadata.extensions.as_ref() {
+        for extension in extensions {
+            action(ValueOrKeyValue::Value(&extension.name))?;
+            action(ValueOrKeyValue::Value(&extension.prefix))?;
+            action(ValueOrKeyValue::Value(&extension.uri))?;
+        }
+    }
+
+    if let Some(globals) = log.metadata.globals.as_ref() {
+        for global in globals {
+            execute_with_attributes_kv_pairs(&global.globals, &mut action)?;
+        }
+    }
+
+    if let Some(classifiers) = log.metadata.classifiers.as_ref() {
+        for classifier in classifiers {
+            action(ValueOrKeyValue::Value(&classifier.name))?;
+
+            for key in &classifier.keys {
+                action(ValueOrKeyValue::Value(&key))?;
+            }
+        }
     }
 
     for variant in &log.variants {
@@ -192,8 +339,8 @@ fn execute_with_kv_pairs<'a>(
 
 fn execute_with_attributes_kv_pairs<'a>(
     attributes: &'a Vec<(BxesValue, BxesValue)>,
-    action: &mut impl FnMut(ValueOrKeyValue<'a>) -> Result<(), BxesWriteError>,
-) -> Result<(), BxesWriteError> {
+    action: &mut impl FnMut(ValueOrKeyValue<'a>) -> Result<(), BeesWriteError>,
+) -> Result<(), BeesWriteError> {
     for (key, value) in attributes {
         action(ValueOrKeyValue::Value(key))?;
         action(ValueOrKeyValue::Value(value))?;
@@ -204,14 +351,14 @@ fn execute_with_attributes_kv_pairs<'a>(
     Ok(())
 }
 
-pub fn try_write_version(writer: &mut BinaryWriter, version: u32) -> Result<(), BxesWriteError> {
+pub fn try_write_version(writer: &mut BinaryWriter, version: u32) -> Result<(), BeesWriteError> {
     try_write_u32_no_type_id(writer, version)
 }
 
 pub fn try_write_values<'a: 'b, 'b>(
     log: &'a BxesEventLog,
     context: Rc<RefCell<BxesWriteContext<'a, 'b>>>,
-) -> Result<(), BxesWriteError> {
+) -> Result<(), BeesWriteError> {
     write_collection_and_count(context.clone(), || {
         execute_with_kv_pairs(log, |value| {
             match value {
@@ -230,8 +377,8 @@ pub fn try_write_values<'a: 'b, 'b>(
 
 fn write_collection_and_count(
     context: Rc<RefCell<BxesWriteContext>>,
-    mut writer_action: impl FnMut() -> Result<u32, BxesWriteError>,
-) -> Result<(), BxesWriteError> {
+    mut writer_action: impl FnMut() -> Result<u32, BeesWriteError>,
+) -> Result<(), BeesWriteError> {
     let pos = try_tell_pos(context.borrow_mut().writer.as_mut().unwrap())?;
 
     try_write_u32_no_type_id(context.borrow_mut().writer.as_mut().unwrap(), 0)?;
@@ -244,24 +391,24 @@ fn write_collection_and_count(
     try_seek(context.borrow_mut().writer.as_mut().unwrap(), current_pos)
 }
 
-fn try_seek(writer: &mut BinaryWriter, pos: usize) -> Result<(), BxesWriteError> {
+fn try_seek(writer: &mut BinaryWriter, pos: usize) -> Result<(), BeesWriteError> {
     match writer.seek(pos) {
         Ok(_) => Ok(()),
-        Err(err) => Err(BxesWriteError::FailedToSeek(err.to_string())),
+        Err(err) => Err(BeesWriteError::FailedToSeek(err.to_string())),
     }
 }
 
-fn try_tell_pos(writer: &mut BinaryWriter) -> Result<usize, BxesWriteError> {
+fn try_tell_pos(writer: &mut BinaryWriter) -> Result<usize, BeesWriteError> {
     match writer.tell() {
         Ok(pos) => Ok(pos),
-        Err(err) => Err(BxesWriteError::FailedToGetWriterPosition(err.to_string())),
+        Err(err) => Err(BeesWriteError::FailedToGetWriterPosition(err.to_string())),
     }
 }
 
 pub fn try_write_value<'a: 'b, 'b>(
     value: &'a BxesValue,
     context: &mut BxesWriteContext<'a, 'b>,
-) -> Result<bool, BxesWriteError> {
+) -> Result<bool, BeesWriteError> {
     if context.values_indices.borrow().contains_key(value) {
         return Ok(false);
     }
@@ -303,11 +450,11 @@ pub fn try_write_value<'a: 'b, 'b>(
 pub fn try_write_software_event_type(
     writer: &mut BinaryWriter,
     value: &SoftwareEventType,
-) -> Result<(), BxesWriteError> {
+) -> Result<(), BeesWriteError> {
     try_write_enum_value(writer, &TypeIds::SoftwareEventType, value)
 }
 
-pub fn try_write_guid(writer: &mut BinaryWriter, guid: &uuid::Uuid) -> Result<(), BxesWriteError> {
+pub fn try_write_guid(writer: &mut BinaryWriter, guid: &uuid::Uuid) -> Result<(), BeesWriteError> {
     try_write(|| {
         writer.write_u8(get_type_id_byte(TypeIds::Guid))?;
         writer.write_bytes(guid.to_bytes_le())
@@ -321,7 +468,7 @@ fn get_type_id_byte(type_id: TypeIds) -> u8 {
 pub fn try_write_artifact<'a: 'b, 'b>(
     context: &mut BxesWriteContext<'a, 'b>,
     artifact: &'a BxesArtifact,
-) -> Result<(), BxesWriteError> {
+) -> Result<(), BeesWriteError> {
     for artifact in &artifact.items {
         get_or_write_value_index(&artifact.instance, context)?;
         get_or_write_value_index(&artifact.transition, context)?;
@@ -348,18 +495,18 @@ pub fn try_write_artifact<'a: 'b, 'b>(
     Ok(())
 }
 
-fn get_index(value: &BxesValue, context: &mut BxesWriteContext) -> Result<u32, BxesWriteError> {
+fn get_index(value: &BxesValue, context: &mut BxesWriteContext) -> Result<u32, BeesWriteError> {
     if let Some(index) = context.values_indices.borrow().get(&value) {
         return Ok(*index as u32);
     }
 
-    Err(BxesWriteError::FailedToFindValueIndex(value.clone()))
+    Err(BeesWriteError::FailedToFindValueIndex(value.clone()))
 }
 
 fn get_or_write_value_index<'a: 'b, 'b>(
     value: &'a BxesValue,
     context: &mut BxesWriteContext<'a, 'b>,
-) -> Result<u32, BxesWriteError> {
+) -> Result<u32, BeesWriteError> {
     try_write_value(value, context)?;
     let index = *context.values_indices.borrow().get(value).unwrap() as u32;
 
@@ -369,7 +516,7 @@ fn get_or_write_value_index<'a: 'b, 'b>(
 pub fn try_write_drivers<'a: 'b, 'b>(
     context: &mut BxesWriteContext<'a, 'b>,
     drivers: &'a BxesDrivers,
-) -> Result<(), BxesWriteError> {
+) -> Result<(), BeesWriteError> {
     for driver in &drivers.drivers {
         get_or_write_value_index(&driver.name, context)?;
         get_or_write_value_index(&driver.driver_type, context)?;
@@ -398,7 +545,7 @@ pub fn try_write_drivers<'a: 'b, 'b>(
     Ok(())
 }
 
-pub fn try_write_i32(writer: &mut BinaryWriter, value: i32) -> Result<(), BxesWriteError> {
+pub fn try_write_i32(writer: &mut BinaryWriter, value: i32) -> Result<(), BeesWriteError> {
     try_write(|| {
         writer.write_u8(get_type_id_byte(TypeIds::I32))?;
         writer.write_i32(value)
@@ -408,11 +555,11 @@ pub fn try_write_i32(writer: &mut BinaryWriter, value: i32) -> Result<(), BxesWr
 pub fn try_write_i64_no_type_id(
     writer: &mut BinaryWriter,
     value: i64,
-) -> Result<(), BxesWriteError> {
+) -> Result<(), BeesWriteError> {
     try_write(|| writer.write_i64(value))
 }
 
-pub fn try_write_i64(writer: &mut BinaryWriter, value: i64) -> Result<(), BxesWriteError> {
+pub fn try_write_i64(writer: &mut BinaryWriter, value: i64) -> Result<(), BeesWriteError> {
     try_write(|| {
         writer.write_u8(get_type_id_byte(TypeIds::I64))?;
         writer.write_i64(value)
@@ -422,36 +569,36 @@ pub fn try_write_i64(writer: &mut BinaryWriter, value: i64) -> Result<(), BxesWr
 pub fn try_write_u32_no_type_id(
     writer: &mut BinaryWriter,
     value: u32,
-) -> Result<(), BxesWriteError> {
+) -> Result<(), BeesWriteError> {
     try_write(|| writer.write_u32(value))
 }
 
-pub fn try_write_u32(writer: &mut BinaryWriter, value: u32) -> Result<(), BxesWriteError> {
+pub fn try_write_u32(writer: &mut BinaryWriter, value: u32) -> Result<(), BeesWriteError> {
     try_write(|| {
         writer.write_u8(get_type_id_byte(TypeIds::U32))?;
         writer.write_u32(value)
     })
 }
 
-pub fn try_write_u64(writer: &mut BinaryWriter, value: u64) -> Result<(), BxesWriteError> {
+pub fn try_write_u64(writer: &mut BinaryWriter, value: u64) -> Result<(), BeesWriteError> {
     try_write(|| {
         writer.write_u8(get_type_id_byte(TypeIds::U64))?;
         writer.write_u64(value)
     })
 }
 
-pub fn try_write_f32(writer: &mut BinaryWriter, value: f32) -> Result<(), BxesWriteError> {
+pub fn try_write_f32(writer: &mut BinaryWriter, value: f32) -> Result<(), BeesWriteError> {
     try_write(|| {
         writer.write_u8(get_type_id_byte(TypeIds::F32))?;
         writer.write_f32(value)
     })
 }
 
-pub fn try_write_u8_no_type_id(writer: &mut BinaryWriter, value: u8) -> Result<(), BxesWriteError> {
+pub fn try_write_u8_no_type_id(writer: &mut BinaryWriter, value: u8) -> Result<(), BeesWriteError> {
     try_write(|| writer.write_u8(value))
 }
 
-pub fn try_write_f64(writer: &mut BinaryWriter, value: f64) -> Result<(), BxesWriteError> {
+pub fn try_write_f64(writer: &mut BinaryWriter, value: f64) -> Result<(), BeesWriteError> {
     try_write(|| {
         writer.write_u8(get_type_id_byte(TypeIds::F64))?;
         writer.write_f64(value)
@@ -461,18 +608,18 @@ pub fn try_write_f64(writer: &mut BinaryWriter, value: f64) -> Result<(), BxesWr
 pub fn try_write_f64_no_type_id(
     writer: &mut BinaryWriter,
     value: f64,
-) -> Result<(), BxesWriteError> {
+) -> Result<(), BeesWriteError> {
     try_write(|| writer.write_f64(value))
 }
 
-pub fn try_write_bool(writer: &mut BinaryWriter, value: bool) -> Result<(), BxesWriteError> {
+pub fn try_write_bool(writer: &mut BinaryWriter, value: bool) -> Result<(), BeesWriteError> {
     try_write(|| {
         writer.write_u8(get_type_id_byte(TypeIds::Bool))?;
         writer.write_u8(if value { 1 } else { 0 })
     })
 }
 
-pub fn try_write_string(writer: &mut BinaryWriter, value: &str) -> Result<(), BxesWriteError> {
+pub fn try_write_string(writer: &mut BinaryWriter, value: &str) -> Result<(), BeesWriteError> {
     try_write(|| {
         writer.write_u8(get_type_id_byte(TypeIds::String))?;
         writer.write_u64(value.len() as u64)?;
@@ -483,7 +630,7 @@ pub fn try_write_string(writer: &mut BinaryWriter, value: &str) -> Result<(), Bx
 pub fn try_write_lifecycle(
     writer: &mut BinaryWriter,
     lifecycle: &Lifecycle,
-) -> Result<(), BxesWriteError> {
+) -> Result<(), BeesWriteError> {
     match lifecycle {
         Lifecycle::Braf(braf_lifecycle) => try_write_braf_lifecycle(writer, braf_lifecycle),
         Lifecycle::Standard(standard_lifecycle) => {
@@ -495,15 +642,22 @@ pub fn try_write_lifecycle(
 pub fn try_write_braf_lifecycle(
     writer: &mut BinaryWriter,
     value: &BrafLifecycle,
-) -> Result<(), BxesWriteError> {
+) -> Result<(), BeesWriteError> {
     try_write_enum_value(writer, &TypeIds::BrafLifecycle, value)
+}
+
+fn try_write_enum_value_no_type_index<T: ToPrimitive>(
+    writer: &mut BinaryWriter,
+    value: &T,
+) -> Result<(), BeesWriteError> {
+    try_write(|| writer.write_u8(T::to_u8(value).unwrap()))
 }
 
 fn try_write_enum_value<T: ToPrimitive>(
     writer: &mut BinaryWriter,
     type_id: &TypeIds,
     value: &T,
-) -> Result<(), BxesWriteError> {
+) -> Result<(), BeesWriteError> {
     try_write(|| {
         writer.write_u8(TypeIds::to_u8(type_id).unwrap())?;
         writer.write_u8(T::to_u8(value).unwrap())
@@ -513,11 +667,11 @@ fn try_write_enum_value<T: ToPrimitive>(
 pub fn try_write_standard_lifecycle(
     writer: &mut BinaryWriter,
     value: &StandardLifecycle,
-) -> Result<(), BxesWriteError> {
+) -> Result<(), BeesWriteError> {
     try_write_enum_value(writer, &TypeIds::StandardLifecycle, value)
 }
 
-pub fn try_write_timestamp(writer: &mut BinaryWriter, value: i64) -> Result<(), BxesWriteError> {
+pub fn try_write_timestamp(writer: &mut BinaryWriter, value: i64) -> Result<(), BeesWriteError> {
     try_write(|| {
         writer.write_u8(get_type_id_byte(TypeIds::Timestamp))?;
         writer.write_i64(value)
@@ -526,22 +680,22 @@ pub fn try_write_timestamp(writer: &mut BinaryWriter, value: i64) -> Result<(), 
 
 fn try_write(
     mut write_func: impl FnMut() -> binary_rw::Result<usize>,
-) -> Result<(), BxesWriteError> {
+) -> Result<(), BeesWriteError> {
     match write_func() {
         Ok(_) => Ok(()),
-        Err(error) => Err(BxesWriteError::WriteError(error)),
+        Err(error) => Err(BeesWriteError::WriteError(error)),
     }
 }
 
-pub fn try_open_write(path: &str) -> Result<FileStream, BxesWriteError> {
+pub fn try_open_write(path: &str) -> Result<FileStream, BeesWriteError> {
     match FileStream::create(path) {
         Ok(stream) => Ok(stream),
-        Err(err) => Err(BxesWriteError::FailedToOpenFileForWriting(err.to_string())),
+        Err(err) => Err(BeesWriteError::FailedToOpenFileForWriting(err.to_string())),
     }
 }
 
-pub fn compress_to_archive(log_path: &str, save_path: &str) -> Result<(), BxesWriteError> {
-    let file = File::create(save_path).or_else(|_| Err(BxesWriteError::FailedToCreateArchive))?;
+pub fn compress_to_archive(log_path: &str, save_path: &str) -> Result<(), BeesWriteError> {
+    let file = File::create(save_path).or_else(|_| Err(BeesWriteError::FailedToCreateArchive))?;
     let mut zip_writer = ZipWriter::new(file);
 
     let archive_log_name = Path::new(save_path).file_name().unwrap().to_str().unwrap();
@@ -551,20 +705,20 @@ pub fn compress_to_archive(log_path: &str, save_path: &str) -> Result<(), BxesWr
 
     zip_writer
         .start_file(archive_log_name, options)
-        .or_else(|_| Err(BxesWriteError::FailedToCreateArchive))?;
+        .or_else(|_| Err(BeesWriteError::FailedToCreateArchive))?;
 
     let bytes = fs::read(log_path).unwrap();
     zip_writer
         .write_all(&bytes)
-        .or_else(|_| Err(BxesWriteError::FailedToCreateArchive))?;
+        .or_else(|_| Err(BeesWriteError::FailedToCreateArchive))?;
 
     zip_writer
         .flush()
-        .or_else(|_| Err(BxesWriteError::FailedToCreateArchive))?;
+        .or_else(|_| Err(BeesWriteError::FailedToCreateArchive))?;
 
     zip_writer
         .finish()
-        .or_else(|_| Err(BxesWriteError::FailedToCreateArchive))?;
+        .or_else(|_| Err(BeesWriteError::FailedToCreateArchive))?;
 
     Ok(())
 }

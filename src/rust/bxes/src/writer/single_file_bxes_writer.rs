@@ -6,7 +6,7 @@ use tempfile::NamedTempFile;
 use crate::models::BxesEventLog;
 
 use super::{
-    errors::BxesWriteError,
+    errors::BeesWriteError,
     write_context::BxesWriteContext,
     writer_utils::{
         compress_to_archive, try_open_write, try_write_key_values, try_write_log_metadata,
@@ -14,10 +14,10 @@ use super::{
     },
 };
 
-pub fn write_bxes(path: &str, log: &BxesEventLog) -> Result<(), BxesWriteError> {
+pub fn write_bxes(path: &str, log: &BxesEventLog) -> Result<(), BeesWriteError> {
     let raw_log_path = match NamedTempFile::new() {
         Ok(file) => file,
-        Err(_) => return Err(BxesWriteError::FailedToCreateTempFile),
+        Err(_) => return Err(BeesWriteError::FailedToCreateTempFile),
     };
 
     let raw_log_path = raw_log_path.path().to_str().unwrap();

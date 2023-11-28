@@ -1,5 +1,7 @@
 use std::string::FromUtf8Error;
 
+use crate::models::BxesValue;
+
 #[derive(Debug)]
 pub enum BxesReadError {
     FailedToOpenFile(String),
@@ -9,7 +11,6 @@ pub enum BxesReadError {
     FailedToParseTypeId(u8),
     FailedToIndexValue(usize),
     FailedToIndexKeyValue(usize),
-    NameOfEventIsNotAString,
     LifecycleOfEventOutOfRange,
     EventAttributeKeyIsNotAString,
     VersionsMismatchError(VersionsMismatchError),
@@ -17,6 +18,7 @@ pub enum BxesReadError {
     TooManyFilesInArchive,
     FailedToCreateTempDir,
     InvalidArchive(String),
+    ExpectedString(BxesValue),
 }
 
 #[derive(Debug)]

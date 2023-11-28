@@ -2,22 +2,77 @@ use std::{any::TypeId, rc::Rc};
 
 use bxes::{
     models::{
-        BrafLifecycle, BxesArtifact, BxesArtifactItem, BxesDriver, BxesDrivers, BxesEvent,
-        BxesEventLog, BxesTraceVariant, BxesValue, Lifecycle, SoftwareEventType, StandardLifecycle,
+        BrafLifecycle, BxesArtifact, BxesArtifactItem, BxesClassifier, BxesDriver, BxesDrivers,
+        BxesEvent, BxesEventLog, BxesEventLogMetadata, BxesExtension, BxesGlobal, BxesGlobalKind,
+        BxesTraceVariant, BxesValue, Lifecycle, SoftwareEventType, StandardLifecycle,
     },
     type_ids::{self, TypeIds},
 };
 use num_traits::FromPrimitive;
-use rand::{distributions::Alphanumeric, rngs::ThreadRng, Rng};
+use rand::{
+    distributions::Alphanumeric,
+    rngs::{self, ThreadRng},
+    Rng,
+};
 use uuid::Uuid;
 
 pub fn generate_random_log() -> BxesEventLog {
     let mut rng = rand::thread_rng();
     BxesEventLog {
         version: rng.gen(),
-        metadata: generate_random_attributes(&mut rng),
+        metadata: generate_random_metadata(&mut rng),
         variants: generate_random_variants(&mut rng),
     }
+}
+
+fn generate_random_metadata(rng: &mut ThreadRng) -> BxesEventLogMetadata {
+    BxesEventLogMetadata {
+        attributes: generate_random_attributes_option(rng),
+        extensions: Some(generate_random_extensions(rng)),
+        classifiers: Some(generate_random_classifiers(rng)),
+        properties: generate_random_attributes_option(rng),
+        globals: Some(generate_random_globals(rng)),
+    }
+}
+
+fn generate_random_globals(rng: &mut ThreadRng) -> Vec<BxesGlobal> {
+    generate_random_list(rng, |rng| BxesGlobal {
+        entity_kind: generate_random_enum::<BxesGlobalKind>(BxesGlobalKind::VARIANT_COUNT),
+        globals: generate_random_attributes(rng),
+    })
+}
+
+fn generate_random_extensions(rng: &mut ThreadRng) -> Vec<BxesExtension> {
+    generate_random_list(rng, |rng| BxesExtension {
+        name: generate_random_string_bxes_value(rng),
+        prefix: generate_random_string_bxes_value(rng),
+        uri: generate_random_string_bxes_value(rng),
+    })
+}
+
+fn generate_random_classifiers(rng: &mut ThreadRng) -> Vec<BxesClassifier> {
+    generate_random_list(rng, |rng| BxesClassifier {
+        name: generate_random_string_bxes_value(rng),
+        keys: generate_random_values(rng),
+    })
+}
+
+fn generate_random_values(rng: &mut ThreadRng) -> Vec<BxesValue> {
+    generate_random_list(rng, |rng| generate_random_bxes_value(rng))
+}
+
+fn generate_random_list<T>(
+    rng: &mut ThreadRng,
+    item_generator: impl Fn(&mut ThreadRng) -> T,
+) -> Vec<T> {
+    let count = rng.gen_range(1..20);
+    let mut vec = vec![];
+
+    for _ in 0..count {
+        vec.push(item_generator(rng));
+    }
+
+    vec
 }
 
 fn generate_random_variants(rng: &mut ThreadRng) -> Vec<BxesTraceVariant> {
@@ -59,21 +114,19 @@ fn generate_random_event(rng: &mut ThreadRng) -> BxesEvent {
         name: generate_random_string_bxes_value(rng),
         timestamp: rng.gen(),
         lifecycle: generate_random_lifecycle(rng),
-        attributes: generate_random_attributes(rng),
+        attributes: generate_random_attributes_option(rng),
     }
 }
 
-fn generate_random_attributes(rng: &mut ThreadRng) -> Option<Vec<(BxesValue, BxesValue)>> {
-    let attributes_count = rng.gen_range(0..20);
-    if attributes_count == 0 {
-        None
-    } else {
-        let mut attributes = Vec::new();
-        for _ in 0..attributes_count {
-            attributes.push(generate_random_attribute(rng));
-        }
+fn generate_random_attributes(rng: &mut ThreadRng) -> Vec<(BxesValue, BxesValue)> {
+    generate_random_list(rng, |rng| generate_random_attribute(rng))
+}
 
-        Some(attributes)
+fn generate_random_attributes_option(rng: &mut ThreadRng) -> Option<Vec<(BxesValue, BxesValue)>> {
+    if rng.gen_bool(0.8) {
+        Some(generate_random_attributes(rng))
+    } else {
+        None
     }
 }
 

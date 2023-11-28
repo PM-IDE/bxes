@@ -242,8 +242,43 @@ pub enum StandardLifecycle {
 #[derive(Debug)]
 pub struct BxesEventLog {
     pub version: u32,
-    pub metadata: Option<Vec<(BxesValue, BxesValue)>>,
+    pub metadata: BxesEventLogMetadata,
     pub variants: Vec<BxesTraceVariant>,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct BxesEventLogMetadata {
+    pub attributes: Option<Vec<(BxesValue, BxesValue)>>,
+    pub extensions: Option<Vec<BxesExtension>>,
+    pub classifiers: Option<Vec<BxesClassifier>>,
+    pub properties: Option<Vec<(BxesValue, BxesValue)>>,
+    pub globals: Option<Vec<BxesGlobal>>,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct BxesExtension {
+    pub name: BxesValue,
+    pub prefix: BxesValue,
+    pub uri: BxesValue,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct BxesClassifier {
+    pub name: BxesValue,
+    pub keys: Vec<BxesValue>,
+}
+
+#[derive(Debug, FromPrimitive, ToPrimitive, VariantCount, PartialEq, Eq)]
+pub enum BxesGlobalKind {
+    Event = 0,
+    Trace = 1,
+    Log = 2,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct BxesGlobal {
+    pub entity_kind: BxesGlobalKind,
+    pub globals: Vec<(BxesValue, BxesValue)>,
 }
 
 #[derive(Debug)]
@@ -339,7 +374,7 @@ impl PartialEq for BxesEventLog {
             return false;
         }
 
-        if !compare_list_of_attributes(&self.metadata, &other.metadata) {
+        if !self.metadata.eq(&other.metadata) {
             return false;
         }
 
