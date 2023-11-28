@@ -1,3 +1,4 @@
+using Bxes.Models.Values;
 using Bxes.Utils;
 using Bxes.Writer;
 using Bxes.Writer.Stream;

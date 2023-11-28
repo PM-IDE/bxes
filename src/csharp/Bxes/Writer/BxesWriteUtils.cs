@@ -1,5 +1,6 @@
 using System.IO.Compression;
 using Bxes.Models;
+using Bxes.Models.Values;
 
 namespace Bxes.Writer;
 

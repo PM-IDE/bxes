@@ -1,4 +1,6 @@
 using Bxes.Models;
+using Bxes.Models.Values;
+using Bxes.Models.Values.Lifecycle;
 using Bxes.Writer;
 
 namespace Bxes.Tests;

@@ -1,6 +1,8 @@
 ﻿using System.Xml;
 using System.Xml.Linq;
 using Bxes.Models;
+using Bxes.Models.Values;
+using Bxes.Models.Values.Lifecycle;
 using Bxes.Writer;
 using Bxes.Writer.Stream;
 
