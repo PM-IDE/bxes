@@ -1,6 +1,7 @@
 using Bxes.Models;
 using Bxes.Models.Values;
 using Bxes.Models.Values.Lifecycle;
+using Bxes.Utils;
 using Bxes.Writer;
 
 namespace Bxes.Tests;
@@ -22,7 +23,7 @@ public static class TestLogsProvider
   private static ITraceVariant CreateRandomVariant()
   {
     var eventsCount = Random.Shared.Next(100);
-    var events = new List<InMemoryEventImpl>();
+    var events = new List<IEvent>();
 
     for (var i = 0; i < eventsCount; ++i)
     {
@@ -40,7 +41,7 @@ public static class TestLogsProvider
       GenerateRandomAttributes()
     );
 
-  private static IEnumerable<AttributeKeyValue> GenerateRandomAttributes()
+  private static List<AttributeKeyValue> GenerateRandomAttributes()
   {
     var attributes = new List<AttributeKeyValue>();
     var attributesCount = Random.Shared.Next(5);

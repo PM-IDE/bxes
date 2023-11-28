@@ -10,16 +10,16 @@ public interface IEventLog : IEquatable<IEventLog>
   uint Version { get; }
 
   IEventLogMetadata Metadata { get; }
-  IEnumerable<ITraceVariant> Traces { get; }
+  IList<ITraceVariant> Traces { get; }
 }
 
 public interface IEventLogMetadata : IEquatable<IEventLogMetadata>
 {
-  List<AttributeKeyValue> Metadata { get; }
-  List<BxesExtension> Extensions { get; }
-  List<BxesClassifier> Classifiers { get; }
-  List<AttributeKeyValue> Properties { get; }
-  List<(GlobalsEntityKind Kind, List<AttributeKeyValue> Globals)> Globals { get; }
+  IList<AttributeKeyValue> Metadata { get; }
+  IList<BxesExtension> Extensions { get; }
+  IList<BxesClassifier> Classifiers { get; }
+  IList<AttributeKeyValue> Properties { get; }
+  IList<(GlobalsEntityKind Kind, List<AttributeKeyValue> Globals)> Globals { get; }
 
   IEnumerable<BxesValue> EnumerateValues()
   {
@@ -82,11 +82,12 @@ public enum GlobalsEntityKind : byte
 
 public class EventLogMetadata : IEventLogMetadata
 {
-  public List<AttributeKeyValue> Metadata { get; } = new();
-  public List<BxesExtension> Extensions { get; } = new();
-  public List<BxesClassifier> Classifiers { get; } = new();
-  public List<AttributeKeyValue> Properties { get; } = new();
-  public List<(GlobalsEntityKind Kind, List<AttributeKeyValue> Globals)> Globals { get; } = new();
+  public IList<AttributeKeyValue> Metadata { get; } = new List<AttributeKeyValue>();
+  public IList<BxesExtension> Extensions { get; } = new List<BxesExtension>();
+  public IList<BxesClassifier> Classifiers { get; } = new List<BxesClassifier>();
+  public IList<AttributeKeyValue> Properties { get; } = new List<AttributeKeyValue>();
+  public IList<(GlobalsEntityKind Kind, List<AttributeKeyValue> Globals)> Globals { get; } = 
+    new List<(GlobalsEntityKind Kind, List<AttributeKeyValue> Globals)>();
 
 
   public bool Equals(IEventLogMetadata? other)
@@ -148,7 +149,7 @@ public class InMemoryEventLog(uint version, IEventLogMetadata metadata, List<ITr
   public uint Version { get; } = version;
 
   public IEventLogMetadata Metadata { get; } = metadata;
-  public IEnumerable<ITraceVariant> Traces { get; } = traces;
+  public IList<ITraceVariant> Traces { get; } = traces;
 
 
   public bool Equals(IEventLog? other)
@@ -156,7 +157,7 @@ public class InMemoryEventLog(uint version, IEventLogMetadata metadata, List<ITr
     return other is { } &&
            Version == other.Version &&
            Metadata.Equals(other.Metadata) &&
-           Traces.Count() == other.Traces.Count() &&
+           Traces.Count == other.Traces.Count &&
            Traces.Zip(other.Traces).All(pair => pair.First.Equals(pair.Second));
   }
 }

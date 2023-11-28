@@ -142,7 +142,7 @@ public static class BxesReadUtils
       }
       
       var eventsCount = reader.ReadUInt32();
-      var events = new List<InMemoryEventImpl>();
+      var events = new List<IEvent>();
 
       for (uint j = 0; j < eventsCount; ++j)
       {

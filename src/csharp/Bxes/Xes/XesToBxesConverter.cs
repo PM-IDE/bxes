@@ -37,7 +37,7 @@ public readonly struct FromXesBxesEvent : IEvent
   public long Timestamp { get; }
   public string Name { get; }
   public IEventLifecycle Lifecycle { get; }
-  public IEnumerable<AttributeKeyValue> Attributes { get; }
+  public IList<AttributeKeyValue> Attributes { get; }
 
 
   public FromXesBxesEvent(XElement element)

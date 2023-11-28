@@ -6,8 +6,8 @@ public interface ITraceVariant : IEquatable<ITraceVariant>
 {
   uint Count { get; }
   
-  IEnumerable<AttributeKeyValue> Metadata { get; }
-  IEnumerable<IEvent> Events { get; }
+  IList<AttributeKeyValue> Metadata { get; }
+  IList<IEvent> Events { get; }
 
   IEnumerable<BxesValue> EnumerateValues()
   {
@@ -45,19 +45,19 @@ public interface ITraceVariant : IEquatable<ITraceVariant>
 
 public class TraceVariantImpl(
   uint count, 
-  List<InMemoryEventImpl> events, 
+  List<IEvent> events, 
   List<AttributeKeyValue> metadata
 ) : ITraceVariant
 {
   public uint Count { get; } = count;
-  public IEnumerable<IEvent> Events { get; } = events;
-  public IEnumerable<AttributeKeyValue> Metadata { get; } = metadata;
+  public IList<IEvent> Events { get; } = events;
+  public IList<AttributeKeyValue> Metadata { get; } = metadata;
 
   public bool Equals(ITraceVariant? other)
   {
     return other is { } &&
            Count == other.Count &&
-           Events.Count() == other.Events.Count() &&
+           Events.Count == other.Events.Count &&
            Events.Zip(other.Events).All(pair => pair.First.Equals(pair.Second));
   }
 }

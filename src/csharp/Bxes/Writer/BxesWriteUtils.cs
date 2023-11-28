@@ -134,19 +134,19 @@ internal static class BxesWriteUtils
   }
 
   public static void WriteTracesVariants(IEventLog log, BxesWriteContext context) =>
-    WriteCollectionAndCount(log.Traces, context, WriteTraceVariant, () => (IndexType)log.Traces.Count());
+    WriteCollectionAndCount(log.Traces, context, WriteTraceVariant, () => (IndexType)log.Traces.Count);
 
   private static void WriteTraceVariant(ITraceVariant variant, BxesWriteContext context)
   {
     context.Writer.Write(variant.Count);
     
     WriteVariantMetadata(variant.Metadata, context);
-    WriteCollectionAndCount(variant.Events, context, WriteEvent, () => (IndexType)variant.Events.Count());
+    WriteCollectionAndCount(variant.Events, context, WriteEvent, () => (IndexType)variant.Events.Count);
   }
 
-  public static void WriteVariantMetadata(IEnumerable<AttributeKeyValue> metadata, BxesWriteContext context)
+  public static void WriteVariantMetadata(IList<AttributeKeyValue> metadata, BxesWriteContext context)
   {
-    var metadataCount = (IndexType)metadata.Count();
+    var metadataCount = (IndexType)metadata.Count;
     context.Writer.Write(metadataCount);
     foreach (var pair in metadata)
     {
@@ -160,7 +160,7 @@ internal static class BxesWriteUtils
     context.Writer.Write(@event.Timestamp);
     @event.Lifecycle.WriteTo(context);
 
-    WriteCollectionAndCount(@event.Attributes, context, WriteKeyValueIndex, () => (IndexType)@event.Attributes.Count());
+    WriteCollectionAndCount(@event.Attributes, context, WriteKeyValueIndex, () => (IndexType)@event.Attributes.Count);
   }
 
   public static void WriteValues(IEventLog log, BxesWriteContext context)

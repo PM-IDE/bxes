@@ -10,7 +10,7 @@ public interface IEvent : IEquatable<IEvent>
   string Name { get; }
   IEventLifecycle Lifecycle { get; }
 
-  IEnumerable<AttributeKeyValue> Attributes { get; }
+  IList<AttributeKeyValue> Attributes { get; }
 
   IEnumerable<BxesValue> EnumerateValues()
   {
@@ -41,13 +41,13 @@ public class InMemoryEventImpl(
   long timestamp,
   BxesStringValue name,
   IEventLifecycle lifecycle,
-  IEnumerable<AttributeKeyValue> attributes
+  List<AttributeKeyValue> attributes
 ) : IEvent
 {
   public long Timestamp { get; } = timestamp;
   public IEventLifecycle Lifecycle { get; } = lifecycle;
   public string Name => name.Value;
-  public IEnumerable<AttributeKeyValue> Attributes { get; } = attributes;
+  public IList<AttributeKeyValue> Attributes { get; } = attributes;
 
 
   public bool Equals(IEvent? other) => other is { } && EventUtil.Equals(this, other);
