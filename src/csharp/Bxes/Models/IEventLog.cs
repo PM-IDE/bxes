@@ -19,7 +19,7 @@ public interface IEventLogMetadata : IEquatable<IEventLogMetadata>
   IList<BxesExtension> Extensions { get; }
   IList<BxesClassifier> Classifiers { get; }
   IList<AttributeKeyValue> Properties { get; }
-  IList<(GlobalsEntityKind Kind, List<AttributeKeyValue> Globals)> Globals { get; }
+  IList<BxesGlobal> Globals { get; }
 
   IEnumerable<BxesValue> EnumerateValues()
   {
@@ -46,12 +46,12 @@ public interface IEventLogMetadata : IEquatable<IEventLogMetadata>
       }
     }
 
-    foreach (var (_, globals) in Globals)
+    foreach (var global in Globals)
     {
-      foreach (var global in globals)
+      foreach (var attribute in global.Globals)
       {
-        yield return global.Key;
-        yield return global.Value;
+        yield return attribute.Key;
+        yield return attribute.Value;
       }
     }
   }
@@ -63,13 +63,31 @@ public interface IEventLogMetadata : IEquatable<IEventLogMetadata>
       yield return pair;
     }
 
-    foreach (var (_, globals) in Globals)
+    foreach (var global in Globals)
     {
-      foreach (var global in globals)
+      foreach (var attribute in global.Globals)
       {
-        yield return global;
+        yield return attribute;
       }
     }
+  }
+
+  IEnumerable<BxesStreamEvent> ToEventsStream()
+  {
+    foreach (var attributeKeyValue in Metadata) 
+      yield return new BxesLogMetadataAttributeEvent(attributeKeyValue);
+
+    foreach (var extension in Extensions)
+      yield return new BxesLogMetadataExtensionEvent(extension);
+    
+    foreach (var classifier in Classifiers)
+      yield return new BxesLogMetadataClassifierEvent(classifier);
+    
+    foreach (var global in Globals)
+      yield return new BxesLogMetadataGlobalEvent(global);
+    
+    foreach (var property in Properties)
+      yield return new BxesLogMetadataPropertyEvent(property);
   }
 }
 
@@ -86,8 +104,7 @@ public class EventLogMetadata : IEventLogMetadata
   public IList<BxesExtension> Extensions { get; } = new List<BxesExtension>();
   public IList<BxesClassifier> Classifiers { get; } = new List<BxesClassifier>();
   public IList<AttributeKeyValue> Properties { get; } = new List<AttributeKeyValue>();
-  public IList<(GlobalsEntityKind Kind, List<AttributeKeyValue> Globals)> Globals { get; } = 
-    new List<(GlobalsEntityKind Kind, List<AttributeKeyValue> Globals)>();
+  public IList<BxesGlobal> Globals { get; } = new List<BxesGlobal>();
 
 
   public bool Equals(IEventLogMetadata? other)
@@ -144,6 +161,12 @@ public record BxesExtension
   public required BxesStringValue Name { get; init; }
 }
 
+public record BxesGlobal
+{
+  public required GlobalsEntityKind Kind { get; init; }
+  public required List<AttributeKeyValue> Globals { get; init; }
+}
+
 public class InMemoryEventLog(uint version, IEventLogMetadata metadata, List<ITraceVariant> traces) : IEventLog
 {
   public uint Version { get; } = version;
@@ -166,7 +189,10 @@ public static class EventLogUtil
 {
   public static IEnumerable<BxesStreamEvent> ToEventsStream(this IEventLog log)
   {
-    yield return new BxesLogMetadataEvent(log.Metadata);
+    foreach (var @event in log.Metadata.ToEventsStream())
+    {
+      yield return @event;
+    }
 
     foreach (var variant in log.Traces)
     {

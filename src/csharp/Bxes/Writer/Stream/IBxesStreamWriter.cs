@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Bxes.Models;
 
 namespace Bxes.Writer.Stream;
@@ -32,7 +33,27 @@ public sealed class BxesValueEvent(BxesValue value) : BxesStreamEvent
   public BxesValue Value { get; } = value;
 }
 
-public sealed class BxesLogMetadataEvent(IEventLogMetadata metadata) : BxesStreamEvent
+public sealed class BxesLogMetadataAttributeEvent(AttributeKeyValue attribute) : BxesStreamEvent
 {
-  public IEventLogMetadata Metadata { get; } = metadata;
+  public AttributeKeyValue Attribute { get; } = attribute;
+}
+
+public sealed class BxesLogMetadataClassifierEvent(BxesClassifier classifier) : BxesStreamEvent
+{
+  public BxesClassifier Classifier { get; } = classifier;
+}
+
+public sealed class BxesLogMetadataExtensionEvent(BxesExtension extension) : BxesStreamEvent
+{
+  public BxesExtension Extensions { get; } = extension;
+}
+
+public sealed class BxesLogMetadataPropertyEvent(AttributeKeyValue attribute) : BxesStreamEvent
+{
+  public AttributeKeyValue Attribute { get; } = attribute;
+}
+
+public sealed class BxesLogMetadataGlobalEvent(BxesGlobal global) : BxesStreamEvent
+{
+  public BxesGlobal Global { get; } = global;
 }

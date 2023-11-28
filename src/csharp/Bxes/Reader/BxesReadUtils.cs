@@ -99,7 +99,11 @@ public static class BxesReadUtils
         entityGlobals.Add(new AttributeKeyValue((BxesStringValue)values[(int)kv.Key], values[(int)kv.Value]));
       }
 
-      metadata.Globals.Add((entityType, entityGlobals));
+      metadata.Globals.Add(new BxesGlobal
+      {
+        Kind = entityType,
+        Globals = entityGlobals
+      });
     }
 
     var classifiersCount = reader.ReadUInt32();

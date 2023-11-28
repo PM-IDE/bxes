@@ -105,15 +105,19 @@ public static class TestLogsProvider
     return extensions;
   }
 
-  private static List<(GlobalsEntityKind, List<AttributeKeyValue>)> GenerateRandomGlobals()
+  private static List<BxesGlobal> GenerateRandomGlobals()
   {
-    var globals = new List<(GlobalsEntityKind, List<AttributeKeyValue>)>();
+    var globals = new List<BxesGlobal>();
     var globalsCount = Random.Shared.Next(10);
     var kindValues = Enum.GetValues<GlobalsEntityKind>();
       
     for (var i = 0; i < globalsCount; ++i)
     {
-      globals.Add((kindValues[Random.Shared.Next(kindValues.Length)], GenerateRandomAttributes().ToList()));
+      globals.Add(new BxesGlobal
+      {
+        Kind = kindValues[Random.Shared.Next(kindValues.Length)],
+        Globals = GenerateRandomAttributes().ToList()
+      });
     }
 
     return globals;

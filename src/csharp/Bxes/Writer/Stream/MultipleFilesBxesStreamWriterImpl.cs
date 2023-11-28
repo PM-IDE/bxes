@@ -10,6 +10,7 @@ public class MultipleFilesBxesStreamWriterImpl<TEvent> : IBxesStreamWriter where
   private readonly BinaryWriter myValuesWriter;
   private readonly BinaryWriter myKeyValuesWriter;
   private readonly BinaryWriter myTracesWriter;
+  private readonly IEventLogMetadata myMetadata = new EventLogMetadata();
 
   private readonly BxesWriteContext myContext = new(null!);
 
@@ -66,8 +67,20 @@ public class MultipleFilesBxesStreamWriterImpl<TEvent> : IBxesStreamWriter where
       case BxesValueEvent valueEvent:
         HandleValueEvent(valueEvent);
         break;
-      case BxesLogMetadataEvent metadataEvent:
-        HandleMetadataEvent(metadataEvent);
+      case BxesLogMetadataGlobalEvent globalEvent:
+        myMetadata.Globals.Add(globalEvent.Global);
+        break;
+      case BxesLogMetadataAttributeEvent attributeEvent:
+        myMetadata.Metadata.Add(attributeEvent.Attribute);
+        break;
+      case BxesLogMetadataClassifierEvent classifierEvent:
+        myMetadata.Classifiers.Add(classifierEvent.Classifier);
+        break;
+      case BxesLogMetadataExtensionEvent extensionEvent:
+        myMetadata.Extensions.Add(extensionEvent.Extensions);
+        break;
+      case BxesLogMetadataPropertyEvent propertyEvent:
+        myMetadata.Properties.Add(propertyEvent.Attribute);
         break;
       case BxesTraceVariantStartEvent variantStartEvent:
         HandleTraceVariantStart(variantStartEvent);
@@ -75,21 +88,6 @@ public class MultipleFilesBxesStreamWriterImpl<TEvent> : IBxesStreamWriter where
       default:
         throw new ArgumentOutOfRangeException(nameof(@event));
     }
-  }
-
-  private void HandleMetadataEvent(BxesLogMetadataEvent metadataEvent)
-  {
-    foreach (var value in metadataEvent.Metadata.EnumerateValues())
-    {
-      BxesWriteUtils.WriteValueIfNeeded(value, myContext.WithWriter(myValuesWriter));
-    }
-
-    foreach (var kv in metadataEvent.Metadata.EnumerateKeyValuePairs())
-    {
-      BxesWriteUtils.WriteKeyValuePairIfNeeded(kv, myContext.WithWriter(myKeyValuesWriter));
-    }
-
-    BxesWriteUtils.WriteEventLogMetadata(metadataEvent.Metadata, myContext.WithWriter(myMetadataWriter));
   }
 
   private void HandleValueEvent(BxesValueEvent valueEvent)
@@ -158,6 +156,7 @@ public class MultipleFilesBxesStreamWriterImpl<TEvent> : IBxesStreamWriter where
 
   private void FlushInformation()
   {
+    WriteMetadata();
     WriteLastTraceVariantCountIfNeeded();
 
     const int CountPos = sizeof(uint);
@@ -165,5 +164,20 @@ public class MultipleFilesBxesStreamWriterImpl<TEvent> : IBxesStreamWriter where
     BxesWriteUtils.WriteCount(myTracesWriter, CountPos, myTracesVariantsCount);
     BxesWriteUtils.WriteCount(myValuesWriter, CountPos, (uint)myContext.ValuesIndices.Count);
     BxesWriteUtils.WriteCount(myKeyValuesWriter, CountPos, (uint)myContext.KeyValueIndices.Count);
+  }
+
+  private void WriteMetadata()
+  {
+    foreach (var value in myMetadata.EnumerateValues())
+    {
+      BxesWriteUtils.WriteValueIfNeeded(value, myContext.WithWriter(myValuesWriter));
+    }
+
+    foreach (var kv in myMetadata.EnumerateKeyValuePairs())
+    {
+      BxesWriteUtils.WriteKeyValuePairIfNeeded(kv, myContext.WithWriter(myKeyValuesWriter));
+    }
+
+    BxesWriteUtils.WriteEventLogMetadata(myMetadata, myContext.WithWriter(myMetadataWriter));
   }
 }
