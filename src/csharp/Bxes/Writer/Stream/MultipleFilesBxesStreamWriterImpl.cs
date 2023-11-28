@@ -88,7 +88,7 @@ public class MultipleFilesBxesStreamWriterImpl<TEvent> : IBxesStreamWriter where
     {
       BxesWriteUtils.WriteKeyValuePairIfNeeded(kv, myContext.WithWriter(myKeyValuesWriter));
     }
-    
+
     BxesWriteUtils.WriteEventLogMetadata(metadataEvent.Metadata, myContext.WithWriter(myMetadataWriter));
   }
 

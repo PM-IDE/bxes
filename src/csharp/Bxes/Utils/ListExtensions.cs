@@ -10,6 +10,6 @@ public static class ListExtensions
     unchecked
     {
       return list.Aggregate(Seed, (current, item) => current * Modifier + item.GetHashCode());
-    }      
+    }
   }
 }

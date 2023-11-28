@@ -20,7 +20,7 @@ public class BxesArtifactModelsListValue(List<BxesArtifactItem> items) : BxesVal
       BxesWriteUtils.WriteValueIfNeeded(new BxesStringValue(item.Instance), context);
       BxesWriteUtils.WriteValueIfNeeded(new BxesStringValue(item.Transition), context);
     }
-    
+
     base.WriteTo(context);
 
     context.Writer.Write((uint)items.Count);

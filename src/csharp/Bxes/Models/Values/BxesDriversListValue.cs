@@ -22,9 +22,9 @@ public class BxesDriversListValue(List<BxesDriver> drivers) : BxesValue<List<Bxe
       BxesWriteUtils.WriteValueIfNeeded(new BxesStringValue(driver.Name), context);
       BxesWriteUtils.WriteValueIfNeeded(new BxesStringValue(driver.Type), context);
     }
-    
+
     base.WriteTo(context);
-    
+
     context.Writer.Write((uint)drivers.Count);
 
     foreach (var driver in drivers)

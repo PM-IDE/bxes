@@ -19,21 +19,24 @@ public class MultipleFilesBxesWriter : IBxesWriter
 
     var version = log.Version;
     ExecuteWithFile(savePath, BxesConstants.ValuesFileName, version, bw => Write(bw, BxesWriteUtils.WriteValues));
-    ExecuteWithFile(savePath, BxesConstants.KVPairsFileName, version, bw => Write(bw, BxesWriteUtils.WriteKeyValuePairs));
-    
+    ExecuteWithFile(savePath, BxesConstants.KVPairsFileName, version,
+      bw => Write(bw, BxesWriteUtils.WriteKeyValuePairs));
+
     ExecuteWithFile(
-      savePath, 
-      BxesConstants.MetadataFileName, 
+      savePath,
+      BxesConstants.MetadataFileName,
       version, bw => Write(bw, (log, context) => BxesWriteUtils.WriteEventLogMetadata(log.Metadata, context)));
-    
-    ExecuteWithFile(savePath, BxesConstants.TracesFileName, version, bw => Write(bw, BxesWriteUtils.WriteTracesVariants));
+
+    ExecuteWithFile(savePath, BxesConstants.TracesFileName, version,
+      bw => Write(bw, BxesWriteUtils.WriteTracesVariants));
   }
 
-  private static void ExecuteWithFile(string saveDirectory, string fileName, uint version, Action<BinaryWriter> writeAction)
+  private static void ExecuteWithFile(
+    string saveDirectory, string fileName, uint version, Action<BinaryWriter> writeAction)
   {
     var path = Path.Combine(saveDirectory, fileName);
     PathUtil.EnsureDeleted(path);
-    
+
     BxesWriteUtils.ExecuteWithFile(path, writer =>
     {
       BxesWriteUtils.WriteBxesVersion(writer, version);

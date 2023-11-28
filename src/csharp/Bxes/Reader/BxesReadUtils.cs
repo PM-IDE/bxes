@@ -98,7 +98,7 @@ public static class BxesReadUtils
         var kv = keyValues[(int)reader.ReadUInt32()];
         entityGlobals.Add(new AttributeKeyValue((BxesStringValue)values[(int)kv.Key], values[(int)kv.Value]));
       }
-      
+
       metadata.Globals.Add((entityType, entityGlobals));
     }
 
@@ -110,16 +110,16 @@ public static class BxesReadUtils
       {
         Name = classifierName
       };
-      
+
       var keysCount = reader.ReadUInt32();
       for (uint j = 0; j < keysCount; ++j)
       {
         classifier.Keys.Add((BxesStringValue)values[(int)reader.ReadUInt32()]);
       }
-      
+
       metadata.Classifiers.Add(classifier);
     }
-    
+
     return metadata;
   }
 

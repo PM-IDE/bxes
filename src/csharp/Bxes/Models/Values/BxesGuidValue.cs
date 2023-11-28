@@ -13,7 +13,7 @@ public class BxesGuidValue(Guid guid) : BxesValue<Guid>(guid)
 
     Span<byte> guidBytes = stackalloc byte[16];
     Value.TryWriteBytes(guidBytes);
-    
+
     context.Writer.Write(guidBytes);
   }
 }

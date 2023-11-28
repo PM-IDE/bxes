@@ -20,7 +20,7 @@ public class SingleFileBxesWriter : IBxesWriter
       BxesWriteUtils.WriteEventLogMetadata(log.Metadata, context);
       BxesWriteUtils.WriteTracesVariants(log, context);
     });
-    
-    BxesWriteUtils.CreateZipArchive(new [] { cookie.Path }, savePath);
+
+    BxesWriteUtils.CreateZipArchive(new[] { cookie.Path }, savePath);
   }
 }

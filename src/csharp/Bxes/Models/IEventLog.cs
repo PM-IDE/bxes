@@ -62,7 +62,7 @@ public interface IEventLogMetadata : IEquatable<IEventLogMetadata>
     {
       yield return pair;
     }
-    
+
     foreach (var (_, globals) in Globals)
     {
       foreach (var global in globals)
@@ -92,7 +92,7 @@ public class EventLogMetadata : IEventLogMetadata
   public bool Equals(IEventLogMetadata? other)
   {
     if (ReferenceEquals(other, this)) return true;
-    
+
     if (other is null ||
         other.Metadata.Count != Metadata.Count ||
         other.Extensions.Count != Extensions.Count ||
@@ -181,6 +181,7 @@ public static class EventLogUtil
   public static bool Equals(ICollection<AttributeKeyValue> first, ICollection<AttributeKeyValue> second)
   {
     return first.Count == second.Count &&
-           first.Zip(second).All(pair => pair.First.Key.Equals(pair.Second.Key) && pair.First.Value.Equals(pair.Second.Value));
+           first.Zip(second).All(pair =>
+             pair.First.Key.Equals(pair.Second.Key) && pair.First.Value.Equals(pair.Second.Value));
   }
 }

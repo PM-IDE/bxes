@@ -104,13 +104,13 @@ internal static class BxesWriteUtils
     {
       context.Writer.Write(context.KeyValueIndices[pair]);
     }
-    
+
     context.Writer.Write((IndexType)metadata.Properties.Count);
     foreach (var pair in metadata.Properties)
     {
       context.Writer.Write(context.KeyValueIndices[pair]);
     }
-    
+
     context.Writer.Write((IndexType)metadata.Extensions.Count);
     foreach (var extension in metadata.Extensions)
     {
@@ -118,7 +118,7 @@ internal static class BxesWriteUtils
       context.Writer.Write(context.ValuesIndices[extension.Prefix]);
       context.Writer.Write(context.ValuesIndices[extension.Uri]);
     }
-    
+
     context.Writer.Write((IndexType)metadata.Globals.Count);
     foreach (var entityGlobal in metadata.Globals)
     {
@@ -130,7 +130,7 @@ internal static class BxesWriteUtils
         context.Writer.Write(context.KeyValueIndices[global]);
       }
     }
-    
+
     context.Writer.Write((IndexType)metadata.Classifiers.Count);
     foreach (var classifier in metadata.Classifiers)
     {

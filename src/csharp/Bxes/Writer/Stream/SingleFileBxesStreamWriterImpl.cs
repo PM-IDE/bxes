@@ -19,15 +19,15 @@ public class SingleFileBxesStreamWriterImpl<TEvent> : IBxesStreamWriter where TE
     myMultipleWriter = new MultipleFilesBxesStreamWriterImpl<TEvent>(myFolderContainer.Path, bxesVersion);
   }
 
-  
+
   public void HandleEvent(BxesStreamEvent @event) => myMultipleWriter.HandleEvent(@event);
-  
+
   public void Dispose()
   {
     myMultipleWriter.Dispose();
 
     MergeFilesIntoOne();
-    
+
     myFolderContainer.Dispose();
   }
 
@@ -46,10 +46,10 @@ public class SingleFileBxesStreamWriterImpl<TEvent> : IBxesStreamWriter where TE
       SkipVersionAndCopyContents(OpenRead(BxesConstants.ValuesFileName), writer);
       SkipVersionAndCopyContents(OpenRead(BxesConstants.KVPairsFileName), writer);
       SkipVersionAndCopyContents(OpenRead(BxesConstants.MetadataFileName), writer);
-      SkipVersionAndCopyContents(OpenRead(BxesConstants.TracesFileName), writer); 
+      SkipVersionAndCopyContents(OpenRead(BxesConstants.TracesFileName), writer);
     }
-    
-    BxesWriteUtils.CreateZipArchive(new [] { tempFileCookie.Path }, mySavePath);
+
+    BxesWriteUtils.CreateZipArchive(new[] { tempFileCookie.Path }, mySavePath);
   }
 
   private static void SkipVersionAndCopyContents(BinaryReader reader, BinaryWriter writer)

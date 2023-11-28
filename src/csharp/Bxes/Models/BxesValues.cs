@@ -62,7 +62,7 @@ public abstract class BxesValue
         {
           var instance = (BxesStringValue)parsedValues[(int)reader.ReadUInt32()];
           var transition = (BxesStringValue)parsedValues[(int)reader.ReadUInt32()];
-          
+
           models.Add(new BxesArtifactItem
           {
             Instance = instance.Value,

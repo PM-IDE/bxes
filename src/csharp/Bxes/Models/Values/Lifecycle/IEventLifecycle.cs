@@ -18,6 +18,6 @@ public interface IEventLifecycle
 
     return new BrafLifecycle(BrafLifecycleValues.Unspecified);
   }
-  
+
   void WriteTo(BxesWriteContext context);
 }

@@ -45,7 +45,7 @@ public readonly struct FromXesBxesEvent : IEvent
     var attributes = new Lazy<List<AttributeKeyValue>>(() => new List<AttributeKeyValue>());
     var initializedName = false;
     var initializedTimestamp = false;
-    
+
     foreach (var child in element.Elements())
     {
       string key = null!;
@@ -74,7 +74,7 @@ public readonly struct FromXesBxesEvent : IEvent
       };
 
       Lifecycle = new StandardXesLifecycle(StandardLifecycleValues.Unspecified);
-      
+
       switch (key)
       {
         case XesConstants.ConceptName:
@@ -105,7 +105,7 @@ public readonly struct FromXesBxesEvent : IEvent
       false => ArraySegment<AttributeKeyValue>.Empty
     };
   }
-  
+
   public bool Equals(IEvent? other) => other is { } && EventUtil.Equals(this, other);
 }
 
