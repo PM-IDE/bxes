@@ -15,10 +15,7 @@ pub fn read_bxes(path: &str) -> Result<BxesEventLog, BxesReadError> {
         .collect::<Vec<String>>();
 
     if files.len() != 1 {
-        return Err(BxesReadError::InvalidArchive(format!(
-            "Expected one file, got {:?}",
-            files
-        )));
+        return Err(BxesReadError::InvalidArchive(format!("Expected one file, got {:?}", files)));
     }
 
     let mut stream = try_open_file_stream(files[0].as_str())?;

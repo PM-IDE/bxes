@@ -33,6 +33,13 @@ fn generate_random_variants(rng: &mut ThreadRng) -> Vec<BxesTraceVariant> {
 
 fn generate_random_variant(rng: &mut ThreadRng) -> BxesTraceVariant {
     let traces_count = rng.gen::<u32>();
+
+    let mut metadata = vec![];
+    let metadata_count = rng.gen_range(1..20);
+    for _ in 0..metadata_count {
+        metadata.push(generate_random_attribute(rng));
+    }
+
     let mut events = vec![];
 
     let events_count = rng.gen_range(0..100);
@@ -42,6 +49,7 @@ fn generate_random_variant(rng: &mut ThreadRng) -> BxesTraceVariant {
 
     BxesTraceVariant {
         traces_count,
+        metadata,
         events,
     }
 }
@@ -104,11 +112,11 @@ fn generate_random_bxes_value(rng: &mut ThreadRng) -> BxesValue {
             BxesValue::StandardLifecycle(generate_random_standard_lifecycle())
         }
         TypeIds::Guid => BxesValue::Guid(Uuid::new_v4()),
-        TypeIds::SoftwareEventType => {
-            BxesValue::SoftwareEventType(generate_random_enum::<SoftwareEventType>(
-                SoftwareEventType::VARIANT_COUNT,
-            ))
-        }
+        TypeIds::SoftwareEventType => BxesValue::SoftwareEventType(generate_random_enum::<
+            SoftwareEventType,
+        >(
+            SoftwareEventType::VARIANT_COUNT,
+        )),
         TypeIds::Artifact => generate_random_artifact(rng),
         TypeIds::Drivers => generate_random_drivers(rng),
         _ => panic!("Got unknown type id"),

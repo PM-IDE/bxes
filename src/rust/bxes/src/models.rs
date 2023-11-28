@@ -249,6 +249,7 @@ pub struct BxesEventLog {
 #[derive(Debug)]
 pub struct BxesTraceVariant {
     pub traces_count: u32,
+    pub metadata: Vec<(BxesValue, BxesValue)>,
     pub events: Vec<BxesEvent>,
 }
 

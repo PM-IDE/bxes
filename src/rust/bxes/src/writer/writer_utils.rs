@@ -29,6 +29,9 @@ pub fn try_write_variants(
                 context.borrow_mut().writer.as_mut().unwrap(),
                 variant.traces_count,
             )?;
+
+            try_write_attributes(context.clone(), Some(&variant.metadata))?;
+
             write_collection_and_count(context.clone(), || {
                 for event in &variant.events {
                     try_write_event(event, context.clone())?;
@@ -70,10 +73,12 @@ pub fn try_write_event(
         context.borrow_mut().writer.as_mut().unwrap(),
         event.timestamp,
     )?;
+
     try_write_lifecycle(
         context.borrow_mut().writer.as_mut().unwrap(),
         &event.lifecycle,
     )?;
+
     try_write_attributes(context, event.attributes.as_ref())
 }
 
@@ -99,10 +104,9 @@ pub fn try_write_attributes(
                         index as u32,
                     )?;
                 } else {
-                    return Err(BxesWriteError::FailedToFindKeyValueIndex((
-                        key.clone(),
-                        value.clone(),
-                    )));
+                    return Err(
+                        BxesWriteError::FailedToFindKeyValueIndex((key.clone(), value.clone()))
+                    );
                 }
             }
 
@@ -169,26 +173,32 @@ fn execute_with_kv_pairs<'a>(
     mut action: impl FnMut(ValueOrKeyValue<'a>) -> Result<(), BxesWriteError>,
 ) -> Result<(), BxesWriteError> {
     if let Some(metadata) = log.metadata.as_ref() {
-        for (key, value) in metadata {
-            action(ValueOrKeyValue::Value(key))?;
-            action(ValueOrKeyValue::Value(value))?;
-
-            action(ValueOrKeyValue::KeyValue((key, value)))?;
-        }
+        execute_with_attributes_kv_pairs(metadata, &mut action)?;
     }
 
     for variant in &log.variants {
+        execute_with_attributes_kv_pairs(&variant.metadata, &mut action)?;
+
         for event in &variant.events {
             action(ValueOrKeyValue::Value(&event.name))?;
             if let Some(attributes) = event.attributes.as_ref() {
-                for (key, value) in attributes {
-                    action(ValueOrKeyValue::Value(key))?;
-                    action(ValueOrKeyValue::Value(value))?;
-
-                    action(ValueOrKeyValue::KeyValue((key, value)))?;
-                }
+                execute_with_attributes_kv_pairs(attributes, &mut action)?;
             }
         }
+    }
+
+    Ok(())
+}
+
+fn execute_with_attributes_kv_pairs<'a>(
+    attributes: &'a Vec<(BxesValue, BxesValue)>,
+    action: &mut impl FnMut(ValueOrKeyValue<'a>) -> Result<(), BxesWriteError>,
+) -> Result<(), BxesWriteError> {
+    for (key, value) in attributes {
+        action(ValueOrKeyValue::Value(key))?;
+        action(ValueOrKeyValue::Value(value))?;
+
+        action(ValueOrKeyValue::KeyValue((key, value)))?;
     }
 
     Ok(())
@@ -353,7 +363,7 @@ fn get_or_write_value_index<'a: 'b, 'b>(
     try_write_value(value, context)?;
     let index = *context.values_indices.borrow().get(value).unwrap() as u32;
 
-    return Ok(index)
+    return Ok(index);
 }
 
 pub fn try_write_drivers<'a: 'b, 'b>(

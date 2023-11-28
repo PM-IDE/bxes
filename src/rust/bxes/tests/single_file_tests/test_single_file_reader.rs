@@ -13,7 +13,7 @@ pub fn test_single_file_read_write() {
     let temp_dir = temp_dir.path().as_os_str().to_str().unwrap();
     let log_save_path = Path::new(temp_dir).join(log_file_name);
 
-    write_bxes(log_save_path.to_str().unwrap(), &log).ok();
+    println!("{:?}", write_bxes(log_save_path.to_str().unwrap(), &log));
 
     let read_log = read_bxes(log_save_path.to_str().unwrap()).unwrap();
     assert!(read_log.eq(&log))
