@@ -13,7 +13,7 @@ public class XesToBxesConverter
     using var writer = new SingleFileBxesStreamWriterImpl<FromXesBxesEvent>(bxesOutputPath, BxesConstants.BxesVersion);
 
     using var fs = File.OpenRead(xesFilePath);
-    var reader = XmlReader.Create(fs);
+    using var reader = XmlReader.Create(fs);
 
     while (reader.Read())
     {
