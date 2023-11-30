@@ -33,11 +33,6 @@ public sealed class BxesValueEvent(BxesValue value) : BxesStreamEvent
   public BxesValue Value { get; } = value;
 }
 
-public sealed class BxesLogMetadataAttributeEvent(AttributeKeyValue attribute) : BxesStreamEvent
-{
-  public AttributeKeyValue Attribute { get; } = attribute;
-}
-
 public sealed class BxesLogMetadataClassifierEvent(BxesClassifier classifier) : BxesStreamEvent
 {
   public BxesClassifier Classifier { get; } = classifier;

@@ -15,7 +15,6 @@ public interface IEventLog : IEquatable<IEventLog>
 
 public interface IEventLogMetadata : IEquatable<IEventLogMetadata>
 {
-  IList<AttributeKeyValue> Metadata { get; }
   IList<BxesExtension> Extensions { get; }
   IList<BxesClassifier> Classifiers { get; }
   IList<AttributeKeyValue> Properties { get; }
@@ -23,7 +22,7 @@ public interface IEventLogMetadata : IEquatable<IEventLogMetadata>
 
   IEnumerable<BxesValue> EnumerateValues()
   {
-    foreach (var (key, value) in Metadata.Concat(Properties))
+    foreach (var (key, value) in Properties)
     {
       yield return key;
       yield return value;
@@ -58,7 +57,7 @@ public interface IEventLogMetadata : IEquatable<IEventLogMetadata>
 
   IEnumerable<AttributeKeyValue> EnumerateKeyValuePairs()
   {
-    foreach (var pair in Metadata.Concat(Properties))
+    foreach (var pair in Properties)
     {
       yield return pair;
     }
@@ -74,9 +73,6 @@ public interface IEventLogMetadata : IEquatable<IEventLogMetadata>
 
   IEnumerable<BxesStreamEvent> ToEventsStream()
   {
-    foreach (var attributeKeyValue in Metadata) 
-      yield return new BxesLogMetadataAttributeEvent(attributeKeyValue);
-
     foreach (var extension in Extensions)
       yield return new BxesLogMetadataExtensionEvent(extension);
     
@@ -100,7 +96,6 @@ public enum GlobalsEntityKind : byte
 
 public class EventLogMetadata : IEventLogMetadata
 {
-  public IList<AttributeKeyValue> Metadata { get; } = new List<AttributeKeyValue>();
   public IList<BxesExtension> Extensions { get; } = new List<BxesExtension>();
   public IList<BxesClassifier> Classifiers { get; } = new List<BxesClassifier>();
   public IList<AttributeKeyValue> Properties { get; } = new List<AttributeKeyValue>();
@@ -112,7 +107,6 @@ public class EventLogMetadata : IEventLogMetadata
     if (ReferenceEquals(other, this)) return true;
 
     if (other is null ||
-        other.Metadata.Count != Metadata.Count ||
         other.Extensions.Count != Extensions.Count ||
         other.Classifiers.Count != Classifiers.Count ||
         other.Properties.Count != Properties.Count ||
@@ -121,7 +115,6 @@ public class EventLogMetadata : IEventLogMetadata
       return false;
     }
 
-    if (!Metadata.Zip(other.Metadata).All(pair => pair.First.Equals(pair.Second))) return false;
     if (!Extensions.Zip(other.Extensions).All(pair => pair.First.Equals(pair.Second))) return false;
     if (!Classifiers.Zip(other.Classifiers).All(pair => pair.First.Equals(pair.Second))) return false;
     if (!Properties.Zip(other.Properties).All(pair => pair.First.Equals(pair.Second))) return false;
@@ -139,7 +132,6 @@ public class EventLogMetadata : IEventLogMetadata
   public override int GetHashCode()
   {
     return HashCode.Combine(
-      Metadata.CalculateHashCode(),
       Extensions.CalculateHashCode(),
       Classifiers.CalculateHashCode(),
       Properties.CalculateHashCode(),

@@ -61,13 +61,6 @@ public static class BxesReadUtils
   {
     var metadata = new EventLogMetadata();
 
-    var metadataKvCount = reader.ReadUInt32();
-    for (uint i = 0; i < metadataKvCount; ++i)
-    {
-      var kv = keyValues[(int)reader.ReadUInt32()];
-      metadata.Metadata.Add(new((BxesStringValue)values[(int)kv.Key], values[(int)kv.Value]));
-    }
-
     var propertiesCount = reader.ReadUInt32();
     for (uint i = 0; i < propertiesCount; ++i)
     {

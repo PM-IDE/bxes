@@ -57,7 +57,7 @@ public static class TestLogsProvider
   private static IEventLogMetadata GenerateRandomMetadata()
   {
     var metadata = new EventLogMetadata();
-    metadata.Metadata.AddRange(GenerateRandomAttributes());
+
     metadata.Properties.AddRange(GenerateRandomAttributes());
     metadata.Classifiers.AddRange(GenerateRandomClassifiers());
     metadata.Extensions.AddRange(GenerateRandomExtensions());

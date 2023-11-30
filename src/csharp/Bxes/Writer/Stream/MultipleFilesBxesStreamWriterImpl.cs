@@ -70,9 +70,6 @@ public class MultipleFilesBxesStreamWriterImpl<TEvent> : IBxesStreamWriter where
       case BxesLogMetadataGlobalEvent globalEvent:
         myMetadata.Globals.Add(globalEvent.Global);
         break;
-      case BxesLogMetadataAttributeEvent attributeEvent:
-        myMetadata.Metadata.Add(attributeEvent.Attribute);
-        break;
       case BxesLogMetadataClassifierEvent classifierEvent:
         myMetadata.Classifiers.Add(classifierEvent.Classifier);
         break;

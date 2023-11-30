@@ -83,12 +83,6 @@ internal static class BxesWriteUtils
 
   public static void WriteEventLogMetadata(IEventLogMetadata metadata, BxesWriteContext context)
   {
-    context.Writer.Write((IndexType)metadata.Metadata.Count);
-    foreach (var pair in metadata.Metadata)
-    {
-      context.Writer.Write(context.KeyValueIndices[pair]);
-    }
-
     context.Writer.Write((IndexType)metadata.Properties.Count);
     foreach (var pair in metadata.Properties)
     {
