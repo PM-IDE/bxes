@@ -150,7 +150,7 @@ public class EventLogMetadata : IEventLogMetadata
 
 public record BxesClassifier
 {
-  public List<BxesStringValue> Keys { get; } = new();
+  public required List<BxesStringValue> Keys { get; init; }
   public required BxesStringValue Name { get; init; }
 }
 

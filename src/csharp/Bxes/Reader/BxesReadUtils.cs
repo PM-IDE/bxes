@@ -110,18 +110,19 @@ public static class BxesReadUtils
     for (uint i = 0; i < classifiersCount; ++i)
     {
       var classifierName = (BxesStringValue)values[(int)reader.ReadUInt32()];
-      var classifier = new BxesClassifier
-      {
-        Name = classifierName
-      };
 
+      var keys = new List<BxesStringValue>();
       var keysCount = reader.ReadUInt32();
       for (uint j = 0; j < keysCount; ++j)
       {
-        classifier.Keys.Add((BxesStringValue)values[(int)reader.ReadUInt32()]);
+        keys.Add((BxesStringValue)values[(int)reader.ReadUInt32()]);
       }
 
-      metadata.Classifiers.Add(classifier);
+      metadata.Classifiers.Add(new BxesClassifier
+      {
+        Name = classifierName,
+        Keys = keys
+      });
     }
 
     return metadata;

@@ -74,13 +74,13 @@ public static class TestLogsProvider
     for (var i = 0; i > classifiersCount; ++i)
     {
       var keysCount = Random.Shared.Next(5);
-      var keys = Enumerable.Range(0, keysCount).Select(_ => GenerateRandomBxesStringValue());
+      var keys = Enumerable.Range(0, keysCount).Select(_ => GenerateRandomBxesStringValue()).ToList();
       var classifier = new BxesClassifier
       {
         Name = GenerateRandomBxesStringValue(),
+        Keys = keys
       };
       
-      classifier.Keys.AddRange(keys);
       classifiers.Add(classifier);
     }
 
