@@ -19,10 +19,23 @@ internal static class BxesWriteUtils
 
     foreach (var element in collection)
     {
-      elementWriter.Invoke(element, context);
+      elementWriter(element, context);
     }
 
     WriteCount(context.Writer, countPos, countGetter());
+  }
+
+  private static void WriteCollection<TElement>(
+    ICollection<TElement> collection,
+    BxesWriteContext context,
+    Action<TElement, BxesWriteContext> elementWriter)
+  {
+    context.Writer.Write((IndexType)collection.Count);
+
+    foreach (var element in collection)
+    {
+      elementWriter(element, context);
+    }
   }
 
   public static void WriteCount(BinaryWriter writer, long countPos, IndexType count)
@@ -153,8 +166,8 @@ internal static class BxesWriteUtils
     context.Writer.Write(context.ValuesIndices[new BxesStringValue(@event.Name)]);
     context.Writer.Write(@event.Timestamp);
     @event.Lifecycle.WriteTo(context);
-
-    WriteCollectionAndCount(@event.Attributes, context, WriteKeyValueIndex, () => (IndexType)@event.Attributes.Count);
+    
+    WriteCollection(@event.Attributes, context, WriteKeyValueIndex);
   }
 
   public static void WriteValues(IEventLog log, BxesWriteContext context)
