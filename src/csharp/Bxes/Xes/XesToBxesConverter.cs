@@ -53,7 +53,7 @@ public class XesToBxesConverter
 
   private void ReadClassifier(XmlReader reader, SingleFileBxesStreamWriterImpl<FromXesBxesEvent> writer)
   {
-    var element = XElement.Load(reader);
+    var element = XElement.Load(reader.ReadSubtree());
     
     BxesStringValue? name = null;
     List<BxesStringValue>? keys = null;
@@ -81,7 +81,7 @@ public class XesToBxesConverter
   
   private void ReadExtension(XmlReader reader, SingleFileBxesStreamWriterImpl<FromXesBxesEvent> writer)
   {
-    var element = XElement.Load(reader);
+    var element = XElement.Load(reader.ReadSubtree());
 
     BxesStringValue? name = null;
     BxesStringValue? prefix = null;
@@ -117,7 +117,7 @@ public class XesToBxesConverter
 
   private void ReadGlobal(XmlReader reader, SingleFileBxesStreamWriterImpl<FromXesBxesEvent> writer)
   {
-    var element = XElement.Load(reader);
+    var element = XElement.Load(reader.ReadSubtree());
 
     if (element.Attribute(XesConstants.GlobalScopeAttribute) is not { } scopeAttribute) 
       throw new XesReadException("Failed to find scope attribute in global tag");
@@ -146,7 +146,7 @@ public class XesToBxesConverter
   
   private void ReadProperty(XmlReader reader, SingleFileBxesStreamWriterImpl<FromXesBxesEvent> writer)
   {
-    var (key, _, value) = XesReadUtil.ParseAttribute(XElement.Load(reader));
+    var (key, _, value) = XesReadUtil.ParseAttribute(XElement.Load(reader.ReadSubtree()));
     writer.HandleEvent(new BxesLogMetadataPropertyEvent(new AttributeKeyValue(new BxesStringValue(key), value)));
   }
 
@@ -165,7 +165,7 @@ public class XesToBxesConverter
 
   private void ReadEvent(XmlReader reader, SingleFileBxesStreamWriterImpl<FromXesBxesEvent> writer)
   {
-    var element = XElement.Load(reader);
+    var element = XElement.Load(reader.ReadSubtree());
     writer.HandleEvent(new BxesEventEvent<FromXesBxesEvent>(FromXesBxesEventFactory.CreateFrom(element)));
   }
 }

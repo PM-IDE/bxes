@@ -28,7 +28,7 @@ public static class FromXesBxesEventFactory
           initializedName = true;
           break;
         case XesConstants.TimeTimestamp:
-          timestamp = ((BxesInt64Value)bxesValue).Value;
+          timestamp = ((BxesTimeStampValue)bxesValue).Value;
           initializedTimestamp = true;
           break;
         case XesConstants.LifecycleTransition:
