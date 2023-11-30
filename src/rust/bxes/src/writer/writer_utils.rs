@@ -86,7 +86,6 @@ pub fn try_write_log_metadata(
     log: &BxesEventLog,
     context: Rc<RefCell<BxesWriteContext>>,
 ) -> Result<(), BeesWriteError> {
-    try_write_attributes(context.clone(), log.metadata.attributes.as_ref())?;
     try_write_properties(context.clone(), log.metadata.properties.as_ref())?;
     try_write_extensions(context.clone(), log.metadata.extensions.as_ref())?;
     try_write_globals(context.clone(), log.metadata.globals.as_ref())?;
@@ -291,10 +290,6 @@ fn execute_with_kv_pairs<'a>(
     log: &'a BxesEventLog,
     mut action: impl FnMut(ValueOrKeyValue<'a>) -> Result<(), BeesWriteError>,
 ) -> Result<(), BeesWriteError> {
-    if let Some(attributes) = log.metadata.attributes.as_ref() {
-        execute_with_attributes_kv_pairs(attributes, &mut action)?;
-    }
-
     if let Some(properties) = log.metadata.properties.as_ref() {
         execute_with_attributes_kv_pairs(properties, &mut action)?;
     }

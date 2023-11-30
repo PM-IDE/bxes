@@ -15,14 +15,12 @@ pub fn try_read_event_log_metadata(
     values: &Vec<BxesValue>,
     kv_pairs: &Vec<(u32, u32)>,
 ) -> Result<BxesEventLogMetadata, BxesReadError> {
-    let attributes = try_read_event_attributes(reader, values, kv_pairs)?;
     let properties = try_read_event_attributes(reader, values, kv_pairs)?;
     let extensions = try_read_extensions(reader, values, kv_pairs)?;
     let globals = try_read_globals(reader, values, kv_pairs)?;
     let classifiers = try_read_classifiers(reader, values, kv_pairs)?;
 
     Ok(BxesEventLogMetadata {
-        attributes,
         extensions,
         classifiers,
         properties,

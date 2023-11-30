@@ -248,7 +248,6 @@ pub struct BxesEventLog {
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct BxesEventLogMetadata {
-    pub attributes: Option<Vec<(BxesValue, BxesValue)>>,
     pub extensions: Option<Vec<BxesExtension>>,
     pub classifiers: Option<Vec<BxesClassifier>>,
     pub properties: Option<Vec<(BxesValue, BxesValue)>>,

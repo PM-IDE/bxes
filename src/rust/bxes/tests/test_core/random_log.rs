@@ -27,7 +27,6 @@ pub fn generate_random_log() -> BxesEventLog {
 
 fn generate_random_metadata(rng: &mut ThreadRng) -> BxesEventLogMetadata {
     BxesEventLogMetadata {
-        attributes: generate_random_attributes_option(rng),
         extensions: Some(generate_random_extensions(rng)),
         classifiers: Some(generate_random_classifiers(rng)),
         properties: generate_random_attributes_option(rng),
