@@ -186,8 +186,6 @@ Type id + additional type info (i.e. length of a string) forms a header of a val
 - Then the sequence of traces variants is written.
 
 ### Event log metadata format
-- The number of metadata values is written (`u32`)
-- The key-values pairs are written
 - The number of properties is written (`u32`)
 - The properties are written: key-value pairs, key must be of type string 
 - The number of extensions is written (`u32`)
