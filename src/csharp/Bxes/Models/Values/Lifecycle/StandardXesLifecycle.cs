@@ -18,4 +18,7 @@ public class StandardXesLifecycle(StandardLifecycleValues value) : EventLifecycl
     base.WriteTo(context);
     context.Writer.Write((byte)Value);
   }
+
+  public override bool IsDefined() => value != StandardLifecycleValues.Unspecified;
+  public override string ToStringValue() => value.ToString().ToLower();
 }

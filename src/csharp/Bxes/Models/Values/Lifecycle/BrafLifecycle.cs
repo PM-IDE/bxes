@@ -18,4 +18,8 @@ public class BrafLifecycle(BrafLifecycleValues value) : EventLifecycle<BrafLifec
     base.WriteTo(context);
     context.Writer.Write((byte)Value);
   }
+
+  public override bool IsDefined() => value != BrafLifecycleValues.Unspecified;
+
+  public override string ToStringValue() => value.ToString().ToLower();
 }

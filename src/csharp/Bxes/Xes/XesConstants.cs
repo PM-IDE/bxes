@@ -3,7 +3,8 @@ namespace Bxes.Xes;
 public static class XesConstants
 {
   public const string DefaultName = "name";
-  
+
+  public const string LogTagName = "log";
   public const string TraceTagName = "trace";
   public const string EventTagName = "event";
   public const string ExtensionTagName = "extension";

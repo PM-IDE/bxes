@@ -20,4 +20,6 @@ public interface IEventLifecycle
   }
 
   void WriteTo(BxesWriteContext context);
+  bool IsDefined();
+  string ToStringValue();
 }
