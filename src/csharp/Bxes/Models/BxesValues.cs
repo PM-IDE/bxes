@@ -60,11 +60,13 @@ public abstract class BxesValue
         var models = new List<BxesArtifactItem>();
         for (var i = 0; i < modelsCount; ++i)
         {
+          var model = (BxesStringValue)parsedValues[(int)reader.ReadUInt32()];
           var instance = (BxesStringValue)parsedValues[(int)reader.ReadUInt32()];
           var transition = (BxesStringValue)parsedValues[(int)reader.ReadUInt32()];
 
           models.Add(new BxesArtifactItem
           {
+            Model = model.Value,
             Instance = instance.Value,
             Transition = transition.Value
           });

@@ -5,6 +5,7 @@ namespace Bxes.Models.Values;
 
 public record BxesArtifactItem
 {
+  public required string Model { get; init; }
   public required string Instance { get; init; }
   public required string Transition { get; init; }
 }
@@ -17,6 +18,7 @@ public class BxesArtifactModelsListValue(List<BxesArtifactItem> items) : BxesVal
   {
     foreach (var item in items)
     {
+      BxesWriteUtils.WriteValueIfNeeded(new BxesStringValue(item.Model), context);
       BxesWriteUtils.WriteValueIfNeeded(new BxesStringValue(item.Instance), context);
       BxesWriteUtils.WriteValueIfNeeded(new BxesStringValue(item.Transition), context);
     }
@@ -27,6 +29,7 @@ public class BxesArtifactModelsListValue(List<BxesArtifactItem> items) : BxesVal
 
     foreach (var item in items)
     {
+      context.Writer.Write(context.ValuesIndices[new BxesStringValue(item.Model)]);
       context.Writer.Write(context.ValuesIndices[new BxesStringValue(item.Instance)]);
       context.Writer.Write(context.ValuesIndices[new BxesStringValue(item.Transition)]);
     }

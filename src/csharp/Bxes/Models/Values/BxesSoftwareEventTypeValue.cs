@@ -29,4 +29,6 @@ public class BxesSoftwareEventTypeValue(SoftwareEventTypeValues values) : BxesVa
     base.WriteTo(context);
     context.Writer.Write((byte)Value);
   }
+
+  public string ToStringValue() => values.ToString().ToLower();
 }

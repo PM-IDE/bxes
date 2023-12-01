@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Xml;
 using Bxes.Models;
 using Bxes.Models.Values;
@@ -48,7 +49,6 @@ public class BxesToXesConverter
       WriteTrace(traceVariant, writer);
     }
   }
-
 
   private void WriteMetadata(XmlWriter writer, IEventLogMetadata metadata)
   {
@@ -151,8 +151,56 @@ public class BxesToXesConverter
       case BxesTimeStampValue timeStampValue:
         WriteValueTag(writer, XesConstants.DateTagName, keyValue, timeStampValue.Timestamp.ToString("0"));
         break;
+      case BxesArtifactModelsListValue artifactItem:
+        WriteArtifact(writer, artifactItem);
+        break;
+      case BxesDriversListValue driversListValue:
+        WriteDrivers(writer, driversListValue);
+        break;
+      case BxesGuidValue guidValue:
+        WriteValueTag(writer, XesConstants.StringTagName, keyValue, guidValue.Value.ToString());
+        break;
+      case BxesSoftwareEventTypeValue softwareEvent:
+        WriteValueTag(writer, XesConstants.StringTagName, keyValue, softwareEvent.ToStringValue());
+        break;
+      case IEventLifecycle lifecycle:
+        WriteValueTag(writer, XesConstants.StringTagName, keyValue, lifecycle.ToStringValue());
+        break;
       default:
         throw new ArgumentOutOfRangeException();
+    }
+  }
+
+  private static void WriteDrivers(XmlWriter writer, BxesDriversListValue drivers)
+  {
+    using var _ = StartEndElementCookie.CreateStartEndElement(writer, null, XesConstants.ListTagName, null);
+    WriteAttribute(writer, XesConstants.KeyAttributeName, XesConstants.CostDrivers);
+    
+    foreach (var driver in drivers.Value)
+    {
+      using (StartEndElementCookie.CreateStartEndElement(writer, null, XesConstants.CostDriver, null))
+      {
+        WriteValueTag(writer, XesConstants.StringTagName, XesConstants.CostDriver, driver.Name);
+        WriteValueTag(writer, XesConstants.StringTagName, XesConstants.ArtifactItemTransition, driver.Type); 
+        WriteValueTag(writer, XesConstants.FloatTagName, XesConstants.CostAmount, driver.Amount.ToString(CultureInfo.InvariantCulture));
+      }
+    }
+  }
+
+  private static void WriteArtifact(XmlWriter writer, BxesArtifactModelsListValue artifact)
+  {
+    using var _ = StartEndElementCookie.CreateStartEndElement(writer, null, XesConstants.ListTagName, null);
+    WriteAttribute(writer, XesConstants.KeyAttributeName, XesConstants.ArtifactMoves);
+    
+    foreach (var item in artifact.Value)
+    {
+      using (StartEndElementCookie.CreateStartEndElement(writer, null, XesConstants.ArtifactItemModel, null))
+      {
+        WriteAttribute(writer, XesConstants.ArtifactItemModel, item.Model);
+        
+        WriteValueTag(writer, XesConstants.StringTagName, XesConstants.ArtifactItemInstance, item.Instance);
+        WriteValueTag(writer, XesConstants.StringTagName, XesConstants.ArtifactItemTransition, item.Transition); 
+      }
     }
   }
 
