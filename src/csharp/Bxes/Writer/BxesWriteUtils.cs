@@ -50,11 +50,19 @@ internal static class BxesWriteUtils
 
   public static void WriteBxesVersion(BinaryWriter writer, IndexType version) => writer.Write(version);
 
-  public static void WriteEventValues(IEvent @event, BxesWriteContext context)
+  public static void WriteEventValues<TEvent>(
+    TEvent @event, BxesWriteContext valuesContext, BxesWriteContext keyValuesContext) where TEvent : IEvent
   {
-    foreach (var value in @event.EnumerateValues())
+    WriteValueIfNeeded(new BxesStringValue(@event.Name), valuesContext);
+
+    foreach (var keyValue in @event.Attributes)
     {
-      WriteValueIfNeeded(value, context);
+      if (keyValuesContext.KeyValueIndices.ContainsKey(keyValue)) continue;
+      
+      WriteValueIfNeeded(keyValue.Key, valuesContext);
+      WriteValueIfNeeded(keyValue.Value, valuesContext);
+      
+      WriteKeyValuePair(keyValue, keyValuesContext);
     }
   }
 
@@ -87,7 +95,12 @@ internal static class BxesWriteUtils
   public static void WriteKeyValuePairIfNeeded(AttributeKeyValue pair, BxesWriteContext context)
   {
     if (context.KeyValueIndices.ContainsKey(pair)) return;
+    
+    WriteKeyValuePair(pair, context);
+  }
 
+  private static void WriteKeyValuePair(AttributeKeyValue pair, BxesWriteContext context)
+  {
     context.Writer.Write(context.ValuesIndices[pair.Key]);
     context.Writer.Write(context.ValuesIndices[pair.Value]);
 
