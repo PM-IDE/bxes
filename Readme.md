@@ -93,7 +93,7 @@ XES-sprcific types:
 - `artifact` (type id = `11`) xes artifact extension
     - the number of models is written (`u32`, `4 bytes`)
     - then the models are written
-        - each model is a value-value pair, which indicates the values of `artifactlifecycle:instance` and `artifactlifecycle:transition`
+        - each model is a value-value-value triple, which indicates the values of `artifactlifecycle:model`, `artifactlifecycle:instance` and `artifactlifecycle:transition`
 - `cost:dirvers` (type id = `12`) xes cost extension. The list of drivers with following attributes:
     - the number of drivers is written (`u32`, `4 bytes`), each list item is the following:
       - the amount is written (`f64`, `8 bytes`)
