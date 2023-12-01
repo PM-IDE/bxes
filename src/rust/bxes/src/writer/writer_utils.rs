@@ -465,6 +465,7 @@ pub fn try_write_artifact<'a: 'b, 'b>(
     artifact: &'a BxesArtifact,
 ) -> Result<(), BeesWriteError> {
     for artifact in &artifact.items {
+        get_or_write_value_index(&artifact.model, context)?;
         get_or_write_value_index(&artifact.instance, context)?;
         get_or_write_value_index(&artifact.transition, context)?;
     }
@@ -480,6 +481,9 @@ pub fn try_write_artifact<'a: 'b, 'b>(
     )?;
 
     for artifact in &artifact.items {
+        let index = get_index(&artifact.model, context)?;
+        try_write_u32_no_type_id(context.writer.as_mut().unwrap(), index as u32)?;
+
         let index = get_index(&artifact.instance, context)?;
         try_write_u32_no_type_id(context.writer.as_mut().unwrap(), index as u32)?;
 

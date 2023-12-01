@@ -65,6 +65,7 @@ impl PartialEq for BxesArtifact {
 
 #[derive(Clone, Debug)]
 pub struct BxesArtifactItem {
+    pub model: BxesValue,
     pub instance: BxesValue,
     pub transition: BxesValue,
 }

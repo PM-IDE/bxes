@@ -331,10 +331,12 @@ pub fn try_read_artifact_item(
     reader: &mut BinaryReader,
     values: &Vec<BxesValue>,
 ) -> Result<BxesArtifactItem, BxesReadError> {
+    let model_index = try_read_u32(reader)? as usize;
     let instance_index = try_read_u32(reader)? as usize;
     let transition_index = try_read_u32(reader)? as usize;
 
     Ok(BxesArtifactItem {
+        model: values[model_index].clone(),
         instance: values[instance_index].clone(),
         transition: values[transition_index].clone(),
     })

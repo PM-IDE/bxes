@@ -207,6 +207,7 @@ fn generate_random_artifact(rng: &mut ThreadRng) -> BxesValue {
 
 fn generate_random_artifact_item(rng: &mut ThreadRng) -> BxesArtifactItem {
     BxesArtifactItem {
+        model: BxesValue::String(Rc::new(Box::new(generate_random_string(rng)))),
         instance: BxesValue::String(Rc::new(Box::new(generate_random_string(rng)))),
         transition: BxesValue::String(Rc::new(Box::new(generate_random_string(rng)))),
     }
