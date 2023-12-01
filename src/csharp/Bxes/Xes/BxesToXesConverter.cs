@@ -191,10 +191,11 @@ public class BxesToXesConverter
   {
     using var _ = StartEndElementCookie.CreateStartEndElement(writer, null, XesConstants.ListTagName, null);
     WriteAttribute(writer, XesConstants.KeyAttributeName, XesConstants.ArtifactMoves);
-    
+
+    using var __ = StartEndElementCookie.CreateStartEndElement(writer, null, XesConstants.ValuesTagName, null);
     foreach (var item in artifact.Value)
     {
-      using (StartEndElementCookie.CreateStartEndElement(writer, null, XesConstants.ArtifactItemModel, null))
+      using (StartEndElementCookie.CreateStartEndElement(writer, null, XesConstants.StringTagName, null))
       {
         WriteAttribute(writer, XesConstants.ArtifactItemModel, item.Model);
         

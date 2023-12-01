@@ -11,6 +11,7 @@ public static class XesConstants
   public const string ClassifierTagName = "classifier";
   public const string GlobalTagName = "global";
   public const string ListTagName = "list";
+  public const string ValuesTagName = "values";
 
   public const string ClassifierNameAttribute = DefaultName;
   public const string ClassifierKeysAttribute = "keys";
