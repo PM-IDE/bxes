@@ -189,6 +189,7 @@ public static class TestLogsProvider
   {
     return new BxesArtifactItem
     {
+      Model = GenerateRandomString(),
       Instance = GenerateRandomString(),
       Transition = GenerateRandomString()
     };
