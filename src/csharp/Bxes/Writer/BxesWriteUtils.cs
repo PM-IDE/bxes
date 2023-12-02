@@ -34,7 +34,7 @@ internal static class BxesWriteUtils
   {
     if (writeLeb128Count)
     {
-      context.Writer.BaseStream.WriteLeb128Unsigned((IndexType)collection.Count);
+      context.Writer.WriteLeb128Unsigned((IndexType)collection.Count);
     }
     else
     {
@@ -102,8 +102,8 @@ internal static class BxesWriteUtils
 
   private static void WriteKeyValuePair(AttributeKeyValue pair, BxesWriteContext context)
   {
-    context.Writer.BaseStream.WriteLeb128Unsigned(context.ValuesIndices[pair.Key]);
-    context.Writer.BaseStream.WriteLeb128Unsigned(context.ValuesIndices[pair.Value]);
+    context.Writer.WriteLeb128Unsigned(context.ValuesIndices[pair.Key]);
+    context.Writer.WriteLeb128Unsigned(context.ValuesIndices[pair.Value]);
 
     context.KeyValueIndices[pair] = (IndexType)context.KeyValueIndices.Count;
   }
@@ -151,7 +151,7 @@ internal static class BxesWriteUtils
 
   private static void WriteKeyValueIndex(AttributeKeyValue tuple, BxesWriteContext context)
   {
-    context.Writer.BaseStream.WriteLeb128Unsigned(context.KeyValueIndices[tuple]);
+    context.Writer.WriteLeb128Unsigned(context.KeyValueIndices[tuple]);
   }
 
   public static void WriteTracesVariants(IEventLog log, BxesWriteContext context) =>
@@ -177,7 +177,7 @@ internal static class BxesWriteUtils
 
   public static void WriteEvent(IEvent @event, BxesWriteContext context)
   {
-    context.Writer.BaseStream.WriteLeb128Unsigned(context.ValuesIndices[new BxesStringValue(@event.Name)]);
+    context.Writer.WriteLeb128Unsigned(context.ValuesIndices[new BxesStringValue(@event.Name)]);
     context.Writer.Write(@event.Timestamp);
     @event.Lifecycle.WriteTo(context);
     
@@ -196,7 +196,14 @@ internal static class BxesWriteUtils
 
   public static void ExecuteWithFile(string filePath, Action<BinaryWriter> writeAction)
   {
-    using var fs = File.OpenWrite(filePath);
+    using var fs = new FileStream(filePath, new FileStreamOptions
+    {
+      Access = FileAccess.Write,
+      Mode = FileMode.Create,
+      Options = FileOptions.RandomAccess,
+      BufferSize = 1024 * 16
+    });
+    
     using var bw = new BinaryWriter(fs, BxesConstants.BxesEncoding);
 
     writeAction(bw);

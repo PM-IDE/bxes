@@ -50,8 +50,8 @@ public static class BxesReadUtils
 
     for (uint i = 0; i < kvPairsCount; ++i)
     {
-      var keyIndex = (uint)reader.BaseStream.ReadLeb128Unsigned();
-      var valueIndex = (uint)reader.BaseStream.ReadLeb128Unsigned();
+      var keyIndex = (uint)reader.ReadLeb128Unsigned();
+      var valueIndex = (uint)reader.ReadLeb128Unsigned();
       keyValues.Add(new KeyValuePair<uint, uint>(keyIndex, valueIndex));
     }
 
@@ -146,16 +146,16 @@ public static class BxesReadUtils
 
       for (uint j = 0; j < eventsCount; ++j)
       {
-        var name = (BxesStringValue)values[(int)reader.BaseStream.ReadLeb128Unsigned()];
+        var name = (BxesStringValue)values[(int)reader.ReadLeb128Unsigned()];
         var timestamp = reader.ReadInt64();
         var lifecycle = (IEventLifecycle)BxesValue.Parse(reader, values);
 
-        var attributesCount = reader.BaseStream.ReadLeb128Unsigned();
+        var attributesCount = reader.ReadLeb128Unsigned();
         var eventAttributes = new List<AttributeKeyValue>();
 
         for (uint k = 0; k < attributesCount; ++k)
         {
-          var kv = keyValues[(int)reader.BaseStream.ReadLeb128Unsigned()];
+          var kv = keyValues[(int)reader.ReadLeb128Unsigned()];
           eventAttributes.Add(new((BxesStringValue)values[(int)kv.Key], values[(int)kv.Value]));
         }
 
