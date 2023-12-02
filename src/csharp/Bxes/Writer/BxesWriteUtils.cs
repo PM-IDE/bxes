@@ -1,6 +1,7 @@
 using System.IO.Compression;
 using Bxes.Models;
 using Bxes.Models.Values;
+using Bxes.Utils;
 
 namespace Bxes.Writer;
 
@@ -28,9 +29,17 @@ internal static class BxesWriteUtils
   private static void WriteCollection<TElement>(
     ICollection<TElement> collection,
     BxesWriteContext context,
+    bool writeLeb128Count,
     Action<TElement, BxesWriteContext> elementWriter)
   {
-    context.Writer.Write((IndexType)collection.Count);
+    if (writeLeb128Count)
+    {
+      context.Writer.BaseStream.WriteLeb128Unsigned((IndexType)collection.Count);
+    }
+    else
+    {
+      context.Writer.Write((IndexType)collection.Count);
+    }
 
     foreach (var element in collection)
     {
@@ -84,14 +93,6 @@ internal static class BxesWriteUtils
     WriteCollectionAndCount(pairs, context, WriteKeyValuePairIfNeeded, () => (IndexType)context.KeyValueIndices.Count);
   }
 
-  public static void WriteEventKeyValuePairs(IEvent @event, BxesWriteContext context)
-  {
-    foreach (var pair in @event.Attributes)
-    {
-      WriteKeyValuePairIfNeeded(pair, context);
-    }
-  }
-
   public static void WriteKeyValuePairIfNeeded(AttributeKeyValue pair, BxesWriteContext context)
   {
     if (context.KeyValueIndices.ContainsKey(pair)) return;
@@ -101,8 +102,8 @@ internal static class BxesWriteUtils
 
   private static void WriteKeyValuePair(AttributeKeyValue pair, BxesWriteContext context)
   {
-    context.Writer.Write(context.ValuesIndices[pair.Key]);
-    context.Writer.Write(context.ValuesIndices[pair.Value]);
+    context.Writer.BaseStream.WriteLeb128Unsigned(context.ValuesIndices[pair.Key]);
+    context.Writer.BaseStream.WriteLeb128Unsigned(context.ValuesIndices[pair.Value]);
 
     context.KeyValueIndices[pair] = (IndexType)context.KeyValueIndices.Count;
   }
@@ -150,7 +151,7 @@ internal static class BxesWriteUtils
 
   private static void WriteKeyValueIndex(AttributeKeyValue tuple, BxesWriteContext context)
   {
-    context.Writer.Write(context.KeyValueIndices[tuple]);
+    context.Writer.BaseStream.WriteLeb128Unsigned(context.KeyValueIndices[tuple]);
   }
 
   public static void WriteTracesVariants(IEventLog log, BxesWriteContext context) =>
@@ -176,11 +177,11 @@ internal static class BxesWriteUtils
 
   public static void WriteEvent(IEvent @event, BxesWriteContext context)
   {
-    context.Writer.Write(context.ValuesIndices[new BxesStringValue(@event.Name)]);
+    context.Writer.BaseStream.WriteLeb128Unsigned(context.ValuesIndices[new BxesStringValue(@event.Name)]);
     context.Writer.Write(@event.Timestamp);
     @event.Lifecycle.WriteTo(context);
     
-    WriteCollection(@event.Attributes, context, WriteKeyValueIndex);
+    WriteCollection(@event.Attributes, context, true, WriteKeyValueIndex);
   }
 
   public static void WriteValues(IEventLog log, BxesWriteContext context)
