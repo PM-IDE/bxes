@@ -6,7 +6,7 @@ use bxes::{
         BxesEvent, BxesEventLog, BxesEventLogMetadata, BxesExtension, BxesGlobal, BxesGlobalKind,
         BxesTraceVariant, BxesValue, Lifecycle, SoftwareEventType, StandardLifecycle,
     },
-    type_ids::{self, TypeIds},
+    type_ids::{TypeIds},
 };
 use num_traits::FromPrimitive;
 use rand::{

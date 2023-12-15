@@ -3,7 +3,7 @@ use binary_rw::BinaryError;
 use crate::models::BxesValue;
 
 #[derive(Debug)]
-pub enum BeesWriteError {
+pub enum BxesWriteError {
     FailedToOpenFileForWriting(String),
     WriteError(BinaryError),
     FailedToGetWriterPosition(String),
@@ -12,4 +12,5 @@ pub enum BeesWriteError {
     FailedToFindValueIndex(BxesValue),
     FailedToCreateTempFile,
     FailedToCreateArchive,
+    LebWriteError(String)
 }

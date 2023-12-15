@@ -1,4 +1,4 @@
-use std::{fs::File, rc::Rc};
+use std::{fs::File, rc::Rc, io::Read};
 
 use binary_rw::{BinaryReader, FileStream, SeekStream};
 use num_traits::FromPrimitive;
@@ -15,7 +15,7 @@ pub fn try_read_event_log_metadata(
     values: &Vec<BxesValue>,
     kv_pairs: &Vec<(u32, u32)>,
 ) -> Result<BxesEventLogMetadata, BxesReadError> {
-    let properties = try_read_event_attributes(reader, values, kv_pairs)?;
+    let properties = try_read_attributes(reader, values, kv_pairs, false)?;
     let extensions = try_read_extensions(reader, values, kv_pairs)?;
     let globals = try_read_globals(reader, values, kv_pairs)?;
     let classifiers = try_read_classifiers(reader, values, kv_pairs)?;
@@ -73,7 +73,7 @@ pub fn try_read_globals(
             let mut entity_globals = vec![];
 
             for _ in 0..globals_count {
-                entity_globals.push(try_read_kv_pair(reader, values, kv_pairs)?);
+                entity_globals.push(try_read_kv_pair(reader, values, kv_pairs, false)?);
             }
 
             globals.push(BxesGlobal {
@@ -106,6 +106,42 @@ pub fn try_read_extensions(
         }
 
         Ok(Some(extensions))
+    }
+}
+
+struct BinaryReaderWrapper<'a, 'b> {
+    reader: &'a mut BinaryReader<'b>
+}
+
+impl<'a, 'b> Read for BinaryReaderWrapper<'a, 'b> {
+    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+        //todo: xDDDDD nice API
+        match self.reader.read_bytes(buf.len()) {
+            Ok(bytes) => {
+                for i in 0..buf.len() {
+                    buf[i] = bytes[i];
+                }
+
+                Ok(bytes.len())
+            },
+            Err(err) => Err(std::io::Error::new(std::io::ErrorKind::Other, err.to_string()))
+        }
+    }
+}
+
+impl<'a, 'b> BinaryReaderWrapper<'a, 'b> {
+    pub fn new(reader: &'a mut BinaryReader<'b>) -> Self {
+        Self {
+            reader
+        }
+    }
+}
+
+pub fn try_read_leb128(reader: &mut BinaryReader) -> Result<u32, BxesReadError> {
+    let mut wrapper = BinaryReaderWrapper::new(reader);
+    match leb128::read::unsigned(&mut wrapper) {
+        Ok(value) => Ok(value as u32),
+        Err(err) => Err(BxesReadError::Leb128ReadError(err.to_string()))
     }
 }
 
@@ -142,7 +178,7 @@ fn try_read_trace_variant(
     let mut variant_metadata = vec![];
     let metadata_count = try_read_u32(reader)?;
     for _ in 0..metadata_count {
-        variant_metadata.push(try_read_kv_pair(reader, values, kv_pairs)?);
+        variant_metadata.push(try_read_kv_pair(reader, values, kv_pairs, false)?);
     }
 
     let events_count = try_read_u32(reader)?;
@@ -164,7 +200,7 @@ fn try_read_event(
     values: &Vec<BxesValue>,
     kv_pairs: &Vec<(u32, u32)>,
 ) -> Result<BxesEvent, BxesReadError> {
-    let name_index = try_read_u32(reader)? as usize;
+    let name_index = try_read_leb128(reader)? as usize;
     let name = values.get(name_index);
 
     if name.is_none() {
@@ -182,22 +218,24 @@ fn try_read_event(
         name: name.unwrap().clone(),
         timestamp,
         lifecycle,
-        attributes: try_read_event_attributes(reader, values, kv_pairs)?,
+        attributes: try_read_attributes(reader, values, kv_pairs, true)?,
     })
 }
 
-fn try_read_event_attributes(
+fn try_read_attributes(
     reader: &mut BinaryReader,
     values: &Vec<BxesValue>,
     kv_pairs: &Vec<(u32, u32)>,
+    leb_128: bool
 ) -> Result<Option<Vec<(BxesValue, BxesValue)>>, BxesReadError> {
-    let attributes_count = try_read_u32(reader)?;
+    let attributes_count = if leb_128 { try_read_leb128(reader)? } else { try_read_u32(reader)? };
+
     if attributes_count == 0 {
         Ok(None)
     } else {
         let mut attributes = vec![];
         for _ in 0..attributes_count {
-            let pair = try_read_kv_pair(reader, values, kv_pairs)?;
+            let pair = try_read_kv_pair(reader, values, kv_pairs, leb_128)?;
             attributes.push(pair);
         }
 
@@ -209,8 +247,9 @@ fn try_read_kv_pair(
     reader: &mut BinaryReader,
     values: &Vec<BxesValue>,
     kv_pairs: &Vec<(u32, u32)>,
+    leb_128: bool,
 ) -> Result<(BxesValue, BxesValue), BxesReadError> {
-    let kv_index = try_read_u32(reader)? as usize;
+    let kv_index = if leb_128 { try_read_leb128(reader)? as usize } else { try_read_u32(reader)? as usize };
     let kv_pair = match kv_pairs.get(kv_index) {
         None => return Err(BxesReadError::FailedToIndexKeyValue(kv_index)),
         Some(pair) => pair,
@@ -236,7 +275,7 @@ pub fn try_read_key_values(reader: &mut BinaryReader) -> Result<Vec<(u32, u32)>,
 
     let key_values_count = try_read_u32(reader)?;
     for _ in 0..key_values_count {
-        key_values.push((try_read_u32(reader)?, try_read_u32(reader)?));
+        key_values.push((try_read_leb128(reader)?, try_read_leb128(reader)?));
     }
 
     Ok(key_values)

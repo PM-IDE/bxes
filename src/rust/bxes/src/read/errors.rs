@@ -19,6 +19,7 @@ pub enum BxesReadError {
     FailedToCreateTempDir,
     InvalidArchive(String),
     ExpectedString(BxesValue),
+    Leb128ReadError(String)
 }
 
 #[derive(Debug)]
