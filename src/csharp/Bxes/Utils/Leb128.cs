@@ -4,13 +4,10 @@ namespace Bxes.Utils;
 public static class Leb128
 {
   private const long SignExtendMask = -1L;
-  private const int Int64Bitsize = sizeof(long) * 8;
-
-  public static void WriteLeb128Signed(this BinaryWriter writer, long value) => WriteLeb128Signed(writer, value, out _);
-
-  public static void WriteLeb128Signed(this BinaryWriter writer, long value, out int bytes)
+  private const int Int64BitSize = sizeof(long) * 8;
+  
+  public static void WriteLeb128Signed(this BinaryWriter writer, long value)
   {
-    bytes = 0;
     var more = true;
 
     while (more)
@@ -26,39 +23,30 @@ public static class Leb128
       }
 
       writer.Write(chunk);
-      bytes += 1;
     }
   }
 
-  public static void WriteLeb128Unsigned(this BinaryWriter writer, ulong value) => WriteLeb128Unsigned(writer, value, out _);
-
-  public static void WriteLeb128Unsigned(this BinaryWriter writer, ulong value, out int bytes)
+  public static void WriteLeb128Unsigned(this BinaryWriter writer, ulong value)
   {
-    bytes = 0;
     var more = true;
 
     while (more)
     {
-      var chunk = (byte)(value & 0x7fUL); // extract a 7-bit chunk
+      var chunk = (byte)(value & 0x7fUL);
       value >>= 7;
 
       more = value != 0;
       if (more)
       {
         chunk |= 0x80;
-      } // set msb marker that more bytes are coming
+      }
 
       writer.Write(chunk);
-      bytes += 1;
     }
   }
 
-  public static long ReadLeb128Signed(this BinaryReader reader) => ReadLeb128Signed(reader, out _);
-
-  public static long ReadLeb128Signed(this BinaryReader reader, out int bytes)
+  public static long ReadLeb128Signed(this BinaryReader reader)
   {
-    bytes = 0;
-
     long value = 0;
     var shift = 0;
     bool more = true, signBitSet = false;
@@ -67,18 +55,15 @@ public static class Leb128
     {
       var next = reader.ReadByte();
 
-      bytes += 1;
+      more = (next & 0x80) != 0;
+      signBitSet = (next & 0x40) != 0;
 
-      more = (next & 0x80) != 0; // extract msb
-      signBitSet = (next & 0x40) != 0; // sign bit is the msb of a 7-bit byte, so 0x40
-
-      var chunk = next & 0x7fL; // extract lower 7 bits
+      var chunk = next & 0x7fL;
       value |= chunk << shift;
       shift += 7;
     }
 
-    // extend the sign of shorter negative numbers
-    if (shift < Int64Bitsize && signBitSet)
+    if (shift < Int64BitSize && signBitSet)
     {
       value |= SignExtendMask << shift;
     }
@@ -86,12 +71,8 @@ public static class Leb128
     return value;
   }
 
-  public static ulong ReadLeb128Unsigned(this BinaryReader reader) => ReadLeb128Unsigned(reader, out _);
-
-  public static ulong ReadLeb128Unsigned(this BinaryReader reader, out int bytes)
+  public static ulong ReadLeb128Unsigned(this BinaryReader reader)
   {
-    bytes = 0;
-
     ulong value = 0;
     var shift = 0;
     var more = true;
@@ -99,8 +80,6 @@ public static class Leb128
     while (more)
     {
       var next = reader.ReadByte();
-
-      bytes += 1;
 
       more = (next & 0x80) != 0;
       var chunk = next & 0x7fUL;
