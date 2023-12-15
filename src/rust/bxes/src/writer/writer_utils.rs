@@ -14,7 +14,7 @@ use crate::{
         BrafLifecycle, BxesArtifact, BxesClassifier, BxesDrivers, BxesEvent, BxesEventLog,
         BxesExtension, BxesGlobal, BxesValue, Lifecycle, SoftwareEventType, StandardLifecycle,
     },
-    type_ids::{self, TypeIds},
+    type_ids::{self, TypeIds}, read::read_utils::try_read_leb128,
 };
 
 use super::{errors::BxesWriteError, write_context::BxesWriteContext};
@@ -23,7 +23,7 @@ pub fn try_write_variants(
     log: &BxesEventLog,
     context: Rc<RefCell<BxesWriteContext>>,
 ) -> Result<(), BxesWriteError> {
-    write_collection_and_count(context.clone(), false, || {
+    write_collection_and_count(context.clone(), false, log.variants.len() as u32, || {
         for variant in &log.variants {
             try_write_u32_no_type_id(
                 context.borrow_mut().writer.as_mut().unwrap(),
@@ -32,16 +32,16 @@ pub fn try_write_variants(
 
             try_write_attributes(context.clone(), Some(&variant.metadata), false)?;
 
-            write_collection_and_count(context.clone(), false, || {
+            write_collection_and_count(context.clone(), false, variant.events.len() as u32, || {
                 for event in &variant.events {
                     try_write_event(event, context.clone())?;
                 }
 
-                Ok(variant.events.len() as u32)
+                Ok(())
             })?;
         }
 
-        Ok(log.variants.len() as u32)
+        Ok(())
     })
 }
 
@@ -130,24 +130,30 @@ pub fn try_write_properties(
     context: Rc<RefCell<BxesWriteContext>>,
     properties: Option<&Vec<(BxesValue, BxesValue)>>,
 ) -> Result<(), BxesWriteError> {
-    write_collection_and_count(context.clone(), false, || {
+    write_collection_and_count(context.clone(), false, count(properties), || {
         if let Some(properties) = properties {
             for property in properties {
-                try_write_kv_index(context.clone(), &(&property.0, &property.1))?;
+                try_write_kv_index(context.clone(), &(&property.0, &property.1), false)?;
             }
-
-            Ok(properties.len() as u32)
-        } else {
-            Ok(0)
         }
+
+        Ok(())
     })
+}
+
+fn count<T>(vec: Option<&Vec<T>>) -> u32 {
+    if let Some(vec) = vec {
+        vec.len() as u32
+    } else {
+        0
+    }
 }
 
 pub fn try_write_globals(
     context: Rc<RefCell<BxesWriteContext>>,
     globals: Option<&Vec<BxesGlobal>>,
 ) -> Result<(), BxesWriteError> {
-    write_collection_and_count(context.clone(), false, || {
+    write_collection_and_count(context.clone(), false, count(globals), || {
         if let Some(globals) = globals {
             for global in globals {
                 try_write_enum_value_no_type_index(
@@ -155,25 +161,24 @@ pub fn try_write_globals(
                     &global.entity_kind,
                 )?;
 
-                write_collection_and_count(context.clone(), false, || {
+                write_collection_and_count(context.clone(), false, global.globals.len() as u32, || {
                     for global in &global.globals {
-                        try_write_kv_index(context.clone(), &(&global.0, &global.1))?;
+                        try_write_kv_index(context.clone(), &(&global.0, &global.1), false)?;
                     }
 
-                    Ok(global.globals.len() as u32)
+                    Ok(())
                 })?;
             }
-
-            Ok(globals.len() as u32)
-        } else {
-            Ok(0)
         }
+
+        Ok(())
     })
 }
 
 pub fn try_write_kv_index(
     context: Rc<RefCell<BxesWriteContext>>,
     kv: &(&BxesValue, &BxesValue),
+    write_leb_128: bool
 ) -> Result<(), BxesWriteError> {
     if !context.borrow().kv_indices.borrow().contains_key(kv) {
         Err(BxesWriteError::FailedToFindKeyValueIndex((
@@ -182,7 +187,12 @@ pub fn try_write_kv_index(
         )))
     } else {
         let index = *context.borrow().kv_indices.borrow().get(kv).unwrap() as u32;
-        try_write_leb_128(context.borrow_mut().writer.as_mut().unwrap(), index)
+
+        if write_leb_128 {
+            try_write_leb_128(context.borrow_mut().writer.as_mut().unwrap(), index)
+        } else {
+            try_write_u32_no_type_id(context.borrow_mut().writer.as_mut().unwrap(), index)
+        }
     }
 }
 
@@ -190,18 +200,16 @@ pub fn try_write_extensions(
     context: Rc<RefCell<BxesWriteContext>>,
     extensions: Option<&Vec<BxesExtension>>,
 ) -> Result<(), BxesWriteError> {
-    write_collection_and_count(context.clone(), false, || {
+    write_collection_and_count(context.clone(), false, count(extensions), || {
         if let Some(extensions) = extensions {
             for extension in extensions {
                 try_write_value_index(context.clone(), &extension.name)?;
                 try_write_value_index(context.clone(), &extension.prefix)?;
                 try_write_value_index(context.clone(), &extension.uri)?;
             }
-
-            Ok(extensions.len() as u32)
-        } else {
-            Ok(0)
         }
+
+        Ok(())
     })
 }
 
@@ -209,23 +217,21 @@ pub fn try_write_classifiers(
     context: Rc<RefCell<BxesWriteContext>>,
     classifiers: Option<&Vec<BxesClassifier>>,
 ) -> Result<(), BxesWriteError> {
-    write_collection_and_count(context.clone(), false, || {
+    write_collection_and_count(context.clone(), false, count(classifiers), || {
         if let Some(classifiers) = classifiers {
             for classifier in classifiers {
                 try_write_value_index(context.clone(), &classifier.name)?;
-                write_collection_and_count(context.clone(), false, || {
+                write_collection_and_count(context.clone(), false, classifier.keys.len() as u32, || {
                     for key in &classifier.keys {
                         try_write_value_index(context.clone(), &key)?;
                     }
 
-                    Ok(classifier.keys.len() as u32)
+                    Ok(())
                 })?;
             }
-
-            Ok(classifiers.len() as u32)
-        } else {
-            Ok(0)
         }
+
+        Ok(())
     })
 }
 
@@ -246,27 +252,14 @@ pub fn try_write_attributes(
     attributes: Option<&Vec<(BxesValue, BxesValue)>>,
     write_leb_128_count: bool
 ) -> Result<(), BxesWriteError> {
-    write_collection_and_count(context.clone(), write_leb_128_count, || {
+    write_collection_and_count(context.clone(), write_leb_128_count, count(attributes), || {
         if let Some(attributes) = attributes {
             for (key, value) in attributes {
-                let pair = (key, value);
-                if context.borrow().kv_indices.borrow().contains_key(&pair) {
-                    let index = *context.borrow().kv_indices.borrow().get(&pair).unwrap();
-                    try_write_u32_no_type_id(
-                        context.borrow_mut().writer.as_mut().unwrap(),
-                        index as u32,
-                    )?;
-                } else {
-                    return Err(
-                        BxesWriteError::FailedToFindKeyValueIndex((key.clone(), value.clone()))
-                    );
-                }
+                try_write_kv_index(context.clone(), &(key, value), write_leb_128_count)?;
             }
-
-            Ok(attributes.len() as u32)
-        } else {
-            Ok(0)
         }
+
+        Ok(())
     })
 }
 
@@ -274,7 +267,7 @@ pub fn try_write_key_values<'a: 'b, 'b>(
     log: &'a BxesEventLog,
     context: Rc<RefCell<BxesWriteContext<'a, 'b>>>,
 ) -> Result<(), BxesWriteError> {
-    write_collection_and_count(context.clone(), false, || {
+    write_collection_and_count_after(context.clone(), || {
         execute_with_kv_pairs(log, |value| {
             match value {
                 ValueOrKeyValue::Value(_) => {}
@@ -389,7 +382,7 @@ pub fn try_write_values<'a: 'b, 'b>(
     log: &'a BxesEventLog,
     context: Rc<RefCell<BxesWriteContext<'a, 'b>>>,
 ) -> Result<(), BxesWriteError> {
-    write_collection_and_count(context.clone(), false, || {
+    write_collection_and_count_after(context.clone(), || {
         execute_with_kv_pairs(log, |value| {
             match value {
                 ValueOrKeyValue::Value(value) => {
@@ -408,6 +401,20 @@ pub fn try_write_values<'a: 'b, 'b>(
 fn write_collection_and_count(
     context: Rc<RefCell<BxesWriteContext>>,
     write_leb_128_count: bool,
+    count: u32,
+    mut writer_action: impl FnMut() -> Result<(), BxesWriteError>,
+) -> Result<(), BxesWriteError> {
+    if write_leb_128_count {
+        try_write_leb_128(context.borrow_mut().writer.as_mut().unwrap(), count)?
+    } else {
+        try_write_u32_no_type_id(context.borrow_mut().writer.as_mut().unwrap(), count)?;
+    }
+
+    writer_action()
+}
+
+fn write_collection_and_count_after(
+    context: Rc<RefCell<BxesWriteContext>>,
     mut writer_action: impl FnMut() -> Result<u32, BxesWriteError>,
 ) -> Result<(), BxesWriteError> {
     let pos = try_tell_pos(context.borrow_mut().writer.as_mut().unwrap())?;
@@ -419,11 +426,7 @@ fn write_collection_and_count(
     let current_pos = try_tell_pos(context.borrow_mut().writer.as_mut().unwrap())?;
     try_seek(context.borrow_mut().writer.as_mut().unwrap(), pos)?;
 
-    if write_leb_128_count {
-        try_write_leb_128(context.borrow_mut().writer.as_mut().unwrap(), count)?
-    } else {
-        try_write_u32_no_type_id(context.borrow_mut().writer.as_mut().unwrap(), count)?;
-    }
+    try_write_u32_no_type_id(context.borrow_mut().writer.as_mut().unwrap(), count)?;
 
     try_seek(context.borrow_mut().writer.as_mut().unwrap(), current_pos)
 }

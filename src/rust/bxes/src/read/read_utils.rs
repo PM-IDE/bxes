@@ -249,7 +249,7 @@ fn try_read_kv_pair(
     kv_pairs: &Vec<(u32, u32)>,
     leb_128: bool,
 ) -> Result<(BxesValue, BxesValue), BxesReadError> {
-    let kv_index = if leb_128 { try_read_leb128(reader)? as usize } else { try_read_u32(reader)? as usize };
+    let kv_index = if leb_128 { try_read_leb128(reader)? } else { try_read_u32(reader)? } as usize;
     let kv_pair = match kv_pairs.get(kv_index) {
         None => return Err(BxesReadError::FailedToIndexKeyValue(kv_index)),
         Some(pair) => pair,
