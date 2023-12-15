@@ -297,7 +297,10 @@ fn try_read_bxes_value(
     values: &Vec<BxesValue>,
 ) -> Result<BxesValue, BxesReadError> {
     let type_id_byte = try_read_u8(reader)?;
-    let type_id = TypeIds::from_u8(type_id_byte).unwrap();
+    let type_id = match TypeIds::from_u8(type_id_byte) {
+        None => return Err(BxesReadError::FailedToParseTypeId(type_id_byte)),
+        Some(id) => id
+    };
 
     match type_id {
         TypeIds::I32 => Ok(BxesValue::Int32(try_read_i32(reader)?)),
