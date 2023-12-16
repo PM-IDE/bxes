@@ -3,7 +3,7 @@ using System.CommandLine.Builder;
 using System.CommandLine.Parsing;
 using Bxes.Console;
 
-var rootCommand = new Command("bxes-converter");
+var rootCommand = new Command("bxes");
 var builder = new CommandLineBuilder(rootCommand);
 
 rootCommand.AddCommand(CreateCommand("xes-to-bxes", "Convert XES event log to bxes format", new XesToBxesCommandHandler()));
