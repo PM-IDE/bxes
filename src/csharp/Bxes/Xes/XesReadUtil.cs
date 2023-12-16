@@ -51,7 +51,7 @@ public static class XesReadUtil
 
         if (reader.GetAttribute(XesConstants.ArtifactItemModel) is not { } model)
         {
-          throw new XesReadException($"{XesConstants.ArtifactItemModel} was not sepcified");
+          throw new XesReadException($"{XesConstants.ArtifactItemModel} was not specified");
         }
 
         string? instance = null;
@@ -78,8 +78,7 @@ public static class XesReadUtil
 
         if (instance is null || transition is null)
         {
-          throw new XesReadException(
-            $"Expected not null instance and transition, got {instance}, {transition}");
+          throw new XesReadException($"Expected not null instance and transition, got {instance}, {transition}");
         }
 
         items.Add(new BxesArtifactItem
