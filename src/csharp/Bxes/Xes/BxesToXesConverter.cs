@@ -30,11 +30,11 @@ internal readonly struct StartEndElementCookie : IDisposable
   public void Dispose() => myXmlWriter.WriteEndElement();
 }
 
-public class BxesToXesConverter
+public class BxesToXesConverter : IBetweenFormatsConverter
 {
-  public void Convert(string bxesFilePath, string outputPath)
+  public void Convert(string filePath, string outputPath)
   {
-    var log = new SingleFileBxesReader().Read(bxesFilePath);
+    var log = new SingleFileBxesReader().Read(filePath);
 
     using var fs = File.OpenWrite(outputPath);
     using var writer = XmlWriter.Create(fs, new XmlWriterSettings

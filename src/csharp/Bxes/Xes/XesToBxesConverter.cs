@@ -6,13 +6,13 @@ using Bxes.Writer.Stream;
 
 namespace Bxes.Xes;
 
-public class XesToBxesConverter
+public class XesToBxesConverter : IBetweenFormatsConverter
 {
-  public void Convert(string xesFilePath, string bxesOutputPath)
+  public void Convert(string filePath, string outputPath)
   {
-    using var writer = new SingleFileBxesStreamWriterImpl<FromXesBxesEvent>(bxesOutputPath, BxesConstants.BxesVersion);
+    using var writer = new SingleFileBxesStreamWriterImpl<FromXesBxesEvent>(outputPath, BxesConstants.BxesVersion);
 
-    using var fs = File.OpenRead(xesFilePath);
+    using var fs = File.OpenRead(filePath);
     using var reader = XmlReader.Create(fs);
 
     while (reader.Read())
