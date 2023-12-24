@@ -6,6 +6,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bxes.Tests", "Bxes.Tests\Bx
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bxes.Console", "Bxes.Console\Bxes.Console.csproj", "{4E1D720F-0061-4691-8B07-BC0BA08E9AA9}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Bxes.Research", "Bxes.Research\Bxes.Research.fsproj", "{68D0577C-D48B-4A59-B0BB-047A1043EFA8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,5 +26,9 @@ Global
 		{4E1D720F-0061-4691-8B07-BC0BA08E9AA9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4E1D720F-0061-4691-8B07-BC0BA08E9AA9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4E1D720F-0061-4691-8B07-BC0BA08E9AA9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{68D0577C-D48B-4A59-B0BB-047A1043EFA8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{68D0577C-D48B-4A59-B0BB-047A1043EFA8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{68D0577C-D48B-4A59-B0BB-047A1043EFA8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{68D0577C-D48B-4A59-B0BB-047A1043EFA8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
