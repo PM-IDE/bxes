@@ -17,6 +17,15 @@ module Transformations =
 
     let executeTransformation logPath outputDirectory extension transformation =
         let outputPath = createOutputFilePath logPath outputDirectory extension
+        let outputDirectory = Path.GetDirectoryName outputPath
+        
+        match Directory.Exists outputDirectory with
+        | true -> ()
+        | false ->
+            Directory.CreateDirectory outputDirectory |> ignore
+            ()
+        
+        printfn $"Started executing transformation {extension} for file {logPath}"
         transformation(outputPath)
         
         { TransformationName = extension
@@ -45,4 +54,5 @@ module Transformations =
     let processEventLog logPath outputDirectory =
         transformations
         |> Seq.map (fun transformation -> transformation logPath outputDirectory)
+        |> Seq.toList
         
