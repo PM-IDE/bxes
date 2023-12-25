@@ -32,6 +32,7 @@ public static class XesReadUtil
       XesConstants.IntTagName => new BxesInt64Value(long.Parse(value)),
       XesConstants.FloatTagName => new BxesFloat64Value(double.Parse(value)),
       XesConstants.BoolTagName => new BxesBoolValue(bool.Parse(value)),
+      XesConstants.IdTagName => new BxesGuidValue(Guid.Parse(value)),
       _ => throw new XesReadException($"Failed to create value for type {reader.Name}")
     };
 

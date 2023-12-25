@@ -27,6 +27,7 @@ public static class XesConstants
   public const string IntTagName = "int";
   public const string FloatTagName = "float";
   public const string BoolTagName = "boolean";
+  public const string IdTagName = "id";
 
   public const string KeyAttributeName = "key";
   public const string ValueAttributeName = "value";
