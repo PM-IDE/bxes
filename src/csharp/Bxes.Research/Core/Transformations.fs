@@ -30,7 +30,7 @@ module Transformations =
         
     let zipTransformation logPath outputDirectory =
         executeTransformation logPath outputDirectory ".zip" (fun outputPath ->
-            use fs = File.OpenWrite(createOutputFilePath logPath outputDirectory ".zip")
+            use fs = File.OpenWrite(outputPath)
             use archive = new ZipArchive(fs, ZipArchiveMode.Create)
         
             let fileName = Path.GetFileNameWithoutExtension(logPath)
