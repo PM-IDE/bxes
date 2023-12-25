@@ -85,7 +85,7 @@ public class XesToBxesConverter : IBetweenFormatsConverter
 
   private void ReadGlobal(XmlReader reader, SingleFileBxesStreamWriterImpl<FromXesBxesEvent> writer)
   {
-    if ( reader.GetAttribute(XesConstants.GlobalScopeAttribute) is not { } scope) 
+    if (reader.GetAttribute(XesConstants.GlobalScopeAttribute) is not { } scope) 
       throw new XesReadException("Failed to find scope attribute in global tag");
 
     var entityKind = scope switch
@@ -97,11 +97,16 @@ public class XesToBxesConverter : IBetweenFormatsConverter
     };
 
     var defaults = new List<AttributeKeyValue>();
-    while (reader.Read())
+
+    var subtreeReader = reader.ReadSubtree();
+    //skip first global tag
+    subtreeReader.Read();
+
+    while (subtreeReader.Read())
     {
       if (reader.NodeType == XmlNodeType.Element)
       {
-        var (key, _, value) = XesReadUtil.ParseAttribute(reader);
+        var (key, _, value) = XesReadUtil.ParseAttribute(subtreeReader);
         defaults.Add(new AttributeKeyValue(new BxesStringValue(key), value));
       }
     }
