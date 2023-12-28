@@ -1,5 +1,7 @@
 namespace Bxes.Research.Core
 
+open System
+open System.Diagnostics
 open System.IO
 open System.IO.Compression
 open Bxes.Utils
@@ -60,7 +62,23 @@ module Transformations =
             let logger = BxesDefaultLoggerFactory.Create()
             BxesToXesConverter().Convert(bxesOutputPath, outputPath, logger))
 
-    let transformations = [ bxesTransformation; zipTransformation; bxesToXesTransformation ]
+    let private executeExternalTransformation command (arguments: string list) =
+        let transformationProcess = Process.Start(command, arguments)
+        transformationProcess.WaitForExit()
+        
+        match transformationProcess.ExitCode with
+        | 0 -> ()
+        | _ -> raise (Exception())
+        
+    let private executeExternalJavaTransformation jarPath logPath outputFilePath =
+        executeExternalTransformation "java" [ "-jar"; jarPath; logPath; outputFilePath ]
+        
+    let exiTransformation (logPath: string) outputDirectory =
+        executeTransformation logPath outputDirectory ".exi" (fun outputPath ->
+            let exiTransformerJarPath = Environment.GetEnvironmentVariable("EXI_JAR_PATH")
+            executeExternalJavaTransformation exiTransformerJarPath logPath outputPath)
+    
+    let transformations = [ bxesTransformation; zipTransformation; bxesToXesTransformation; exiTransformation; ]
 
     let processEventLog logPath outputDirectory =
         transformations
