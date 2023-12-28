@@ -17,22 +17,30 @@ let main args =
         Directory.GetFiles directory
         |> Seq.filter (fun dir -> dir.EndsWith(".xes"))
         |> Seq.map (fun logPath ->
-            let fileName = Path.GetFileNameWithoutExtension(logPath)
-            let logOutputDirectory = Path.Combine(currentOutputDirectory, fileName)
+            let logName = Path.GetFileNameWithoutExtension(logPath)
+            let logOutputDirectory = Path.Combine(currentOutputDirectory, logName)
 
-            Transformations.processEventLog logPath logOutputDirectory)
+            (logName, Transformations.processEventLog logPath logOutputDirectory))
         |> Seq.toList
-
 
     match Directory.Exists(logsTopLevelDirectory) with
     | true ->
-        let results =
-            Directory.GetDirectories(logsTopLevelDirectory)
-            |> Array.map processLogsDirectory
-            
-        ()
+        use fs = File.OpenWrite(Path.Combine(outputDirectory, "results.csv"))
+        use sw = new StreamWriter(fs)
+        sw.WriteLine("Name;OriginalSize;BxesSize;ZipSize;BxesToXesSize")
+        
+        Directory.GetDirectories(logsTopLevelDirectory)
+        |> Array.map (fun directory ->
+            (directory, processLogsDirectory directory))
+        |> Array.map (fun (directoryName, logsResults) ->
+            logsResults |> List.map (fun (logName, logResults) ->
+                let transformationResult = logResults
+                                           |> List.map (fun res -> res.TransformedFileSize.ToString())
+                                           |> String.concat ";"
+
+                sw.WriteLine($"{logName};{logResults[0].OriginalFileSize};{transformationResult}")))
+        |> ignore
     | false ->
         printfn "The top level logs directory does not exist"
-        ()
 
     0
