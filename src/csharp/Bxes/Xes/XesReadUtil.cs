@@ -53,7 +53,7 @@ public static class XesReadUtil
     var value = reader.GetAttribute(XesConstants.ValueAttributeName);
 
     if (key is null && value is null) return AttributeParseResult.Empty();
-    if (key is { } && value is null) throw new XesReadException("Attribute contains key and no value");
+    if (key is { } && value is null) throw new XesReadException(reader, "Attribute contains key and no value");
 
     Debug.Assert(value is { });
 
@@ -66,7 +66,7 @@ public static class XesReadUtil
         case XesConstants.CostDrivers:
           throw new NotImplementedException();
         default:
-          throw new XesReadException($"Failed to parse list {key}");
+          throw new XesReadException(reader, $"Failed to parse list {key}");
       }
     }
     
@@ -78,7 +78,7 @@ public static class XesReadUtil
       XesConstants.FloatTagName => new BxesFloat64Value(double.Parse(value)),
       XesConstants.BoolTagName => new BxesBoolValue(bool.Parse(value)),
       XesConstants.IdTagName => new BxesGuidValue(Guid.Parse(value)),
-      _ => throw new XesReadException($"Failed to create value for type {reader.Name}")
+      _ => throw new XesReadException(reader, $"Failed to create value for type {reader.Name}")
     };
 
     return AttributeParseResult.KeyValue(key, AttributeValueParseResult.Create(value, bxesValue));
@@ -97,7 +97,7 @@ public static class XesReadUtil
 
         if (reader.GetAttribute(XesConstants.ArtifactItemModel) is not { } model)
         {
-          throw new XesReadException($"{XesConstants.ArtifactItemModel} was not specified");
+          throw new XesReadException(reader, $"{XesConstants.ArtifactItemModel} was not specified");
         }
 
         string? instance = null;
@@ -125,14 +125,14 @@ public static class XesReadUtil
             else
             {
               //todo: replace with logging
-              throw new XesReadException("Failed to read artifact attribute");
+              throw new XesReadException(subtreeReader, "Failed to read artifact attribute");
             }
           }
         }
 
         if (instance is null || transition is null)
         {
-          throw new XesReadException($"Expected not null instance and transition, got {instance}, {transition}");
+          throw new XesReadException(reader, $"Expected not null instance and transition, got {instance}, {transition}");
         }
 
         items.Add(new BxesArtifactItem

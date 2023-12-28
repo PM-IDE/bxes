@@ -55,8 +55,8 @@ public class XesToBxesConverter : IBetweenFormatsConverter
     var name = reader.GetAttribute(XesConstants.ClassifierNameAttribute);
     var keys = reader.GetAttribute(XesConstants.ClassifierKeysAttribute);
 
-    if (name is null) throw new XesReadException("Failed to read name in classifier");
-    if (keys is null) throw new XesReadException("Failed to read keys in classifier");
+    if (name is null) throw new XesReadException(reader, "Failed to read name in classifier");
+    if (keys is null) throw new XesReadException(reader, "Failed to read keys in classifier");
 
     writer.HandleEvent(new BxesLogMetadataClassifierEvent(new BxesClassifier
     {
@@ -71,9 +71,9 @@ public class XesToBxesConverter : IBetweenFormatsConverter
     var prefix = reader.GetAttribute(XesConstants.ExtensionPrefixAttribute);
     var uri = reader.GetAttribute(XesConstants.ExtensionUriAttribute);
 
-    if (name is null) throw new XesReadException("Failed to read name for extension");
-    if (prefix is null) throw new XesReadException("Failed to read prefix for extension");
-    if (uri is null) throw new XesReadException("Failed to read uri for extension");
+    if (name is null) throw new XesReadException(reader, "Failed to read name for extension");
+    if (prefix is null) throw new XesReadException(reader, "Failed to read prefix for extension");
+    if (uri is null) throw new XesReadException(reader, "Failed to read uri for extension");
 
     writer.HandleEvent(new BxesLogMetadataExtensionEvent(new BxesExtension
     {
@@ -86,14 +86,14 @@ public class XesToBxesConverter : IBetweenFormatsConverter
   private void ReadGlobal(XmlReader reader, SingleFileBxesStreamWriterImpl<FromXesBxesEvent> writer)
   {
     if (reader.GetAttribute(XesConstants.GlobalScopeAttribute) is not { } scope)
-      throw new XesReadException("Failed to find scope attribute in global tag");
+      throw new XesReadException(reader, "Failed to find scope attribute in global tag");
 
     var entityKind = scope switch
     {
       "event" => GlobalsEntityKind.Event,
       "trace" => GlobalsEntityKind.Trace,
       "log" => GlobalsEntityKind.Log,
-      _ => throw new XesReadException($"Unknown scope attribute value {scope}")
+      _ => throw new XesReadException(reader, $"Unknown scope attribute value {scope}")
     };
 
     var defaults = new List<AttributeKeyValue>();
@@ -112,7 +112,7 @@ public class XesToBxesConverter : IBetweenFormatsConverter
         }
         else
         {
-          throw new XesReadException("Failed to read global tag");
+          throw new XesReadException(subtreeReader, "Failed to read global tag");
         }
       }
     }
@@ -132,7 +132,7 @@ public class XesToBxesConverter : IBetweenFormatsConverter
     }
     else
     {
-      throw new XesReadException("Failed to read global tag");
+      throw new XesReadException(reader, "Failed to read global tag");
     }
   }
 
@@ -157,7 +157,7 @@ public class XesToBxesConverter : IBetweenFormatsConverter
     }
     else
     {
-      throw new XesReadException("Failed to read xes event");
+      throw new XesReadException(reader, "Failed to read xes event");
     }
   }
 }

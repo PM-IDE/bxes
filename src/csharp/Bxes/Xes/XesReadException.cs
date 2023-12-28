@@ -1,6 +1,8 @@
+using System.Xml;
+
 namespace Bxes.Xes;
 
-public class XesReadException(string message) : BxesException
+public class XesReadException(XmlReader reader, string message) : BxesException
 {
-  public override string Message { get; } = message;
+  public override string Message { get; } = $"{message}, content: {reader.ReadOuterXml()}";
 }
