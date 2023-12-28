@@ -57,14 +57,14 @@ public class XesToBxesConverter : IBetweenFormatsConverter
 
     if (name is null) throw new XesReadException("Failed to read name in classifier");
     if (keys is null) throw new XesReadException("Failed to read keys in classifier");
-    
+
     writer.HandleEvent(new BxesLogMetadataClassifierEvent(new BxesClassifier
     {
       Name = new BxesStringValue(name),
       Keys = keys.Split().Select(key => new BxesStringValue(key)).ToList()
     }));
   }
-  
+
   private void ReadExtension(XmlReader reader, SingleFileBxesStreamWriterImpl<FromXesBxesEvent> writer)
   {
     var name = reader.GetAttribute(XesConstants.ExtensionNameAttribute);
@@ -85,7 +85,7 @@ public class XesToBxesConverter : IBetweenFormatsConverter
 
   private void ReadGlobal(XmlReader reader, SingleFileBxesStreamWriterImpl<FromXesBxesEvent> writer)
   {
-    if (reader.GetAttribute(XesConstants.GlobalScopeAttribute) is not { } scope) 
+    if (reader.GetAttribute(XesConstants.GlobalScopeAttribute) is not { } scope)
       throw new XesReadException("Failed to find scope attribute in global tag");
 
     var entityKind = scope switch
@@ -106,22 +106,34 @@ public class XesToBxesConverter : IBetweenFormatsConverter
     {
       if (reader.NodeType == XmlNodeType.Element)
       {
-        var (key, _, value) = XesReadUtil.ParseAttribute(subtreeReader);
-        defaults.Add(new AttributeKeyValue(new BxesStringValue(key), value));
+        if (XesReadUtil.ParseAttribute(subtreeReader) is { Key: { } key, Value.BxesValue: { } value })
+        {
+          defaults.Add(new AttributeKeyValue(new BxesStringValue(key), value));
+        }
+        else
+        {
+          throw new XesReadException("Failed to read global tag");
+        }
       }
     }
-    
+
     writer.HandleEvent(new BxesLogMetadataGlobalEvent(new BxesGlobal
     {
       Kind = entityKind,
       Globals = defaults
     }));
   }
-  
+
   private void ReadProperty(XmlReader reader, SingleFileBxesStreamWriterImpl<FromXesBxesEvent> writer)
   {
-    var (key, _, value) = XesReadUtil.ParseAttribute(reader);
-    writer.HandleEvent(new BxesLogMetadataPropertyEvent(new AttributeKeyValue(new BxesStringValue(key), value)));
+    if (XesReadUtil.ParseAttribute(reader) is { Key: { } key, Value.BxesValue: { } value })
+    {
+      writer.HandleEvent(new BxesLogMetadataPropertyEvent(new AttributeKeyValue(new BxesStringValue(key), value)));
+    }
+    else
+    {
+      throw new XesReadException("Failed to read global tag");
+    }
   }
 
   private void ReadTrace(XmlReader reader, SingleFileBxesStreamWriterImpl<FromXesBxesEvent> writer)

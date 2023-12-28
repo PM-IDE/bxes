@@ -1,23 +1,68 @@
-using System.Runtime.InteropServices;
+using System.Diagnostics;
 using System.Xml;
 using Bxes.Models;
 using Bxes.Models.Values;
 
 namespace Bxes.Xes;
 
+public readonly struct AttributeValueParseResult
+{
+  public required string Value { get; init; }
+  public required BxesValue BxesValue { get; init; }
+
+
+  public static AttributeValueParseResult Create(string value, BxesValue parsedValue) => new()
+  {
+    Value = value,
+    BxesValue = parsedValue
+  };
+}
+
+public readonly struct AttributeParseResult
+{
+  public required string? Key { get; init; }
+  public required AttributeValueParseResult? Value { get; init; }
+
+  public bool IsEmpty => Key is null && Value is null;
+  
+
+  public static AttributeParseResult Empty() => new()
+  {
+    Key = null,
+    Value = null
+  };
+
+  public static AttributeParseResult KeyValue(string key, AttributeValueParseResult value) => new()
+  {
+    Key = key,
+    Value = value
+  };
+
+  public static AttributeParseResult OnlyValue(AttributeValueParseResult value) => new()
+  {
+    Key = null,
+    Value = value
+  };
+}
+
 public static class XesReadUtil
 {
-  public static (string Key, string Value, BxesValue ParsedValue) ParseAttribute(XmlReader reader)
+  public static AttributeParseResult ParseAttribute(XmlReader reader)
   {
-    var key = reader.GetAttribute(XesConstants.KeyAttributeName) ?? throw new XesReadException("No key at attribute");
-    var value = reader.GetAttribute(XesConstants.ValueAttributeName) ?? throw new XesReadException("No value at attribute");
+    var key = reader.GetAttribute(XesConstants.KeyAttributeName);
+    var value = reader.GetAttribute(XesConstants.ValueAttributeName);
+
+    if (key is null && value is null) return AttributeParseResult.Empty();
+    if (key is { } && value is null) throw new XesReadException("Attribute contains key and no value");
+
+    Debug.Assert(value is { });
 
     if (reader.Name is XesConstants.ListTagName)
     {
       switch (key)
       {
         case XesConstants.ArtifactMoves:
-          return (key, value, ReadArtifact(reader));
+          return AttributeParseResult.KeyValue(key, AttributeValueParseResult.Create(value, ReadArtifact(reader)));
         case XesConstants.CostDrivers:
           throw new NotImplementedException();
         default:
@@ -36,7 +81,7 @@ public static class XesReadUtil
       _ => throw new XesReadException($"Failed to create value for type {reader.Name}")
     };
 
-    return (key, value, bxesValue);
+    return AttributeParseResult.KeyValue(key, AttributeValueParseResult.Create(value, bxesValue));
   }
 
   private static BxesArtifactModelsListValue ReadArtifact(XmlReader reader)
@@ -64,15 +109,23 @@ public static class XesReadUtil
         {
           if (reader.NodeType is XmlNodeType.Element && reader.Name == XesConstants.StringTagName)
           {
-            var (artifactKey, artifactValue, _) = ParseAttribute(reader);
-            switch (artifactKey)
+            var parsedAttribute = ParseAttribute(reader);
+            if (parsedAttribute is { Key: { }, Value: { } value })
             {
-              case XesConstants.ArtifactItemInstance:
-                instance = artifactValue;
-                break;
-              case XesConstants.ArtifactItemTransition:
-                transition = artifactValue;
-                break;
+              switch (parsedAttribute.Key)
+              {
+                case XesConstants.ArtifactItemInstance:
+                  instance = value.Value;
+                  break;
+                case XesConstants.ArtifactItemTransition:
+                  transition = value.Value;
+                  break;
+              } 
+            }
+            else
+            {
+              //todo: replace with logging
+              throw new XesReadException("Failed to read artifact attribute");
             }
           }
         }

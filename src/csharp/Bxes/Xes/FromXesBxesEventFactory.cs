@@ -9,7 +9,7 @@ public static class FromXesBxesEventFactory
 {
   public static FromXesBxesEvent CreateFrom(XmlReader reader)
   {
-    var attributes = new Lazy<List<AttributeKeyValue>>(() => new List<AttributeKeyValue>());
+    var attributes = new Lazy<List<AttributeKeyValue>>(static () => new List<AttributeKeyValue>());
     var initializedName = false;
     var initializedTimestamp = false;
 
@@ -19,31 +19,31 @@ public static class FromXesBxesEventFactory
 
     while (reader.Read())
     {
-      if (reader.NodeType == XmlNodeType.EndElement)
-      {
-        break;
-      }
+      if (reader.NodeType == XmlNodeType.EndElement) break;
       
       if (reader.NodeType == XmlNodeType.Element)
       {
-        var (key, value, bxesValue) = XesReadUtil.ParseAttribute(reader);
+        var parsedAttribute = XesReadUtil.ParseAttribute(reader);
 
-        switch (key)
+        if (parsedAttribute is { Key: { } key, Value: { Value: { } value, BxesValue: { } bxesValue } })
         {
-          case XesConstants.ConceptName:
-            name = value;
-            initializedName = true;
-            break;
-          case XesConstants.TimeTimestamp:
-            timestamp = ((BxesTimeStampValue)bxesValue).Value;
-            initializedTimestamp = true;
-            break;
-          case XesConstants.LifecycleTransition:
-            lifecycle = IEventLifecycle.Parse(value);
-            break;
-          default:
-            attributes.Value.Add(new AttributeKeyValue(new BxesStringValue(key), bxesValue));
-            break;
+          switch (key)
+          {
+            case XesConstants.ConceptName:
+              name = value;
+              initializedName = true;
+              break;
+            case XesConstants.TimeTimestamp:
+              timestamp = ((BxesTimeStampValue)bxesValue).Value;
+              initializedTimestamp = true;
+              break;
+            case XesConstants.LifecycleTransition:
+              lifecycle = IEventLifecycle.Parse(value);
+              break;
+            default:
+              attributes.Value.Add(new AttributeKeyValue(new BxesStringValue(key), bxesValue));
+              break;
+          } 
         }
       }
     }
