@@ -9,9 +9,9 @@ internal abstract class ConvertCommandHandlerBase : ICommandHandler
   {
     var filePath = context.ParseResult.GetValueOrThrow(Options.PathOption);
     var outputFilePath = context.ParseResult.GetValueOrThrow(Options.OutputPathOption);
-    
+
     CreateConverter().Convert(filePath, outputFilePath);
-    
+
     return 0;
   }
 

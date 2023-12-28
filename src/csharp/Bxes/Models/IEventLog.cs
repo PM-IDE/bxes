@@ -75,13 +75,13 @@ public interface IEventLogMetadata : IEquatable<IEventLogMetadata>
   {
     foreach (var extension in Extensions)
       yield return new BxesLogMetadataExtensionEvent(extension);
-    
+
     foreach (var classifier in Classifiers)
       yield return new BxesLogMetadataClassifierEvent(classifier);
-    
+
     foreach (var global in Globals)
       yield return new BxesLogMetadataGlobalEvent(global);
-    
+
     foreach (var property in Properties)
       yield return new BxesLogMetadataPropertyEvent(property);
   }

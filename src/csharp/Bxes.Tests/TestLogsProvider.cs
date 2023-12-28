@@ -80,7 +80,7 @@ public static class TestLogsProvider
         Name = GenerateRandomBxesStringValue(),
         Keys = keys
       };
-      
+
       classifiers.Add(classifier);
     }
 
@@ -98,7 +98,7 @@ public static class TestLogsProvider
       {
         Name = GenerateRandomBxesStringValue(),
         Prefix = GenerateRandomBxesStringValue(),
-        Uri =GenerateRandomBxesStringValue(),
+        Uri = GenerateRandomBxesStringValue(),
       });
     }
 
@@ -110,7 +110,7 @@ public static class TestLogsProvider
     var globals = new List<BxesGlobal>();
     var globalsCount = Random.Shared.Next(10);
     var kindValues = Enum.GetValues<GlobalsEntityKind>();
-      
+
     for (var i = 0; i < globalsCount; ++i)
     {
       globals.Add(new BxesGlobal
@@ -171,7 +171,7 @@ public static class TestLogsProvider
       Type = GenerateRandomString()
     };
   }
-  
+
   private static BxesArtifactModelsListValue GenerateRandomArtifact()
   {
     var artifactsCount = Random.Shared.Next(100);
@@ -210,6 +210,6 @@ public static class TestLogsProvider
 
   private static char GenerateRandomChar() => (char)('a' + Random.Shared.Next('z' - 'a' + 1));
 
-  private static T GenerateRandomEnum<T>() where T : struct, Enum => 
-     Enum.GetValues<T>()[Random.Shared.Next(Enum.GetValues<T>().Length)];
+  private static T GenerateRandomEnum<T>() where T : struct, Enum =>
+    Enum.GetValues<T>()[Random.Shared.Next(Enum.GetValues<T>().Length)];
 }

@@ -2,20 +2,27 @@
 
 ### Goals
 
-The goal of creating the format is to provide a compact way of storing event logs in Process Mining field, especially in software field.
-The main problem about software logs is their size, as each event can contain a lot of attributes and the number of events is big. Moreover,
-some attributes values can be repeated many times (e.g. name of a method), thus, when using XES format, there will a lot of repetition, which leads
-to enormous size of .xes files. `bxes` format aims to provide a binary representation of event logs, thus reducing the size and optimizing the process
+The goal of creating the format is to provide a compact way of storing event logs in Process Mining field, especially in
+software field.
+The main problem about software logs is their size, as each event can contain a lot of attributes and the number of
+events is big. Moreover,
+some attributes values can be repeated many times (e.g. name of a method), thus, when using XES format, there will a lot
+of repetition, which leads
+to enormous size of .xes files. `bxes` format aims to provide a binary representation of event logs, thus reducing the
+size and optimizing the process
 of working with software event logs.
 
 ### Event log description
 
-Event log is a sequence of traces, or, the `multiset` of traces. This indicates, that some traces can be repeated for several times.
+Event log is a sequence of traces, or, the `multiset` of traces. This indicates, that some traces can be repeated for
+several times.
 An event log can contain meta-information, e.g. version of format, date of creation, etc.
 Every trace is a sequence of events.
 Trace may not contain any metadata as event log does.
-Every event contains a set of attributes, where each attribute contains a name of attribute (`String`) and a value of the attribute (any of primitive types).
-The core difference between `bxes` and other XML-like formats is that we do not allow complex data structures and nested tags.
+Every event contains a set of attributes, where each attribute contains a name of attribute (`String`) and a value of
+the attribute (any of primitive types).
+The core difference between `bxes` and other XML-like formats is that we do not allow complex data structures and nested
+tags.
 E.g. the constructs like the following one are not allowed:
 
 ```xml
@@ -27,14 +34,18 @@ E.g. the constructs like the following one are not allowed:
 </event>
 ```
 
-In `bxes` every event contains a plain set of attributes, in other words every attribute is a pair `(name: String, value: PrimitiveType)`, and an event is
+In `bxes` every event contains a plain set of attributes, in other words every attribute is a
+pair `(name: String, value: PrimitiveType)`, and an event is
 a set of such pairs.
-Event may not contain metadata, as event log does, all information about an event should be stored in the set of its attributes.
+Event may not contain metadata, as event log does, all information about an event should be stored in the set of its
+attributes.
 
 ### Core features of `bxes`
 
 The bxes core features are:
-- Aggressive reuse of attribute keys and values: instead of repeating them as in XES, the actual value will be stored once, while attributes in an event
+
+- Aggressive reuse of attribute keys and values: instead of repeating them as in XES, the actual value will be stored
+  once, while attributes in an event
   will reference those values.
 - Aggressive reuse of attribute pairs
 - Attribute values and each trace variant can be stored in a single file, or in separate files.
@@ -43,6 +54,7 @@ The bxes core features are:
 ### Type system
 
 The following types are suported in bxes:
+
 - `i32` (type id = 0, `4 bytes`)
 - `i64` (type id = 1, `8 bytes`)
 - `u32` (type id = 2, `4 bytes`)
@@ -53,6 +65,7 @@ The following types are suported in bxes:
 - `bool` (type id = 7, `1 byte`)
 
 XES-sprcific types:
+
 - `timestamp` (type id = 8, `8 bytes`), the date is UTC ticks.
 - `braf-lifecycle-transition` (type id = 9, `1 byte`) - BRAF lifecycle model
     - NULL (unspecified) = `0`,
@@ -93,12 +106,13 @@ XES-sprcific types:
 - `artifact` (type id = `11`) xes artifact extension
     - the number of models is written (`u32`, `4 bytes`)
     - then the models are written
-        - each model is a value-value-value triple, which indicates the values of `artifactlifecycle:model`, `artifactlifecycle:instance` and `artifactlifecycle:transition`
+        - each model is a value-value-value triple, which indicates the values
+          of `artifactlifecycle:model`, `artifactlifecycle:instance` and `artifactlifecycle:transition`
 - `cost:dirvers` (type id = `12`) xes cost extension. The list of drivers with following attributes:
     - the number of drivers is written (`u32`, `4 bytes`), each list item is the following:
-      - the amount is written (`f64`, `8 bytes`)
-      - the driver name index is written (`u32`, `4 bytes`)
-      - the type index is written (`u32`, `4 bytes`)
+        - the amount is written (`f64`, `8 bytes`)
+        - the driver name index is written (`u32`, `4 bytes`)
+        - the type index is written (`u32`, `4 bytes`)
 - `guid` (type id = `13`) the guid written in LE order, `16 bytes`
 - `software event type` (type id = `14`, `1 byte`) - enum:
     - NULL = `0`,
@@ -109,7 +123,8 @@ XES-sprcific types:
     - Calling = `5`
     - Returning = `6`
 
-Type id is one byte length. In case of string the length of a string in bytes is also serialized, the length of string takes 8 bytes.
+Type id is one byte length. In case of string the length of a string in bytes is also serialized, the length of string
+takes 8 bytes.
 Type id + additional type info (i.e. length of a string) forms a header of a value, followed by the actual value
 
 ### Single file format description
@@ -118,16 +133,19 @@ Type id + additional type info (i.e. length of a string) forms a header of a val
 - The number of values is written (`u32`) - `4 bytes`
 - Then there is a sequence of values [(Header[type-id + metainfo], value)]
 - Then there is a number of attribute key-values pairs (`u32`) - `4 bytes`
-- After that there is a sequence of pairs (index(`u32`, `4 bytes`), index(`u32`, `4 bytes`)), which indicates the attributes key-value pairs.
+- After that there is a sequence of pairs (index(`u32`, `4 bytes`), index(`u32`, `4 bytes`)), which indicates the
+  attributes key-value pairs.
 - The event log metadata is written
 - Then the number of traces variants is written (`u32`) - `4 bytes`
 - Then the sequence of traces variants is written.
 
 ### Event log metadata format
+
 - The number of properties is written (`u32`)
-- The properties are written: key-value pairs, key must be of type string 
+- The properties are written: key-value pairs, key must be of type string
 - The number of extensions is written (`u32`)
-- The extensions are written. The extension is tuple of three elements (name index (`u32`), prefix index (`u32`), uri index (`u32`))
+- The extensions are written. The extension is tuple of three elements (name index (`u32`), prefix index (`u32`), uri
+  index (`u32`))
 - The number of entities for globals are written (`u8`)
 - The globals are written:
     - The entity identifier (`u8`)
@@ -144,6 +162,7 @@ Type id + additional type info (i.e. length of a string) forms a header of a val
     - The keys are written (value-index `u32`)
 
 ### Trace variant format
+
 - The number of traces is written (`u32`)
 - The number of trace metadata is written (`u32`)
 - The metadata is written: key-value pairs
@@ -151,6 +170,7 @@ Type id + additional type info (i.e. length of a string) forms a header of a val
 - The events are written
 
 ### Event description
+
 - name value index: (`u32`, `4 bytes`)
 - timestamp value (`i64`, `8 bytes`)
 - lifecycle value (`2 bytes`, type id (`1 byte`) + value (`1 byte`), `0` if unspecified)

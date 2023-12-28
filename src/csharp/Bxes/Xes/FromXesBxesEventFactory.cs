@@ -51,13 +51,13 @@ public static class FromXesBxesEventFactory
       }
     }
 
-    if (!initializedName) 
+    if (!initializedName)
       TryInitializeFromDefaults(XesConstants.ConceptName, ref name, ref initializedName, context);
 
-    if (!initializedTimestamp) 
+    if (!initializedTimestamp)
       TryInitializeFromDefaults(XesConstants.TimeTimestamp, ref timestamp, ref initializedTimestamp, context);
 
-    if (!initializedLifecycle) 
+    if (!initializedLifecycle)
       TryInitializeFromDefaults(XesConstants.LifecycleTransition, ref lifecycle, ref initializedLifecycle, context);
 
     return new FromXesBxesEvent
@@ -72,7 +72,7 @@ public static class FromXesBxesEventFactory
   private static void TryInitializeFromDefaults<TValue>(
     string key, ref TValue value, ref bool initialized, XesReadContext context) where TValue : notnull
   {
-    if (context.EventDefaults.TryGetValue(key, out var defaultValue) && 
+    if (context.EventDefaults.TryGetValue(key, out var defaultValue) &&
         defaultValue is BxesValue<TValue> { Value: { } existingValue })
     {
       value = existingValue;

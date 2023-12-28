@@ -24,7 +24,7 @@ public readonly struct AttributeParseResult
   public required AttributeValueParseResult? Value { get; init; }
 
   public bool IsEmpty => Key is null && Value is null;
-  
+
 
   public static AttributeParseResult Empty() => new()
   {
@@ -53,6 +53,7 @@ public static class XesReadUtil
     var value = reader.GetAttribute(XesConstants.ValueAttributeName);
 
     if (key is null && value is null) return AttributeParseResult.Empty();
+
     if (key is { } && value is null) throw new XesReadException(reader, "Attribute contains key and no value");
 
     Debug.Assert(value is { });
@@ -69,7 +70,7 @@ public static class XesReadUtil
           throw new XesReadException(reader, $"Failed to parse list {key}");
       }
     }
-    
+
     BxesValue bxesValue = reader.Name switch
     {
       XesConstants.StringTagName => new BxesStringValue(value),
@@ -120,7 +121,7 @@ public static class XesReadUtil
                 case XesConstants.ArtifactItemTransition:
                   transition = value.Value;
                   break;
-              } 
+              }
             }
             else
             {
@@ -132,7 +133,8 @@ public static class XesReadUtil
 
         if (instance is null || transition is null)
         {
-          throw new XesReadException(reader, $"Expected not null instance and transition, got {instance}, {transition}");
+          throw new XesReadException(reader,
+            $"Expected not null instance and transition, got {instance}, {transition}");
         }
 
         items.Add(new BxesArtifactItem

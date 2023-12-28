@@ -6,8 +6,10 @@ using Bxes.Console;
 var rootCommand = new Command("bxes");
 var builder = new CommandLineBuilder(rootCommand);
 
-rootCommand.AddCommand(CreateCommand("xes-to-bxes", "Convert XES event log to bxes format", new XesToBxesCommandHandler()));
-rootCommand.AddCommand(CreateCommand("bxes-to-xes", "Convert bxes event log into XES format", new BxesToXesCommandHandler()));
+rootCommand.AddCommand(CreateCommand("xes-to-bxes", "Convert XES event log to bxes format",
+  new XesToBxesCommandHandler()));
+rootCommand.AddCommand(CreateCommand("bxes-to-xes", "Convert bxes event log into XES format",
+  new BxesToXesCommandHandler()));
 
 builder.UseDefaults();
 

@@ -67,10 +67,10 @@ internal static class BxesWriteUtils
     foreach (var keyValue in @event.Attributes)
     {
       if (keyValuesContext.KeyValueIndices.ContainsKey(keyValue)) continue;
-      
+
       WriteValueIfNeeded(keyValue.Key, valuesContext);
       WriteValueIfNeeded(keyValue.Value, valuesContext);
-      
+
       WriteKeyValuePair(keyValue, keyValuesContext);
     }
   }
@@ -96,7 +96,7 @@ internal static class BxesWriteUtils
   public static void WriteKeyValuePairIfNeeded(AttributeKeyValue pair, BxesWriteContext context)
   {
     if (context.KeyValueIndices.ContainsKey(pair)) return;
-    
+
     WriteKeyValuePair(pair, context);
   }
 
@@ -160,7 +160,7 @@ internal static class BxesWriteUtils
   private static void WriteTraceVariant(ITraceVariant variant, BxesWriteContext context)
   {
     context.Writer.Write(variant.Count);
-    
+
     WriteVariantMetadata(variant.Metadata, context);
     WriteCollectionAndCount(variant.Events, context, WriteEvent, () => (IndexType)variant.Events.Count);
   }
@@ -180,7 +180,7 @@ internal static class BxesWriteUtils
     context.Writer.WriteLeb128Unsigned(context.ValuesIndices[new BxesStringValue(@event.Name)]);
     context.Writer.Write(@event.Timestamp);
     @event.Lifecycle.WriteTo(context);
-    
+
     WriteCollection(@event.Attributes, context, true, WriteKeyValueIndex);
   }
 
@@ -203,7 +203,7 @@ internal static class BxesWriteUtils
       Options = FileOptions.RandomAccess,
       BufferSize = 1024 * 16
     });
-    
+
     using var bw = new BinaryWriter(fs, BxesConstants.BxesEncoding);
 
     writeAction(bw);

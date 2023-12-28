@@ -61,12 +61,12 @@ public class BxesToXesConverter : IBetweenFormatsConverter
     {
       WriteExtensionTag(writer, extension.Name.Value, extension.Prefix.Value, extension.Uri.Value);
     }
-    
+
     foreach (var global in metadata.Globals)
     {
       WriteGlobal(writer, global);
     }
-    
+
     foreach (var classifier in metadata.Classifiers)
     {
       WriteClassifier(writer, classifier);
@@ -86,7 +86,7 @@ public class BxesToXesConverter : IBetweenFormatsConverter
   {
     using var _ = StartEndElementCookie.CreateStartEndElement(writer, null, XesConstants.GlobalTagName, null);
     WriteAttribute(writer, XesConstants.GlobalScopeAttribute, global.Kind.ToString().ToLower());
-    
+
     foreach (var attribute in global.Globals)
     {
       WriteKeyValuePair(writer, attribute);
@@ -100,15 +100,15 @@ public class BxesToXesConverter : IBetweenFormatsConverter
     {
       WriteKeyValuePair(writer, attribute);
     }
-    
+
     foreach (var @event in variant.Events)
     {
       WriteEventNode(writer, @event);
     }
-    
+
     writer.WriteEndElement();
   }
-  
+
   private static void WriteEventNode(XmlWriter writer, IEvent currentEvent)
   {
     using var _ = StartEndElementCookie.CreateStartEndElement(writer, null, XesConstants.EventTagName, null);
@@ -120,7 +120,7 @@ public class BxesToXesConverter : IBetweenFormatsConverter
     {
       WriteLifecycle(writer, currentEvent.Lifecycle);
     }
-    
+
     foreach (var attribute in currentEvent.Attributes)
     {
       WriteKeyValuePair(writer, attribute);
@@ -175,14 +175,15 @@ public class BxesToXesConverter : IBetweenFormatsConverter
   {
     using var _ = StartEndElementCookie.CreateStartEndElement(writer, null, XesConstants.ListTagName, null);
     WriteAttribute(writer, XesConstants.KeyAttributeName, XesConstants.CostDrivers);
-    
+
     foreach (var driver in drivers.Value)
     {
       using (StartEndElementCookie.CreateStartEndElement(writer, null, XesConstants.CostDriver, null))
       {
         WriteValueTag(writer, XesConstants.StringTagName, XesConstants.CostDriver, driver.Name);
-        WriteValueTag(writer, XesConstants.StringTagName, XesConstants.ArtifactItemTransition, driver.Type); 
-        WriteValueTag(writer, XesConstants.FloatTagName, XesConstants.CostAmount, driver.Amount.ToString(CultureInfo.InvariantCulture));
+        WriteValueTag(writer, XesConstants.StringTagName, XesConstants.ArtifactItemTransition, driver.Type);
+        WriteValueTag(writer, XesConstants.FloatTagName, XesConstants.CostAmount,
+          driver.Amount.ToString(CultureInfo.InvariantCulture));
       }
     }
   }
@@ -198,9 +199,9 @@ public class BxesToXesConverter : IBetweenFormatsConverter
       using (StartEndElementCookie.CreateStartEndElement(writer, null, XesConstants.StringTagName, null))
       {
         WriteAttribute(writer, XesConstants.ArtifactItemModel, item.Model);
-        
+
         WriteValueTag(writer, XesConstants.StringTagName, XesConstants.ArtifactItemInstance, item.Instance);
-        WriteValueTag(writer, XesConstants.StringTagName, XesConstants.ArtifactItemTransition, item.Transition); 
+        WriteValueTag(writer, XesConstants.StringTagName, XesConstants.ArtifactItemTransition, item.Transition);
       }
     }
   }
@@ -209,7 +210,7 @@ public class BxesToXesConverter : IBetweenFormatsConverter
   {
     writer.WriteAttributeString(null, XesConstants.LifecycleTransition, null, lifecycle.ToStringValue());
   }
-  
+
   private static void WriteExtensionTag(XmlWriter writer, string name, string prefix, string uri)
   {
     using var _ = StartEndElementCookie.CreateStartEndElement(writer, null, XesConstants.ExtensionTagName, null);

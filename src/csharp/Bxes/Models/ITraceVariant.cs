@@ -5,7 +5,7 @@ namespace Bxes.Models;
 public interface ITraceVariant : IEquatable<ITraceVariant>
 {
   uint Count { get; }
-  
+
   IList<AttributeKeyValue> Metadata { get; }
   IList<IEvent> Events { get; }
 
@@ -25,7 +25,7 @@ public interface ITraceVariant : IEquatable<ITraceVariant>
       }
     }
   }
-  
+
   IEnumerable<AttributeKeyValue> EnumerateKeyValuePairs()
   {
     foreach (var pair in Metadata)
@@ -44,8 +44,8 @@ public interface ITraceVariant : IEquatable<ITraceVariant>
 }
 
 public class TraceVariantImpl(
-  uint count, 
-  List<IEvent> events, 
+  uint count,
+  List<IEvent> events,
   List<AttributeKeyValue> metadata
 ) : ITraceVariant
 {

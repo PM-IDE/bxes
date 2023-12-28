@@ -5,7 +5,7 @@ public static class Leb128
 {
   private const long SignExtendMask = -1L;
   private const int Int64BitSize = sizeof(long) * 8;
-  
+
   public static void WriteLeb128Signed(this BinaryWriter writer, long value)
   {
     var more = true;

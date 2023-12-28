@@ -10,7 +10,7 @@ public readonly struct FromXesBxesEvent : IEvent
   public required string Name { get; init; }
   public required IEventLifecycle Lifecycle { get; init; }
   public required IList<AttributeKeyValue> Attributes { get; init; }
-  
+
 
   public bool Equals(IEvent? other) => other is { } && EventUtil.Equals(this, other);
 }

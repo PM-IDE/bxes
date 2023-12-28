@@ -6,11 +6,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Include="Core\Transformations.fs" />
-        <Compile Include="Program.fs" />
+        <Compile Include="Core\Transformations.fs"/>
+        <Compile Include="Program.fs"/>
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Bxes\Bxes.csproj" />
+        <ProjectReference Include="..\Bxes\Bxes.csproj"/>
     </ItemGroup>
 </Project>

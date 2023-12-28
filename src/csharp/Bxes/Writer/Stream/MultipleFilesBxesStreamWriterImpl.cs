@@ -96,7 +96,7 @@ public class MultipleFilesBxesStreamWriterImpl<TEvent> : IBxesStreamWriter where
   {
     BxesWriteUtils.WriteEventValues(
       @event.Event, myContext.WithWriter(myValuesWriter), myContext.WithWriter(myKeyValuesWriter));
-    
+
     BxesWriteUtils.WriteEvent(@event.Event, myContext.WithWriter(myTracesWriter));
 
     ++myLastTraceVariantEventCount;
@@ -122,7 +122,7 @@ public class MultipleFilesBxesStreamWriterImpl<TEvent> : IBxesStreamWriter where
     {
       BxesWriteUtils.WriteValueIfNeeded(pair.Key, myContext.WithWriter(myValuesWriter));
       BxesWriteUtils.WriteValueIfNeeded(pair.Value, myContext.WithWriter(myValuesWriter));
-      
+
       BxesWriteUtils.WriteKeyValuePairIfNeeded(pair, myContext.WithWriter(myKeyValuesWriter));
     }
 

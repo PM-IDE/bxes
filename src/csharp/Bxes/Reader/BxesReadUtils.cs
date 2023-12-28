@@ -140,7 +140,7 @@ public static class BxesReadUtils
         var kv = keyValues[(int)reader.ReadUInt32()];
         metadata.Add(new AttributeKeyValue((BxesStringValue)values[(int)kv.Key], values[(int)kv.Value]));
       }
-      
+
       var eventsCount = reader.ReadUInt32();
       var events = new List<IEvent>();
 

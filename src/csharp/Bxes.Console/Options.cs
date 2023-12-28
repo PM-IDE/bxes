@@ -5,10 +5,10 @@ namespace Bxes.Console;
 
 internal static class Options
 {
-  public static Option<string> PathOption { get; } = 
+  public static Option<string> PathOption { get; } =
     new("-path", "The path to the target file") { IsRequired = true };
 
-  public static Option<string> OutputPathOption { get; } = 
+  public static Option<string> OutputPathOption { get; } =
     new("-output-path", "The output path for converted file") { IsRequired = true };
 
 

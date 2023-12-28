@@ -116,11 +116,11 @@ public class ParseException(long offset, string message) : BxesException
 public abstract class BxesValue<TValue> : BxesValue where TValue : notnull
 {
   private readonly TValue myValue;
-  
-  
+
+
   public TValue Value => myValue;
-  
-  
+
+
   protected BxesValue(TValue value)
   {
     myValue = value;

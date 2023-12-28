@@ -7,12 +7,14 @@ public static class TestUtils
 {
   public static void ExecuteTestWithTempFile(IEventLog log, Func<string, IEventLog> testAction)
   {
-    ExecuteTestWithPath(static () => new TempFilePathContainer(), file => ExecuteTestWithLog(log, () => testAction(file)));
+    ExecuteTestWithPath(
+      static () => new TempFilePathContainer(), file => ExecuteTestWithLog(log, () => testAction(file)));
   }
 
   public static void ExecuteTestWithTempFolder(IEventLog log, Func<string, IEventLog> testAction)
   {
-    ExecuteTestWithPath(static () => new TempFolderContainer(), folder => ExecuteTestWithLog(log, () => testAction(folder)));
+    ExecuteTestWithPath(
+      static () => new TempFolderContainer(), folder => ExecuteTestWithLog(log, () => testAction(folder)));
   }
 
   private static void ExecuteTestWithPath(Func<IPathContainer> pathCreator, Action<string> testAction)
