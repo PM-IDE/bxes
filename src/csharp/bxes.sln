@@ -8,6 +8,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bxes.Console", "Bxes.Consol
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Bxes.Research", "Bxes.Research\Bxes.Research.fsproj", "{68D0577C-D48B-4A59-B0BB-047A1043EFA8}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "MISC", "MISC", "{09F32555-D340-4C87-B321-E24A8C72A55D}"
+	ProjectSection(SolutionItems) = preProject
+		..\..\.gitignore = ..\..\.gitignore
+		..\..\Readme.md = ..\..\Readme.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
