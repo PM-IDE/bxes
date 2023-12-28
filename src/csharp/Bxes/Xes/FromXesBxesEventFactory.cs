@@ -7,7 +7,7 @@ namespace Bxes.Xes;
 
 public static class FromXesBxesEventFactory
 {
-  public static FromXesBxesEvent CreateFrom(XmlReader reader)
+  public static FromXesBxesEvent? CreateFrom(XmlReader reader)
   {
     var attributes = new Lazy<List<AttributeKeyValue>>(static () => new List<AttributeKeyValue>());
     var initializedName = false;
@@ -48,10 +48,7 @@ public static class FromXesBxesEventFactory
       }
     }
 
-    if (!initializedName || !initializedTimestamp)
-    {
-      throw new XesReadException("Failed to initialize name or timestamp");
-    }
+    if (!initializedName || !initializedTimestamp) return null;
 
     return new FromXesBxesEvent
     {

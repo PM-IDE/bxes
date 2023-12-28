@@ -151,6 +151,13 @@ public class XesToBxesConverter : IBetweenFormatsConverter
 
   private void ReadEvent(XmlReader reader, SingleFileBxesStreamWriterImpl<FromXesBxesEvent> writer)
   {
-    writer.HandleEvent(new BxesEventEvent<FromXesBxesEvent>(FromXesBxesEventFactory.CreateFrom(reader)));
+    if (FromXesBxesEventFactory.CreateFrom(reader) is { } @event)
+    {
+      writer.HandleEvent(new BxesEventEvent<FromXesBxesEvent>(@event));
+    }
+    else
+    {
+      throw new XesReadException("Failed to read xes event");
+    }
   }
 }
