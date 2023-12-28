@@ -82,7 +82,12 @@ public static class XesReadUtil
       _ => throw new XesReadException(reader, $"Failed to create value for type {reader.Name}")
     };
 
-    return AttributeParseResult.KeyValue(key, AttributeValueParseResult.Create(value, bxesValue));
+    var valueParseResult = AttributeValueParseResult.Create(value, bxesValue);
+    return key switch
+    {
+      null => AttributeParseResult.OnlyValue(valueParseResult),
+      { } => AttributeParseResult.KeyValue(key, valueParseResult)
+    };
   }
 
   private static BxesArtifactModelsListValue ReadArtifact(XmlReader reader)
