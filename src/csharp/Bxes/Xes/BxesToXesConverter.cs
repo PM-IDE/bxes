@@ -150,7 +150,7 @@ public class BxesToXesConverter : IBetweenFormatsConverter
         WriteValueTag(writer, XesConstants.BoolTagName, keyValue, boolValue.Value ? "true" : "false");
         break;
       case BxesTimeStampValue timeStampValue:
-        WriteValueTag(writer, XesConstants.DateTagName, keyValue, timeStampValue.Timestamp.ToString("0"));
+        WriteValueTag(writer, XesConstants.DateTagName, keyValue, timeStampValue.Timestamp.ToString("O"));
         break;
       case BxesArtifactModelsListValue artifactItem:
         WriteArtifact(writer, artifactItem);
@@ -209,7 +209,9 @@ public class BxesToXesConverter : IBetweenFormatsConverter
 
   private static void WriteLifecycle(XmlWriter writer, IEventLifecycle lifecycle)
   {
-    writer.WriteAttributeString(null, XesConstants.LifecycleTransition, null, lifecycle.ToStringValue());
+    using var _ = StartEndElementCookie.CreateStartEndElement(writer, null, XesConstants.StringTagName, null);
+    WriteKeyAttribute(writer, XesConstants.LifecycleTransition);
+    WriteAttribute(writer, XesConstants.ValueAttributeName, lifecycle.ToStringValue());
   }
 
   private static void WriteExtensionTag(XmlWriter writer, string name, string prefix, string uri)
