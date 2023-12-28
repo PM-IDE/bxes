@@ -1,8 +1,10 @@
 ﻿using System.CommandLine;
 using System.CommandLine.Builder;
 using System.CommandLine.Parsing;
+using System.Globalization;
 using Bxes.Console;
 
+Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
 var rootCommand = new Command("bxes");
 var builder = new CommandLineBuilder(rootCommand);
 
