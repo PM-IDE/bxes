@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Xml;
+using Bxes.Logging;
 using Bxes.Models;
 using Bxes.Models.Values;
 using Bxes.Models.Values.Lifecycle;
@@ -32,7 +33,7 @@ internal readonly struct StartEndElementCookie : IDisposable
 
 public class BxesToXesConverter : IBetweenFormatsConverter
 {
-  public void Convert(string filePath, string outputPath)
+  public void Convert(string filePath, string outputPath, ILogger logger)
   {
     var log = new SingleFileBxesReader().Read(filePath);
 

@@ -2,6 +2,7 @@ namespace Bxes.Research.Core
 
 open System.IO
 open System.IO.Compression
+open Bxes.Utils
 open Bxes.Xes
 
 module Transformations =
@@ -35,7 +36,8 @@ module Transformations =
 
     let bxesTransformation (logPath: string) outputDirectory =
         executeTransformation logPath outputDirectory ".bxes" (fun outputPath ->
-            XesToBxesConverter().Convert(logPath, outputPath))
+            let logger = BxesDefaultLoggerFactory.Create()
+            XesToBxesConverter().Convert(logPath, outputPath, logger))
 
     let zipTransformation logPath outputDirectory =
         executeTransformation logPath outputDirectory ".zip" (fun outputPath ->

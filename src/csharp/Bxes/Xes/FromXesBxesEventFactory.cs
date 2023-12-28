@@ -25,7 +25,7 @@ public static class FromXesBxesEventFactory
 
       if (reader.NodeType == XmlNodeType.Element)
       {
-        var parsedAttribute = XesReadUtil.ParseAttribute(reader);
+        var parsedAttribute = XesReadUtil.ParseAttribute(reader, context);
 
         if (parsedAttribute is { Key: { } key, Value: { Value: { } value, BxesValue: { } bxesValue } })
         {

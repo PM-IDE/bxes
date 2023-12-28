@@ -1,27 +1,30 @@
 ﻿using System.Xml;
+using Bxes.Logging;
 using Bxes.Models;
 using Bxes.Models.Values;
+using Bxes.Utils;
 using Bxes.Writer;
 using Bxes.Writer.Stream;
 
 namespace Bxes.Xes;
 
-public readonly ref struct XesReadContext(SingleFileBxesStreamWriterImpl<FromXesBxesEvent> writer)
+public readonly ref struct XesReadContext(SingleFileBxesStreamWriterImpl<FromXesBxesEvent> writer, ILogger logger)
 {
+  public ILogger Logger { get; } = logger;
   public SingleFileBxesStreamWriterImpl<FromXesBxesEvent> Writer { get; } = writer;
   public Dictionary<string, BxesValue> EventDefaults { get; } = new();
 }
 
 public class XesToBxesConverter : IBetweenFormatsConverter
 {
-  public void Convert(string filePath, string outputPath)
+  public void Convert(string filePath, string outputPath, ILogger logger)
   {
     using var writer = new SingleFileBxesStreamWriterImpl<FromXesBxesEvent>(outputPath, BxesConstants.BxesVersion);
 
     using var fs = File.OpenRead(filePath);
     using var reader = XmlReader.Create(fs);
 
-    var context = new XesReadContext(writer);
+    var context = new XesReadContext(writer, logger);
 
     while (reader.Read())
     {
@@ -53,7 +56,7 @@ public class XesToBxesConverter : IBetweenFormatsConverter
       case XesConstants.IntTagName:
       case XesConstants.FloatTagName:
       case XesConstants.BoolTagName:
-        ReadProperty(reader, context.Writer);
+        ReadProperty(reader, context);
         break;
     }
   }
@@ -114,7 +117,7 @@ public class XesToBxesConverter : IBetweenFormatsConverter
     {
       if (reader.NodeType == XmlNodeType.Element)
       {
-        if (XesReadUtil.ParseAttribute(subtreeReader) is { Key: { } key, Value.BxesValue: { } value })
+        if (XesReadUtil.ParseAttribute(subtreeReader, context) is { Key: { } key, Value.BxesValue: { } value })
         {
           defaults.Add(new AttributeKeyValue(new BxesStringValue(key), value));
 
@@ -125,7 +128,7 @@ public class XesToBxesConverter : IBetweenFormatsConverter
         }
         else
         {
-          throw new XesReadException(subtreeReader, "Failed to read global tag");
+          context.Logger.LogWarning(reader, "Failed to read global tag");
         }
       }
     }
@@ -137,15 +140,16 @@ public class XesToBxesConverter : IBetweenFormatsConverter
     }));
   }
 
-  private static void ReadProperty(XmlReader reader, SingleFileBxesStreamWriterImpl<FromXesBxesEvent> writer)
+  private static void ReadProperty(XmlReader reader, XesReadContext context)
   {
-    if (XesReadUtil.ParseAttribute(reader) is { Key: { } key, Value.BxesValue: { } value })
+    if (XesReadUtil.ParseAttribute(reader, context) is { Key: { } key, Value.BxesValue: { } value })
     {
-      writer.HandleEvent(new BxesLogMetadataPropertyEvent(new AttributeKeyValue(new BxesStringValue(key), value)));
+      var @event = new BxesLogMetadataPropertyEvent(new AttributeKeyValue(new BxesStringValue(key), value));
+      context.Writer.HandleEvent(@event);
     }
     else
     {
-      throw new XesReadException(reader, "Failed to read global tag");
+      context.Logger.LogWarning(reader, "Failed to read property tag");
     }
   }
 
@@ -170,7 +174,7 @@ public class XesToBxesConverter : IBetweenFormatsConverter
     }
     else
     {
-      throw new XesReadException(reader, "Failed to read xes event");
+      context.Logger.LogWarning(reader, "Failed to read xes event");
     }
   }
 }

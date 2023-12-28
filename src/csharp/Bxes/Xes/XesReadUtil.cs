@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Xml;
 using Bxes.Models;
 using Bxes.Models.Values;
+using Bxes.Utils;
 
 namespace Bxes.Xes;
 
@@ -47,7 +48,7 @@ public readonly struct AttributeParseResult
 
 public static class XesReadUtil
 {
-  public static AttributeParseResult ParseAttribute(XmlReader reader)
+  public static AttributeParseResult ParseAttribute(XmlReader reader, XesReadContext context)
   {
     var key = reader.GetAttribute(XesConstants.KeyAttributeName);
     var value = reader.GetAttribute(XesConstants.ValueAttributeName);
@@ -63,7 +64,8 @@ public static class XesReadUtil
       switch (key)
       {
         case XesConstants.ArtifactMoves:
-          return AttributeParseResult.KeyValue(key, AttributeValueParseResult.Create(value, ReadArtifact(reader)));
+          var parseResult = AttributeValueParseResult.Create(value, ReadArtifact(reader, context));
+          return AttributeParseResult.KeyValue(key, parseResult);
         case XesConstants.CostDrivers:
           throw new NotImplementedException();
         default:
@@ -90,7 +92,7 @@ public static class XesReadUtil
     };
   }
 
-  private static BxesArtifactModelsListValue ReadArtifact(XmlReader reader)
+  private static BxesArtifactModelsListValue ReadArtifact(XmlReader reader, XesReadContext context)
   {
     var items = new List<BxesArtifactItem>();
     while (reader.Read())
@@ -115,7 +117,7 @@ public static class XesReadUtil
         {
           if (reader.NodeType is XmlNodeType.Element && reader.Name == XesConstants.StringTagName)
           {
-            var parsedAttribute = ParseAttribute(reader);
+            var parsedAttribute = ParseAttribute(reader, context);
             if (parsedAttribute is { Key: { }, Value: { } value })
             {
               switch (parsedAttribute.Key)
@@ -130,8 +132,7 @@ public static class XesReadUtil
             }
             else
             {
-              //todo: replace with logging
-              throw new XesReadException(subtreeReader, "Failed to read artifact attribute");
+              context.Logger.LogWarning(subtreeReader, "Failed to read artifact attribute");
             }
           }
         }
