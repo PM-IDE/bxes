@@ -50,10 +50,18 @@ module Transformations =
             |> ignore
 
             ())
+        
+    let bxesToXesTransformation (logPath: string) outputDirectory =
+        let mutable bxesOutputPath = ""
+        executeTransformation logPath outputDirectory ".bxes" (fun outputPath ->
+            bxesOutputPath <- outputPath) |> ignore
+        
+        executeTransformation logPath outputDirectory ".xes" (fun outputPath ->
+            let logger = BxesDefaultLoggerFactory.Create()
+            BxesToXesConverter().Convert(bxesOutputPath, outputPath, logger))
 
-    let transformations = [ bxesTransformation; zipTransformation ]
+    let transformations = [ bxesTransformation; zipTransformation; bxesToXesTransformation ]
 
     let processEventLog logPath outputDirectory =
         transformations
-        |> Seq.map (fun transformation -> transformation logPath outputDirectory)
-        |> Seq.toList
+        |> List.map (fun transformation -> transformation logPath outputDirectory)
