@@ -27,7 +27,7 @@ let main args =
     | true ->
         use fs = File.OpenWrite(Path.Combine(outputDirectory, "results.csv"))
         use sw = new StreamWriter(fs)
-        sw.WriteLine("Name;OriginalSize;BxesSize;ZipSize;BxesToXesSize;ExiSize")
+        sw.WriteLine("Name;OriginalSize;BxesSize;BxesPreprocessing;ZipSize;BxesToXesSize;ExiSize")
         
         Directory.GetDirectories(logsTopLevelDirectory)
         |> Array.map (fun directory ->
