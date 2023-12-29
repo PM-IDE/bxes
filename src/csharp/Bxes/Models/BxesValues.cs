@@ -113,18 +113,10 @@ public class ParseException(long offset, string message) : BxesException
   public override string Message { get; } = $"Failed to parse file at {offset}, {message}";
 }
 
-public abstract class BxesValue<TValue> : BxesValue where TValue : notnull
+public abstract class BxesValue<TValue>(TValue value) : BxesValue
+  where TValue : notnull
 {
-  private readonly TValue myValue;
-
-
-  public TValue Value => myValue;
-
-
-  protected BxesValue(TValue value)
-  {
-    myValue = value;
-  }
+  public TValue Value { get; } = value;
 
 
   public override void WriteTo(BxesWriteContext context)
@@ -133,7 +125,9 @@ public abstract class BxesValue<TValue> : BxesValue where TValue : notnull
   }
 
   public override bool Equals(object? obj) =>
-    obj is BxesValue<TValue> otherValue && EqualityComparer<TValue>.Default.Equals(myValue, otherValue.myValue);
+    obj is BxesValue<TValue> otherValue && EqualityComparer<TValue>.Default.Equals(Value, otherValue.Value);
 
   public override int GetHashCode() => Value.GetHashCode();
+
+  public override string ToString() => Value.ToString();
 }
