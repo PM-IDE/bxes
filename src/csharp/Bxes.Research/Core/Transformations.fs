@@ -6,6 +6,7 @@ open System.IO
 open System.IO.Compression
 open Bxes.Utils
 open Bxes.Xes
+open Bxes.Xes.XesToBxes
 
 module Transformations =
     type TransformationResult =

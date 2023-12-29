@@ -136,11 +136,11 @@ public class BxesToXesConverter : IBetweenFormatsConverter
       case BxesInt64Value:
       case BxesUint32Value:
       case BxesUint64Value:
-        WriteValueTag(writer, XesConstants.IntTagName, keyValue, attribute.Value.ToString());
+        WriteValueTag(writer, XesConstants.IntTagName, keyValue, attribute.Value.ToString()!);
         break;
       case BxesFloat32Value:
       case BxesFloat64Value:
-        WriteValueTag(writer, XesConstants.FloatTagName, keyValue, attribute.Value.ToString());
+        WriteValueTag(writer, XesConstants.FloatTagName, keyValue, attribute.Value.ToString()!);
         break;
       case BxesStringValue stringValue:
         WriteValueTag(writer, XesConstants.StringTagName, keyValue, stringValue.Value);
@@ -182,8 +182,7 @@ public class BxesToXesConverter : IBetweenFormatsConverter
       {
         WriteValueTag(writer, XesConstants.StringTagName, XesConstants.CostDriver, driver.Name);
         WriteValueTag(writer, XesConstants.StringTagName, XesConstants.ArtifactItemTransition, driver.Type);
-        WriteValueTag(writer, XesConstants.FloatTagName, XesConstants.CostAmount,
-          driver.Amount.ToString(CultureInfo.InvariantCulture));
+        WriteValueTag(writer, XesConstants.FloatTagName, XesConstants.CostAmount, driver.Amount.ToString(CultureInfo.InvariantCulture));
       }
     }
   }

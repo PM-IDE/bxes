@@ -1,5 +1,6 @@
 using Bxes.Logging;
 using Bxes.Xes;
+using Bxes.Xes.XesToBxes;
 
 namespace Bxes.Console;
 

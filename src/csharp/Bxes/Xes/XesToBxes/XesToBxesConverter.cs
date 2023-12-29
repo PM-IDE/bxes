@@ -6,14 +6,7 @@ using Bxes.Utils;
 using Bxes.Writer;
 using Bxes.Writer.Stream;
 
-namespace Bxes.Xes;
-
-public readonly struct XesReadContext(SingleFileBxesStreamWriterImpl<FromXesBxesEvent> writer, ILogger logger)
-{
-  public ILogger Logger { get; } = logger;
-  public SingleFileBxesStreamWriterImpl<FromXesBxesEvent> Writer { get; } = writer;
-  public Dictionary<string, BxesValue> EventDefaults { get; } = new();
-}
+namespace Bxes.Xes.XesToBxes;
 
 public class XesToBxesConverter(ILogger logger, bool doIndicesPreprocessing) : IBetweenFormatsConverter
 {
@@ -34,13 +27,15 @@ public class XesToBxesConverter(ILogger logger, bool doIndicesPreprocessing) : I
 
   private static void ExtractValuesAndKeyValues(FileStream fs, XesReadContext context)
   {
+    var handler = new XesValuesPreprocessor(context.Writer);
+    
     using (var reader = XmlReader.Create(fs))
     {
       while (reader.Read())
       {
         if (reader.NodeType == XmlNodeType.Element)
         {
-          PreprocessTag(reader, context);
+          ProcessTag(reader, context, handler);
         }
       }
     }
@@ -52,55 +47,39 @@ public class XesToBxesConverter(ILogger logger, bool doIndicesPreprocessing) : I
   private static void ConvertXesToBxes(FileStream fs, XesReadContext context)
   {
     using var reader = XmlReader.Create(fs);
-    
+    var handler = new XesToBxesHandler(context.Writer);
+
     while (reader.Read())
     {
       if (reader.NodeType == XmlNodeType.Element)
       {
-        ProcessTag(reader, context);
+        ProcessTag(reader, context, handler);
       }
     }
   }
 
-  private static void PreprocessTag(XmlReader reader, XesReadContext context)
+  private static void ProcessTag(XmlReader reader, XesReadContext context, XesElementHandlerBase handler)
   {
     switch (reader.Name)
     {
       case XesConstants.TraceTagName:
-        ReadTrace(reader, context, bxesEvent =>
-        {
-          context.Writer.HandleEvent(new BxesValueEvent(new BxesStringValue(bxesEvent.Name)));
-
-          foreach (var attribute in bxesEvent.Attributes)
-          {
-            context.Writer.HandleEvent(new BxesKeyValueEvent(attribute));
-          }
-        });
+        handler.HandleTraceStart();
+        ReadTrace(reader, context, handler.HandleEvent);
         break;
       case XesConstants.ClassifierTagName:
-        var classifier = ReadClassifier(reader);
-        
-        context.Writer.HandleEvent(new BxesValueEvent(classifier.Name));
-        foreach (var value in classifier.Keys)
-        {
-          context.Writer.HandleEvent(new BxesValueEvent(value));
-        }
-        
+        handler.HandleClassifier(ReadClassifier(reader));
         break;
       case XesConstants.ExtensionTagName:
-        var extension = ReadExtension(reader);
-        context.Writer.HandleEvent(new BxesValueEvent(extension.Name));
-        context.Writer.HandleEvent(new BxesValueEvent(extension.Prefix));
-        context.Writer.HandleEvent(new BxesValueEvent(extension.Uri));
-
+        handler.HandleExtension(ReadExtension(reader));
         break;
       case XesConstants.GlobalTagName:
         if (ReadGlobalInternal(reader, context) is { } global)
         {
-          foreach (var attribute in global.Globals)
-          {
-            context.Writer.HandleEvent(new BxesKeyValueEvent(attribute));
-          } 
+          handler.HandleGlobal(global);
+        }
+        else
+        {
+          context.Logger.LogWarning(reader, "Failed to read global tag");
         }
 
         break;
@@ -112,43 +91,15 @@ public class XesToBxesConverter(ILogger logger, bool doIndicesPreprocessing) : I
       case XesConstants.IdTagName:
         if (ReadPropertyInternal(reader, context) is { } property)
         {
-          context.Writer.HandleEvent(new BxesKeyValueEvent(property));
+          handler.HandleProperty(property);
+        }
+        else
+        {
+          context.Logger.LogWarning(reader, "Failed to read property tag");
         }
         
         break;
     }
-  }
-
-  private static void ProcessTag(XmlReader reader, XesReadContext context)
-  {
-    switch (reader.Name)
-    {
-      case XesConstants.TraceTagName:
-        ReadTrace(reader, context);
-        break;
-      case XesConstants.ClassifierTagName:
-        ReadClassifier(reader, context.Writer);
-        break;
-      case XesConstants.ExtensionTagName:
-        ReadExtension(reader, context.Writer);
-        break;
-      case XesConstants.GlobalTagName:
-        ReadGlobal(reader, context);
-        break;
-      case XesConstants.StringTagName:
-      case XesConstants.DateTagName:
-      case XesConstants.IntTagName:
-      case XesConstants.FloatTagName:
-      case XesConstants.BoolTagName:
-      case XesConstants.IdTagName:
-        ReadProperty(reader, context);
-        break;
-    }
-  }
-
-  private static void ReadClassifier(XmlReader reader, SingleFileBxesStreamWriterImpl<FromXesBxesEvent> writer)
-  {
-    writer.HandleEvent(new BxesLogMetadataClassifierEvent(ReadClassifier(reader)));
   }
 
   private static BxesClassifier ReadClassifier(XmlReader reader)
@@ -164,11 +115,6 @@ public class XesToBxesConverter(ILogger logger, bool doIndicesPreprocessing) : I
       Name = new BxesStringValue(name),
       Keys = keys.Split().Select(key => new BxesStringValue(key)).ToList()
     };
-  }
-
-  private static void ReadExtension(XmlReader reader, SingleFileBxesStreamWriterImpl<FromXesBxesEvent> writer)
-  {
-    writer.HandleEvent(new BxesLogMetadataExtensionEvent(ReadExtension(reader)));
   }
 
   private static BxesExtension ReadExtension(XmlReader reader)
@@ -187,11 +133,6 @@ public class XesToBxesConverter(ILogger logger, bool doIndicesPreprocessing) : I
       Prefix = new BxesStringValue(name),
       Uri = new BxesStringValue(name)
     };
-  }
-
-  private static void ReadGlobal(XmlReader reader, XesReadContext context)
-  {
-    context.Writer.HandleEvent(new BxesLogMetadataGlobalEvent(ReadGlobalInternal(reader, context)));
   }
 
   private static BxesGlobal ReadGlobalInternal(XmlReader reader, XesReadContext context)
@@ -240,19 +181,6 @@ public class XesToBxesConverter(ILogger logger, bool doIndicesPreprocessing) : I
     };
   }
 
-  private static void ReadProperty(XmlReader reader, XesReadContext context)
-  {
-    if (ReadPropertyInternal(reader, context) is { } attributeKeyValue)
-    {
-      var @event = new BxesLogMetadataPropertyEvent(attributeKeyValue);
-      context.Writer.HandleEvent(@event);
-    }
-    else
-    {
-      context.Logger.LogWarning(reader, "Failed to read property tag");
-    }
-  }
-
   private static AttributeKeyValue? ReadPropertyInternal(XmlReader reader, XesReadContext context)
   {
     if (XesReadUtil.ParseAttribute(reader, context) is { Key: { } key, Value.BxesValue: { } value })
@@ -261,16 +189,6 @@ public class XesToBxesConverter(ILogger logger, bool doIndicesPreprocessing) : I
     }
 
     return null;
-  }
-
-  private static void ReadTrace(XmlReader reader, XesReadContext context)
-  {
-    context.Writer.HandleEvent(new BxesTraceVariantStartEvent(1, new List<AttributeKeyValue>()));
-    
-    ReadTrace(reader, context, @event =>
-    {
-      context.Writer.HandleEvent(new BxesEventEvent<FromXesBxesEvent>(@event));
-    });
   }
 
   private static void ReadTrace(

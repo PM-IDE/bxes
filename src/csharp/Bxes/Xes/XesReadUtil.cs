@@ -3,6 +3,7 @@ using System.Xml;
 using Bxes.Models;
 using Bxes.Models.Values;
 using Bxes.Utils;
+using Bxes.Xes.XesToBxes;
 
 namespace Bxes.Xes;
 
