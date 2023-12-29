@@ -16,7 +16,7 @@ internal readonly struct ValuesCounter()
     OrderByCount(map);
 
   private static IEnumerable<T> OrderByCount<T>(Dictionary<T, int> map) where T : notnull => 
-    map.OrderBy(pair => pair.Value).Select(pair => pair.Key);
+    map.OrderByDescending(pair => pair.Value).Select(pair => pair.Key);
 
   public void HandleValue(BxesValue value) => InitOrIncrease(myValuesCounts, value);
 
