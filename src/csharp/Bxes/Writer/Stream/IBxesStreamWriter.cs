@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Bxes.Models;
 
 namespace Bxes.Writer.Stream;
@@ -52,3 +51,5 @@ public sealed class BxesLogMetadataGlobalEvent(BxesGlobal global) : BxesStreamEv
 {
   public BxesGlobal Global { get; } = global;
 }
+
+public sealed class BxesRecalculateIndicesEvent : BxesStreamEvent;
