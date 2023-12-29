@@ -15,17 +15,44 @@ public readonly struct XesReadContext(SingleFileBxesStreamWriterImpl<FromXesBxes
   public Dictionary<string, BxesValue> EventDefaults { get; } = new();
 }
 
-public class XesToBxesConverter : IBetweenFormatsConverter
+public class XesToBxesConverter(ILogger logger, bool doIndicesPreprocessing) : IBetweenFormatsConverter
 {
-  public void Convert(string filePath, string outputPath, ILogger logger)
+  public void Convert(string filePath, string outputPath)
   {
     using var writer = new SingleFileBxesStreamWriterImpl<FromXesBxesEvent>(outputPath, BxesConstants.BxesVersion);
-
     using var fs = File.OpenRead(filePath);
-    using var reader = XmlReader.Create(fs);
 
     var context = new XesReadContext(writer, logger);
 
+    if (doIndicesPreprocessing)
+    {
+      ExtractValuesAndKeyValues(fs, context);
+    }
+
+    ConvertXesToBxes(fs, context);
+  }
+
+  private static void ExtractValuesAndKeyValues(FileStream fs, XesReadContext context)
+  {
+    using (var reader = XmlReader.Create(fs))
+    {
+      while (reader.Read())
+      {
+        if (reader.NodeType == XmlNodeType.Element)
+        {
+          PreprocessTag(reader, context);
+        }
+      }
+    }
+
+    context.Writer.HandleEvent(new BxesRecalculateIndicesEvent());
+    fs.Seek(0, SeekOrigin.Begin);
+  }
+
+  private static void ConvertXesToBxes(FileStream fs, XesReadContext context)
+  {
+    using var reader = XmlReader.Create(fs);
+    
     while (reader.Read())
     {
       if (reader.NodeType == XmlNodeType.Element)
@@ -35,7 +62,64 @@ public class XesToBxesConverter : IBetweenFormatsConverter
     }
   }
 
-  private void ProcessTag(XmlReader reader, XesReadContext context)
+  private static void PreprocessTag(XmlReader reader, XesReadContext context)
+  {
+    switch (reader.Name)
+    {
+      case XesConstants.TraceTagName:
+        ReadTrace(reader, context, bxesEvent =>
+        {
+          context.Writer.HandleEvent(new BxesValueEvent(new BxesStringValue(bxesEvent.Name)));
+
+          foreach (var attribute in bxesEvent.Attributes)
+          {
+            context.Writer.HandleEvent(new BxesKeyValueEvent(attribute));
+          }
+        });
+        break;
+      case XesConstants.ClassifierTagName:
+        var classifier = ReadClassifier(reader);
+        
+        context.Writer.HandleEvent(new BxesValueEvent(classifier.Name));
+        foreach (var value in classifier.Keys)
+        {
+          context.Writer.HandleEvent(new BxesValueEvent(value));
+        }
+        
+        break;
+      case XesConstants.ExtensionTagName:
+        var extension = ReadExtension(reader);
+        context.Writer.HandleEvent(new BxesValueEvent(extension.Name));
+        context.Writer.HandleEvent(new BxesValueEvent(extension.Prefix));
+        context.Writer.HandleEvent(new BxesValueEvent(extension.Uri));
+
+        break;
+      case XesConstants.GlobalTagName:
+        if (ReadGlobalInternal(reader, context) is { } global)
+        {
+          foreach (var attribute in global.Globals)
+          {
+            context.Writer.HandleEvent(new BxesKeyValueEvent(attribute));
+          } 
+        }
+
+        break;
+      case XesConstants.StringTagName:
+      case XesConstants.DateTagName:
+      case XesConstants.IntTagName:
+      case XesConstants.FloatTagName:
+      case XesConstants.BoolTagName:
+      case XesConstants.IdTagName:
+        if (ReadPropertyInternal(reader, context) is { } property)
+        {
+          context.Writer.HandleEvent(new BxesKeyValueEvent(property));
+        }
+        
+        break;
+    }
+  }
+
+  private static void ProcessTag(XmlReader reader, XesReadContext context)
   {
     switch (reader.Name)
     {
@@ -179,18 +263,18 @@ public class XesToBxesConverter : IBetweenFormatsConverter
     return null;
   }
 
-  private void ReadTrace(XmlReader reader, XesReadContext context)
+  private static void ReadTrace(XmlReader reader, XesReadContext context)
   {
     context.Writer.HandleEvent(new BxesTraceVariantStartEvent(1, new List<AttributeKeyValue>()));
     
-    ReadTrace(reader, context, (@event, context) =>
+    ReadTrace(reader, context, @event =>
     {
       context.Writer.HandleEvent(new BxesEventEvent<FromXesBxesEvent>(@event));
     });
   }
 
   private static void ReadTrace(
-    XmlReader reader, XesReadContext context, Action<FromXesBxesEvent, XesReadContext> eventHandler)
+    XmlReader reader, XesReadContext context, Action<FromXesBxesEvent> eventHandler)
   {
     while (reader.Read())
     {
@@ -198,7 +282,7 @@ public class XesToBxesConverter : IBetweenFormatsConverter
       {
         if (ReadEvent(reader, context) is { } fromXesBxesEvent)
         {
-          eventHandler(fromXesBxesEvent, context);
+          eventHandler(fromXesBxesEvent);
         }
       }
     }

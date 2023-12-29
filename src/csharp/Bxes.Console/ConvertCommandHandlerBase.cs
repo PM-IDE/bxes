@@ -1,4 +1,5 @@
 using System.CommandLine.Invocation;
+using Bxes.Logging;
 using Bxes.Utils;
 using Bxes.Xes;
 
@@ -10,9 +11,8 @@ internal abstract class ConvertCommandHandlerBase : ICommandHandler
   {
     var filePath = context.ParseResult.GetValueOrThrow(Options.PathOption);
     var outputFilePath = context.ParseResult.GetValueOrThrow(Options.OutputPathOption);
-    var logger = BxesDefaultLoggerFactory.Create();
 
-    CreateConverter().Convert(filePath, outputFilePath, logger);
+    CreateConverter().Convert(filePath, outputFilePath);
 
     return 0;
   }
