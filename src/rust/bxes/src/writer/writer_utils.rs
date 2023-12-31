@@ -15,7 +15,7 @@ use crate::{
         BxesExtension, BxesGlobal, BxesValue, Lifecycle, SoftwareEventType, StandardLifecycle,
     },
     read::read_utils::try_read_leb128,
-    type_ids::{self, TypeIds},
+    type_ids::{self, TypeIds}, utils::buffered_stream::BufferedWriteFileStream,
 };
 
 use super::{errors::BxesWriteError, write_context::BxesWriteContext};
@@ -753,9 +753,9 @@ fn try_write(
     }
 }
 
-pub fn try_open_write(path: &str) -> Result<FileStream, BxesWriteError> {
+pub fn try_open_write(path: &str) -> Result<BufferedWriteFileStream, BxesWriteError> {
     match FileStream::create(path) {
-        Ok(stream) => Ok(stream),
+        Ok(stream) => Ok(BufferedWriteFileStream::new(stream, 1024)),
         Err(err) => Err(BxesWriteError::FailedToOpenFileForWriting(err.to_string())),
     }
 }

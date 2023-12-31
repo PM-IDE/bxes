@@ -2,7 +2,7 @@ use std::io::{Read, Write};
 
 use binary_rw::{FileStream, ReadStream, SeekStream, WriteStream};
 
-pub struct BufferedFileStream {
+pub struct BufferedReadFileStream {
     stream: FileStream,
     buffer: Vec<u8>,
     occupied_size: usize,
@@ -10,7 +10,7 @@ pub struct BufferedFileStream {
     file_length_bytes: usize,
 }
 
-impl BufferedFileStream {
+impl BufferedReadFileStream {
     pub fn new(stream: FileStream, buffer_size: usize) -> Self {
         let length = stream.len().ok().unwrap();
         Self {
@@ -23,17 +23,8 @@ impl BufferedFileStream {
     }
 }
 
-impl Write for BufferedFileStream {
-    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-        todo!()
-    }
-
-    fn flush(&mut self) -> std::io::Result<()> {
-        todo!()
-    }
-}
-
-impl Read for BufferedFileStream {
+impl ReadStream for BufferedReadFileStream {}
+impl Read for BufferedReadFileStream {
     fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
         let mut out_buff_index = 0;
 
@@ -77,8 +68,11 @@ impl Read for BufferedFileStream {
     }
 }
 
-impl SeekStream for BufferedFileStream {
+impl SeekStream for BufferedReadFileStream {
     fn seek(&mut self, to: usize) -> binary_rw::Result<usize> {
+        self.next_buffer_index = 0;
+        self.occupied_size = 0;
+        
         self.stream.seek(to)
     }
 
@@ -91,5 +85,73 @@ impl SeekStream for BufferedFileStream {
     }
 }
 
-impl ReadStream for BufferedFileStream {}
-impl WriteStream for BufferedFileStream {}
+pub struct BufferedWriteFileStream {
+    stream: FileStream,
+    buffer: Vec<u8>,
+    written_bytes_count: usize
+}
+
+impl BufferedWriteFileStream {
+    pub fn new(stream: FileStream, buffer_size: usize) -> Self {
+        Self {
+            stream,
+            buffer: vec![0; buffer_size],
+            written_bytes_count: 0
+        }
+    }
+}
+
+impl WriteStream for BufferedWriteFileStream {}
+
+impl SeekStream for BufferedWriteFileStream {
+    fn seek(&mut self, to: usize) -> binary_rw::Result<usize> {
+        self.flush()?;
+        self.stream.seek(to)
+    }
+
+    fn tell(&mut self) -> binary_rw::Result<usize> {
+        self.stream.tell()
+    }
+
+    fn len(&self) -> binary_rw::Result<usize> {
+        self.stream.len()
+    }
+}
+
+impl Write for BufferedWriteFileStream {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        if buf.len() > self.buffer.len() {
+            self.flush()?;
+            self.stream.write(buf)?;
+        } else {
+            let remained_space = self.buffer.len() - self.written_bytes_count;
+            if buf.len() > remained_space {
+                self.flush()?;
+                self.written_bytes_count = buf.len();
+                for i in 0..buf.len() {
+                    self.buffer[i] = buf[i];
+                }
+            } else {
+                for i in 0..buf.len() {
+                    self.buffer[self.written_bytes_count + i] = buf[i];
+                }
+
+                self.written_bytes_count += buf.len();
+            }
+        }
+
+        Ok(buf.len())
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        if self.written_bytes_count == 0 {
+            return Ok(())
+        }
+
+        self.written_bytes_count = 0;
+        match self.stream.write(&self.buffer[0..self.written_bytes_count]) {
+            Ok(_) => Ok(()),
+            Err(err) => Err(err),
+        }
+    }
+}
