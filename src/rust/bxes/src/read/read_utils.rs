@@ -6,7 +6,7 @@ use tempfile::TempDir;
 use uuid::Uuid;
 use zip::ZipArchive;
 
-use crate::{models::*, type_ids::TypeIds};
+use crate::{models::*, type_ids::TypeIds, utils::buffered_stream::BufferedFileStream};
 
 use super::errors::*;
 
@@ -493,9 +493,9 @@ pub fn try_extract_archive(path: &str) -> Result<TempDir, BxesReadError> {
     return Ok(temp_dir);
 }
 
-pub fn try_open_file_stream(path: &str) -> Result<FileStream, BxesReadError> {
+pub fn try_open_file_stream(path: &str) -> Result<BufferedFileStream, BxesReadError> {
     match FileStream::open(path) {
-        Ok(fs) => Ok(fs),
+        Ok(fs) => Ok(BufferedFileStream::new(fs, 1024)),
         Err(err) => Err(BxesReadError::FailedToOpenFile(err.to_string())),
     }
 }
