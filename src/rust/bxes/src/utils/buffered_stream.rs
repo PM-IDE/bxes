@@ -72,7 +72,7 @@ impl SeekStream for BufferedReadFileStream {
     fn seek(&mut self, to: usize) -> binary_rw::Result<usize> {
         self.next_buffer_index = 0;
         self.occupied_size = 0;
-        
+
         self.stream.seek(to)
     }
 
@@ -88,7 +88,7 @@ impl SeekStream for BufferedReadFileStream {
 pub struct BufferedWriteFileStream {
     stream: FileStream,
     buffer: Vec<u8>,
-    written_bytes_count: usize
+    written_bytes_count: usize,
 }
 
 impl BufferedWriteFileStream {
@@ -96,7 +96,7 @@ impl BufferedWriteFileStream {
         Self {
             stream,
             buffer: vec![0; buffer_size],
-            written_bytes_count: 0
+            written_bytes_count: 0,
         }
     }
 }
@@ -144,14 +144,12 @@ impl Write for BufferedWriteFileStream {
     }
 
     fn flush(&mut self) -> std::io::Result<()> {
-        if self.written_bytes_count == 0 {
-            return Ok(())
+        if self.written_bytes_count != 0 {
+            self.written_bytes_count = 0;
+            self.stream
+                .write(&self.buffer[0..self.written_bytes_count])?;
         }
 
-        self.written_bytes_count = 0;
-        match self.stream.write(&self.buffer[0..self.written_bytes_count]) {
-            Ok(_) => Ok(()),
-            Err(err) => Err(err),
-        }
+        self.stream.flush()
     }
 }

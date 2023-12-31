@@ -1,4 +1,4 @@
-use std::{cell::RefCell, rc::Rc, io::Write};
+use std::{cell::RefCell, io::Write, rc::Rc};
 
 use binary_rw::{BinaryWriter, Endian};
 use tempfile::NamedTempFile;
