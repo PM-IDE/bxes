@@ -12,5 +12,5 @@ pub enum BxesWriteError {
     FailedToFindValueIndex(BxesValue),
     FailedToCreateTempFile,
     FailedToCreateArchive,
-    LebWriteError(String)
+    LebWriteError(String),
 }

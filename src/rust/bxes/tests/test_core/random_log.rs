@@ -6,7 +6,7 @@ use bxes::{
         BxesEvent, BxesEventLog, BxesEventLogMetadata, BxesExtension, BxesGlobal, BxesGlobalKind,
         BxesTraceVariant, BxesValue, Lifecycle, SoftwareEventType, StandardLifecycle,
     },
-    type_ids::{TypeIds},
+    type_ids::TypeIds,
 };
 use num_traits::FromPrimitive;
 use rand::{
@@ -164,11 +164,11 @@ fn generate_random_bxes_value(rng: &mut ThreadRng) -> BxesValue {
             BxesValue::StandardLifecycle(generate_random_standard_lifecycle())
         }
         TypeIds::Guid => BxesValue::Guid(Uuid::new_v4()),
-        TypeIds::SoftwareEventType => BxesValue::SoftwareEventType(generate_random_enum::<
-            SoftwareEventType,
-        >(
-            SoftwareEventType::VARIANT_COUNT,
-        )),
+        TypeIds::SoftwareEventType => {
+            BxesValue::SoftwareEventType(generate_random_enum::<SoftwareEventType>(
+                SoftwareEventType::VARIANT_COUNT,
+            ))
+        }
         TypeIds::Artifact => generate_random_artifact(rng),
         TypeIds::Drivers => generate_random_drivers(rng),
         _ => panic!("Got unknown type id"),

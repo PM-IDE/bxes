@@ -14,7 +14,8 @@ use crate::{
         BrafLifecycle, BxesArtifact, BxesClassifier, BxesDrivers, BxesEvent, BxesEventLog,
         BxesExtension, BxesGlobal, BxesValue, Lifecycle, SoftwareEventType, StandardLifecycle,
     },
-    type_ids::{self, TypeIds}, read::read_utils::try_read_leb128,
+    read::read_utils::try_read_leb128,
+    type_ids::{self, TypeIds},
 };
 
 use super::{errors::BxesWriteError, write_context::BxesWriteContext};
@@ -32,13 +33,18 @@ pub fn try_write_variants(
 
             try_write_attributes(context.clone(), Some(&variant.metadata), false)?;
 
-            write_collection_and_count(context.clone(), false, variant.events.len() as u32, || {
-                for event in &variant.events {
-                    try_write_event(event, context.clone())?;
-                }
+            write_collection_and_count(
+                context.clone(),
+                false,
+                variant.events.len() as u32,
+                || {
+                    for event in &variant.events {
+                        try_write_event(event, context.clone())?;
+                    }
 
-                Ok(())
-            })?;
+                    Ok(())
+                },
+            )?;
         }
 
         Ok(())
@@ -93,14 +99,17 @@ pub fn try_write_log_metadata(
 }
 
 struct BinaryWriterWrapper<'a, 'b> {
-    writer: &'a mut BinaryWriter<'b>
+    writer: &'a mut BinaryWriter<'b>,
 }
 
 impl<'a, 'b> Write for BinaryWriterWrapper<'a, 'b> {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
         match self.writer.write_bytes(buf) {
             Ok(written) => Ok(written),
-            Err(err) => Err(std::io::Error::new(std::io::ErrorKind::Other, err.to_string())),
+            Err(err) => Err(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                err.to_string(),
+            )),
         }
     }
 
@@ -111,9 +120,7 @@ impl<'a, 'b> Write for BinaryWriterWrapper<'a, 'b> {
 
 impl<'a, 'b> BinaryWriterWrapper<'a, 'b> {
     pub fn new(writer: &'a mut BinaryWriter<'b>) -> Self {
-        Self {
-            writer
-        }
+        Self { writer }
     }
 }
 
@@ -122,7 +129,7 @@ pub fn try_write_leb_128<'a>(writer: &mut BinaryWriter, value: u32) -> Result<()
 
     match leb128::write::unsigned(&mut wrapper, value as u64) {
         Ok(_) => Ok(()),
-        Err(err) => Err(BxesWriteError::LebWriteError(err.to_string()))
+        Err(err) => Err(BxesWriteError::LebWriteError(err.to_string())),
     }
 }
 
@@ -161,13 +168,18 @@ pub fn try_write_globals(
                     &global.entity_kind,
                 )?;
 
-                write_collection_and_count(context.clone(), false, global.globals.len() as u32, || {
-                    for global in &global.globals {
-                        try_write_kv_index(context.clone(), &(&global.0, &global.1), false)?;
-                    }
+                write_collection_and_count(
+                    context.clone(),
+                    false,
+                    global.globals.len() as u32,
+                    || {
+                        for global in &global.globals {
+                            try_write_kv_index(context.clone(), &(&global.0, &global.1), false)?;
+                        }
 
-                    Ok(())
-                })?;
+                        Ok(())
+                    },
+                )?;
             }
         }
 
@@ -178,7 +190,7 @@ pub fn try_write_globals(
 pub fn try_write_kv_index(
     context: Rc<RefCell<BxesWriteContext>>,
     kv: &(&BxesValue, &BxesValue),
-    write_leb_128: bool
+    write_leb_128: bool,
 ) -> Result<(), BxesWriteError> {
     if !context.borrow().kv_indices.borrow().contains_key(kv) {
         Err(BxesWriteError::FailedToFindKeyValueIndex((
@@ -221,13 +233,18 @@ pub fn try_write_classifiers(
         if let Some(classifiers) = classifiers {
             for classifier in classifiers {
                 try_write_value_index(context.clone(), &classifier.name)?;
-                write_collection_and_count(context.clone(), false, classifier.keys.len() as u32, || {
-                    for key in &classifier.keys {
-                        try_write_value_index(context.clone(), &key)?;
-                    }
+                write_collection_and_count(
+                    context.clone(),
+                    false,
+                    classifier.keys.len() as u32,
+                    || {
+                        for key in &classifier.keys {
+                            try_write_value_index(context.clone(), &key)?;
+                        }
 
-                    Ok(())
-                })?;
+                        Ok(())
+                    },
+                )?;
             }
         }
 
@@ -250,17 +267,22 @@ fn try_write_value_index(
 pub fn try_write_attributes(
     context: Rc<RefCell<BxesWriteContext>>,
     attributes: Option<&Vec<(BxesValue, BxesValue)>>,
-    write_leb_128_count: bool
+    write_leb_128_count: bool,
 ) -> Result<(), BxesWriteError> {
-    write_collection_and_count(context.clone(), write_leb_128_count, count(attributes), || {
-        if let Some(attributes) = attributes {
-            for (key, value) in attributes {
-                try_write_kv_index(context.clone(), &(key, value), write_leb_128_count)?;
+    write_collection_and_count(
+        context.clone(),
+        write_leb_128_count,
+        count(attributes),
+        || {
+            if let Some(attributes) = attributes {
+                for (key, value) in attributes {
+                    try_write_kv_index(context.clone(), &(key, value), write_leb_128_count)?;
+                }
             }
-        }
 
-        Ok(())
-    })
+            Ok(())
+        },
+    )
 }
 
 pub fn try_write_key_values<'a: 'b, 'b>(

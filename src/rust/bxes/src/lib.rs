@@ -7,5 +7,5 @@ pub mod constants;
 pub mod models;
 pub mod read;
 pub mod type_ids;
-pub mod writer;
 pub mod utils;
+pub mod writer;
