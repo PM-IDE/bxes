@@ -1,21 +1,24 @@
-use std::io::{Write, Read};
+use std::io::{Read, Write};
 
-use binary_rw::{FileStream, SeekStream, ReadStream, WriteStream};
+use binary_rw::{FileStream, ReadStream, SeekStream, WriteStream};
 
 pub struct BufferedFileStream {
     stream: FileStream,
     buffer: Vec<u8>,
     occupied_size: usize,
-    next_buffer_index: usize
+    next_buffer_index: usize,
+    file_length_bytes: usize,
 }
 
 impl BufferedFileStream {
     pub fn new(stream: FileStream, buffer_size: usize) -> Self {
+        let length = stream.len().ok().unwrap();
         Self {
             stream,
             buffer: vec![0; buffer_size],
             occupied_size: 0,
-            next_buffer_index: 0
+            next_buffer_index: 0,
+            file_length_bytes: length,
         }
     }
 }
@@ -32,32 +35,42 @@ impl Write for BufferedFileStream {
 
 impl Read for BufferedFileStream {
     fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
-        if self.next_buffer_index + buf.len() <= self.occupied_size {
-            for i in 0..buf.len() {
-                buf[i] = self.buffer[self.next_buffer_index + i]
+        let mut out_buff_index = 0;
+
+        loop {
+            if out_buff_index >= buf.len() {
+                break;
             }
 
-            self.next_buffer_index += buf.len()
-        } else {
-            let read_bytes = self.occupied_size - self.next_buffer_index;
-            for i in 0..read_bytes {
-                buf[i] = self.buffer[self.next_buffer_index + i];
-            }
+            let to_read = buf.len() - out_buff_index;
+            if self.next_buffer_index + to_read <= self.occupied_size {
+                for i in 0..to_read {
+                    buf[out_buff_index] = self.buffer[self.next_buffer_index + i];
+                    out_buff_index += 1;
+                }
 
-            let to_read_bytes = buf.len() - read_bytes;
-            match self.stream.read(&mut self.buffer) {
-                Ok(read_from_stream_bytes) => {
-                    self.occupied_size = read_from_stream_bytes;
-                    self.next_buffer_index = 0;
-                },
-                Err(err) => return Err(err),
-            }
+                self.next_buffer_index += to_read;
+                break;
+            } else {
+                let read_bytes = self.occupied_size - self.next_buffer_index;
+                for i in 0..read_bytes {
+                    buf[out_buff_index] = self.buffer[self.next_buffer_index + i];
+                    out_buff_index += 1;
+                }
 
-            for i in 0..to_read_bytes {
-                buf[read_bytes + i] = self.buffer[i];
-            }
+                let current_pos = self.stream.tell().ok().unwrap();
+                let remained_bytes_in_file = self.file_length_bytes - current_pos;
+                self.next_buffer_index = 0;
 
-            self.next_buffer_index = to_read_bytes;
+                if remained_bytes_in_file < self.buffer.len() {
+                    self.occupied_size = remained_bytes_in_file;
+                    self.stream
+                        .read_exact(&mut self.buffer[0..remained_bytes_in_file])?;
+                } else {
+                    self.occupied_size = self.buffer.len();
+                    self.stream.read_exact(&mut self.buffer)?;
+                }
+            }
         }
 
         Ok(buf.len())
