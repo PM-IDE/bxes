@@ -8,6 +8,7 @@ pub struct BufferedReadFileStream {
     occupied_size: usize,
     next_buffer_index: usize,
     file_length_bytes: usize,
+    total_read_bytes: usize,
 }
 
 impl BufferedReadFileStream {
@@ -19,7 +20,12 @@ impl BufferedReadFileStream {
             occupied_size: 0,
             next_buffer_index: 0,
             file_length_bytes: length,
+            total_read_bytes: 0,
         }
+    }
+
+    pub fn total_read_bytes(&self) -> usize {
+        self.total_read_bytes
     }
 }
 
@@ -64,6 +70,7 @@ impl Read for BufferedReadFileStream {
             }
         }
 
+        self.total_read_bytes += buf.len();
         Ok(buf.len())
     }
 }
@@ -77,7 +84,8 @@ impl SeekStream for BufferedReadFileStream {
     }
 
     fn tell(&mut self) -> binary_rw::Result<usize> {
-        self.stream.tell()
+        //reduce the number of sys calls
+        Ok(self.total_read_bytes)
     }
 
     fn len(&self) -> binary_rw::Result<usize> {
