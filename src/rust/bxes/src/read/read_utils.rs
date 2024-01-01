@@ -116,35 +116,8 @@ pub fn try_read_extensions(
     }
 }
 
-struct BinaryReaderWrapper<'a, 'b> {
-    reader: &'a mut BinaryReader<'b>,
-}
-
-impl<'a, 'b> Read for BinaryReaderWrapper<'a, 'b> {
-    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
-        //todo: xDDDDD nice API
-        match self.reader.read_bytes(buf.len()) {
-            Ok(bytes) => {
-                for i in 0..buf.len() {
-                    buf[i] = bytes[i];
-                }
-
-                Ok(bytes.len())
-            }
-            Err(err) => Err(std::io::Error::new(std::io::ErrorKind::Other, err.to_string())),
-        }
-    }
-}
-
-impl<'a, 'b> BinaryReaderWrapper<'a, 'b> {
-    pub fn new(reader: &'a mut BinaryReader<'b>) -> Self {
-        Self { reader }
-    }
-}
-
 pub fn try_read_leb128(reader: &mut BinaryReader) -> Result<u32, BxesReadError> {
-    let mut wrapper = BinaryReaderWrapper::new(reader);
-    match leb128::read::unsigned(&mut wrapper) {
+    match leb128::read::unsigned(reader) {
         Ok(value) => Ok(value as u32),
         Err(err) => Err(BxesReadError::Leb128ReadError(err.to_string())),
     }
@@ -402,8 +375,10 @@ pub fn try_read_artifact_item(
 
 pub fn try_read_guid(reader: &mut BinaryReader) -> Result<Uuid, BxesReadError> {
     try_read(try_tell_pos(reader)?, || {
-        let bytes = reader.read_bytes(16)?;
-        Ok(Uuid::from_slice_le(bytes.as_slice()).unwrap())
+        let mut buf = [0; 16];
+        reader.read(&mut buf)?;
+
+        Ok(Uuid::from_slice_le(&buf).unwrap())
     })
 }
 
@@ -457,8 +432,9 @@ fn try_read_string(reader: &mut BinaryReader) -> Result<String, BxesReadError> {
 
 fn try_read_bytes(reader: &mut BinaryReader, length: usize) -> Result<Vec<u8>, BxesReadError> {
     let offset = try_tell_pos(reader)?;
-    match reader.read_bytes(length) {
-        Ok(bytes) => Ok(bytes),
+    let mut buf = vec![0; length];
+    match reader.read(&mut buf) {
+        Ok(_) => Ok(buf),
         Err(err) => Err(
             BxesReadError::FailedToReadValue(FailedToReadValueError::new(offset, err.to_string()))
         ),

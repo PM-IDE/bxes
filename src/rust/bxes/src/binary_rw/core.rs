@@ -66,6 +66,12 @@ pub struct BinaryReader<'a> {
     endian: Endian,
 }
 
+impl<'a> Read for BinaryReader<'a> {
+    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+        self.stream.read(buf)
+    }
+}
+
 impl<'a> SeekStream for BinaryReader<'a> {
     fn seek(&mut self, to: usize) -> Result<usize> {
         self.stream.seek(to)
@@ -222,13 +228,6 @@ impl<'a> BinaryReader<'a> {
         let mut buffer: [u8; 1] = [0; 1];
         self.stream.read(&mut buffer)?;
         decode!(self.endian, buffer, i8);
-    }
-
-    /// Read bytes from the stream into a buffer.
-    pub fn read_bytes(&mut self, length: usize) -> Result<Vec<u8>> {
-        let mut buffer: Vec<u8> = vec![0; length];
-        self.stream.read(&mut buffer)?;
-        Ok(buffer)
     }
 }
 
