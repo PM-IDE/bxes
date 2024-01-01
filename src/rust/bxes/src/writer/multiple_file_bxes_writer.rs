@@ -1,8 +1,10 @@
 use std::{cell::RefCell, path::Path, rc::Rc};
 
-use binary_rw::{BinaryWriter, Endian};
-
-use crate::{constants, models::BxesEventLog};
+use crate::{
+    binary_rw::core::{BinaryWriter, Endian},
+    constants,
+    models::BxesEventLog,
+};
 
 use super::{
     errors::BxesWriteError,

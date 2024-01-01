@@ -1,6 +1,9 @@
 use std::io::{Read, Write};
 
-use binary_rw::{FileStream, ReadStream, SeekStream, WriteStream};
+use crate::binary_rw::{
+    core::{ReadStream, SeekStream, WriteStream},
+    file_stream::FileStream,
+};
 
 pub struct BufferedReadFileStream {
     stream: FileStream,
@@ -76,19 +79,19 @@ impl Read for BufferedReadFileStream {
 }
 
 impl SeekStream for BufferedReadFileStream {
-    fn seek(&mut self, to: usize) -> binary_rw::Result<usize> {
+    fn seek(&mut self, to: usize) -> crate::binary_rw::core::Result<usize> {
         self.next_buffer_index = 0;
         self.occupied_size = 0;
 
         self.stream.seek(to)
     }
 
-    fn tell(&mut self) -> binary_rw::Result<usize> {
+    fn tell(&mut self) -> crate::binary_rw::core::Result<usize> {
         //reduce the number of sys calls
         Ok(self.total_read_bytes)
     }
 
-    fn len(&self) -> binary_rw::Result<usize> {
+    fn len(&self) -> crate::binary_rw::core::Result<usize> {
         self.stream.len()
     }
 }
@@ -112,16 +115,16 @@ impl BufferedWriteFileStream {
 impl WriteStream for BufferedWriteFileStream {}
 
 impl SeekStream for BufferedWriteFileStream {
-    fn seek(&mut self, to: usize) -> binary_rw::Result<usize> {
+    fn seek(&mut self, to: usize) -> crate::binary_rw::core::Result<usize> {
         self.flush()?;
         self.stream.seek(to)
     }
 
-    fn tell(&mut self) -> binary_rw::Result<usize> {
+    fn tell(&mut self) -> crate::binary_rw::core::Result<usize> {
         self.stream.tell()
     }
 
-    fn len(&self) -> binary_rw::Result<usize> {
+    fn len(&self) -> crate::binary_rw::core::Result<usize> {
         self.stream.len()
     }
 }

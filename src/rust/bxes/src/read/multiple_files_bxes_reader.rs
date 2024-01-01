@@ -1,8 +1,10 @@
 use std::path::Path;
 
-use binary_rw::{BinaryReader, Endian};
-
-use crate::{constants::*, models::*};
+use crate::{
+    binary_rw::core::{BinaryReader, Endian},
+    constants::*,
+    models::*,
+};
 
 use super::{errors::*, read_utils::*};
 

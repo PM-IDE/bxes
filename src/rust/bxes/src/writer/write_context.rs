@@ -1,8 +1,6 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-use binary_rw::BinaryWriter;
-
-use crate::models::BxesValue;
+use crate::{binary_rw::core::BinaryWriter, models::BxesValue};
 
 pub struct BxesWriteContext<'b> {
     pub values_indices: Rc<RefCell<HashMap<Rc<Box<BxesValue>>, usize>>>,

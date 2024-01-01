@@ -1,4 +1,3 @@
-use binary_rw::{BinaryWriter, FileStream, SeekStream};
 use num_traits::ToPrimitive;
 use std::{
     cell::RefCell,
@@ -10,13 +9,15 @@ use std::{
 use zip::{write::FileOptions, ZipWriter};
 
 use crate::{
+    binary_rw::{
+        core::{BinaryWriter, SeekStream},
+        file_stream::FileStream,
+    },
     models::{
         BrafLifecycle, BxesArtifact, BxesClassifier, BxesDrivers, BxesEvent, BxesEventLog,
         BxesExtension, BxesGlobal, BxesValue, Lifecycle, SoftwareEventType, StandardLifecycle,
     },
-    read::read_utils::try_read_leb128,
-    type_ids::{self, TypeIds},
-    utils::buffered_stream::BufferedWriteFileStream,
+    type_ids::TypeIds,
 };
 
 use super::{errors::BxesWriteError, write_context::BxesWriteContext};
@@ -772,7 +773,7 @@ pub fn try_write_timestamp(writer: &mut BinaryWriter, value: i64) -> Result<(), 
 }
 
 fn try_write(
-    mut write_func: impl FnMut() -> binary_rw::Result<usize>,
+    mut write_func: impl FnMut() -> crate::binary_rw::core::Result<usize>,
 ) -> Result<(), BxesWriteError> {
     match write_func() {
         Ok(_) => Ok(()),

@@ -1,8 +1,10 @@
 use std::fs;
 
 use super::{errors::BxesReadError, read_utils::*};
-use crate::models::*;
-use binary_rw::{BinaryReader, Endian};
+use crate::{
+    binary_rw::core::{BinaryReader, Endian},
+    models::*,
+};
 
 pub fn read_bxes(path: &str) -> Result<BxesEventLog, BxesReadError> {
     let extracted_files_dir = try_extract_archive(path)?;

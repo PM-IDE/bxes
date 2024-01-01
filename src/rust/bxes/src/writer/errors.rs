@@ -1,8 +1,6 @@
 use std::rc::Rc;
 
-use binary_rw::BinaryError;
-
-use crate::models::BxesValue;
+use crate::{binary_rw::error::BinaryError, models::BxesValue};
 
 #[derive(Debug)]
 pub enum BxesWriteError {

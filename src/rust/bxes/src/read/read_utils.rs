@@ -1,12 +1,19 @@
 use std::{fs::File, io::Read, rc::Rc};
 
-use binary_rw::{BinaryReader, FileStream, SeekStream};
 use num_traits::FromPrimitive;
 use tempfile::TempDir;
 use uuid::Uuid;
 use zip::ZipArchive;
 
-use crate::{models::*, type_ids::TypeIds, utils::buffered_stream::BufferedReadFileStream};
+use crate::{
+    binary_rw::{
+        core::{BinaryReader, SeekStream},
+        file_stream::FileStream,
+    },
+    models::*,
+    type_ids::TypeIds,
+    utils::buffered_stream::BufferedReadFileStream,
+};
 
 use super::errors::*;
 
@@ -511,7 +518,7 @@ pub fn try_open_file_stream(path: &str) -> Result<BufferedReadFileStream, BxesRe
 
 fn try_read<T>(
     reader_pos: usize,
-    mut read_func: impl FnMut() -> binary_rw::Result<T>,
+    mut read_func: impl FnMut() -> crate::binary_rw::core::Result<T>,
 ) -> Result<T, BxesReadError> {
     match read_func() {
         Ok(value) => Ok(value),
