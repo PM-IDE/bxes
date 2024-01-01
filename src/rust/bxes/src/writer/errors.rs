@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use binary_rw::BinaryError;
 
 use crate::models::BxesValue;
@@ -8,8 +10,8 @@ pub enum BxesWriteError {
     WriteError(BinaryError),
     FailedToGetWriterPosition(String),
     FailedToSeek(String),
-    FailedToFindKeyValueIndex((BxesValue, BxesValue)),
-    FailedToFindValueIndex(BxesValue),
+    FailedToFindKeyValueIndex((Rc<Box<BxesValue>>, Rc<Box<BxesValue>>)),
+    FailedToFindValueIndex(Rc<Box<BxesValue>>),
     FailedToCreateTempFile,
     FailedToCreateArchive,
     LebWriteError(String),

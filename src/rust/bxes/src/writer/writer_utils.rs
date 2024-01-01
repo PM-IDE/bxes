@@ -107,10 +107,7 @@ impl<'a, 'b> Write for BinaryWriterWrapper<'a, 'b> {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
         match self.writer.write_bytes(buf) {
             Ok(written) => Ok(written),
-            Err(err) => Err(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                err.to_string(),
-            )),
+            Err(err) => Err(std::io::Error::new(std::io::ErrorKind::Other, err.to_string())),
         }
     }
 
@@ -136,12 +133,16 @@ pub fn try_write_leb_128<'a>(writer: &mut BinaryWriter, value: u32) -> Result<()
 
 pub fn try_write_properties(
     context: Rc<RefCell<BxesWriteContext>>,
-    properties: Option<&Vec<(BxesValue, BxesValue)>>,
+    properties: Option<&Vec<(Rc<Box<BxesValue>>, Rc<Box<BxesValue>>)>>,
 ) -> Result<(), BxesWriteError> {
     write_collection_and_count(context.clone(), false, count(properties), || {
         if let Some(properties) = properties {
             for property in properties {
-                try_write_kv_index(context.clone(), &(&property.0, &property.1), false)?;
+                try_write_kv_index(
+                    context.clone(),
+                    &(property.0.clone(), property.1.clone()),
+                    false,
+                )?;
             }
         }
 
@@ -175,7 +176,11 @@ pub fn try_write_globals(
                     global.globals.len() as u32,
                     || {
                         for global in &global.globals {
-                            try_write_kv_index(context.clone(), &(&global.0, &global.1), false)?;
+                            try_write_kv_index(
+                                context.clone(),
+                                &(global.0.clone(), global.1.clone()),
+                                false,
+                            )?;
                         }
 
                         Ok(())
@@ -190,7 +195,7 @@ pub fn try_write_globals(
 
 pub fn try_write_kv_index(
     context: Rc<RefCell<BxesWriteContext>>,
-    kv: &(&BxesValue, &BxesValue),
+    kv: &(Rc<Box<BxesValue>>, Rc<Box<BxesValue>>),
     write_leb_128: bool,
 ) -> Result<(), BxesWriteError> {
     if !context.borrow().kv_indices.borrow().contains_key(kv) {
@@ -216,9 +221,9 @@ pub fn try_write_extensions(
     write_collection_and_count(context.clone(), false, count(extensions), || {
         if let Some(extensions) = extensions {
             for extension in extensions {
-                try_write_value_index(context.clone(), &extension.name)?;
-                try_write_value_index(context.clone(), &extension.prefix)?;
-                try_write_value_index(context.clone(), &extension.uri)?;
+                try_write_value_index(context.clone(), extension.name.clone())?;
+                try_write_value_index(context.clone(), extension.prefix.clone())?;
+                try_write_value_index(context.clone(), extension.uri.clone())?;
             }
         }
 
@@ -233,14 +238,14 @@ pub fn try_write_classifiers(
     write_collection_and_count(context.clone(), false, count(classifiers), || {
         if let Some(classifiers) = classifiers {
             for classifier in classifiers {
-                try_write_value_index(context.clone(), &classifier.name)?;
+                try_write_value_index(context.clone(), classifier.name.clone())?;
                 write_collection_and_count(
                     context.clone(),
                     false,
                     classifier.keys.len() as u32,
                     || {
                         for key in &classifier.keys {
-                            try_write_value_index(context.clone(), &key)?;
+                            try_write_value_index(context.clone(), key.clone())?;
                         }
 
                         Ok(())
@@ -255,19 +260,29 @@ pub fn try_write_classifiers(
 
 fn try_write_value_index(
     context: Rc<RefCell<BxesWriteContext>>,
-    value: &BxesValue,
+    value: Rc<Box<BxesValue>>,
 ) -> Result<(), BxesWriteError> {
-    if !context.borrow().values_indices.borrow().contains_key(value) {
+    if !context
+        .borrow()
+        .values_indices
+        .borrow()
+        .contains_key(&value)
+    {
         Err(BxesWriteError::FailedToFindValueIndex(value.clone()))
     } else {
-        let index = *context.borrow().values_indices.borrow().get(value).unwrap() as u32;
+        let index = *context
+            .borrow()
+            .values_indices
+            .borrow()
+            .get(&value)
+            .unwrap() as u32;
         try_write_u32_no_type_id(context.borrow_mut().writer.as_mut().unwrap(), index)
     }
 }
 
 pub fn try_write_attributes(
     context: Rc<RefCell<BxesWriteContext>>,
-    attributes: Option<&Vec<(BxesValue, BxesValue)>>,
+    attributes: Option<&Vec<(Rc<Box<BxesValue>>, Rc<Box<BxesValue>>)>>,
     write_leb_128_count: bool,
 ) -> Result<(), BxesWriteError> {
     write_collection_and_count(
@@ -277,7 +292,11 @@ pub fn try_write_attributes(
         || {
             if let Some(attributes) = attributes {
                 for (key, value) in attributes {
-                    try_write_kv_index(context.clone(), &(key, value), write_leb_128_count)?;
+                    try_write_kv_index(
+                        context.clone(),
+                        &(key.clone(), value.clone()),
+                        write_leb_128_count,
+                    )?;
                 }
             }
 
@@ -286,9 +305,9 @@ pub fn try_write_attributes(
     )
 }
 
-pub fn try_write_key_values<'a: 'b, 'b>(
-    log: &'a BxesEventLog,
-    context: Rc<RefCell<BxesWriteContext<'a, 'b>>>,
+pub fn try_write_key_values(
+    log: &BxesEventLog,
+    context: Rc<RefCell<BxesWriteContext>>,
 ) -> Result<(), BxesWriteError> {
     write_collection_and_count_after(context.clone(), || {
         execute_with_kv_pairs(log, |value| {
@@ -299,7 +318,7 @@ pub fn try_write_key_values<'a: 'b, 'b>(
                         .borrow()
                         .kv_indices
                         .borrow()
-                        .contains_key(&(key, value))
+                        .contains_key(&(key.clone(), value.clone()))
                     {
                         let count = context.borrow().kv_indices.borrow().len();
                         let key_index = *context.borrow().values_indices.borrow().get(key).unwrap();
@@ -320,7 +339,7 @@ pub fn try_write_key_values<'a: 'b, 'b>(
                             .borrow_mut()
                             .kv_indices
                             .borrow_mut()
-                            .insert((key, value), count);
+                            .insert((key.clone(), value.clone()), count);
                     }
                 }
             }
@@ -333,8 +352,8 @@ pub fn try_write_key_values<'a: 'b, 'b>(
 }
 
 pub enum ValueOrKeyValue<'a> {
-    Value(&'a BxesValue),
-    KeyValue((&'a BxesValue, &'a BxesValue)),
+    Value(&'a Rc<Box<BxesValue>>),
+    KeyValue((&'a Rc<Box<BxesValue>>, &'a Rc<Box<BxesValue>>)),
 }
 
 fn execute_with_kv_pairs<'a>(
@@ -384,14 +403,14 @@ fn execute_with_kv_pairs<'a>(
 }
 
 fn execute_with_attributes_kv_pairs<'a>(
-    attributes: &'a Vec<(BxesValue, BxesValue)>,
+    attributes: &'a Vec<(Rc<Box<BxesValue>>, Rc<Box<BxesValue>>)>,
     action: &mut impl FnMut(ValueOrKeyValue<'a>) -> Result<(), BxesWriteError>,
 ) -> Result<(), BxesWriteError> {
     for (key, value) in attributes {
-        action(ValueOrKeyValue::Value(key))?;
-        action(ValueOrKeyValue::Value(value))?;
+        action(ValueOrKeyValue::Value(&key))?;
+        action(ValueOrKeyValue::Value(&value))?;
 
-        action(ValueOrKeyValue::KeyValue((key, value)))?;
+        action(ValueOrKeyValue::KeyValue((&key, &value)))?;
     }
 
     Ok(())
@@ -401,9 +420,9 @@ pub fn try_write_version(writer: &mut BinaryWriter, version: u32) -> Result<(), 
     try_write_u32_no_type_id(writer, version)
 }
 
-pub fn try_write_values<'a: 'b, 'b>(
-    log: &'a BxesEventLog,
-    context: Rc<RefCell<BxesWriteContext<'a, 'b>>>,
+pub fn try_write_values(
+    log: &BxesEventLog,
+    context: Rc<RefCell<BxesWriteContext>>,
 ) -> Result<(), BxesWriteError> {
     write_collection_and_count_after(context.clone(), || {
         execute_with_kv_pairs(log, |value| {
@@ -468,15 +487,16 @@ fn try_tell_pos(writer: &mut BinaryWriter) -> Result<usize, BxesWriteError> {
     }
 }
 
-pub fn try_write_value<'a: 'b, 'b>(
-    value: &'a BxesValue,
-    context: &mut BxesWriteContext<'a, 'b>,
+pub fn try_write_value(
+    value: &Rc<Box<BxesValue>>,
+    context: &mut BxesWriteContext,
 ) -> Result<bool, BxesWriteError> {
     if context.values_indices.borrow().contains_key(value) {
         return Ok(false);
     }
 
-    match value {
+    let value_ref = value.as_ref().as_ref();
+    match value_ref {
         BxesValue::Int32(value) => try_write_i32(context.writer.as_mut().unwrap(), *value),
         BxesValue::Int64(value) => try_write_i64(context.writer.as_mut().unwrap(), *value),
         BxesValue::Uint32(value) => try_write_u32(context.writer.as_mut().unwrap(), *value),
@@ -505,7 +525,10 @@ pub fn try_write_value<'a: 'b, 'b>(
     }?;
 
     let len = context.values_indices.borrow().len();
-    context.values_indices.borrow_mut().insert(value, len);
+    context
+        .values_indices
+        .borrow_mut()
+        .insert(value.clone(), len);
 
     Ok(true)
 }
@@ -528,9 +551,9 @@ fn get_type_id_byte(type_id: TypeIds) -> u8 {
     TypeIds::to_u8(&type_id).unwrap()
 }
 
-pub fn try_write_artifact<'a: 'b, 'b>(
-    context: &mut BxesWriteContext<'a, 'b>,
-    artifact: &'a BxesArtifact,
+pub fn try_write_artifact(
+    context: &mut BxesWriteContext,
+    artifact: &BxesArtifact,
 ) -> Result<(), BxesWriteError> {
     for artifact in &artifact.items {
         get_or_write_value_index(&artifact.model, context)?;
@@ -562,17 +585,20 @@ pub fn try_write_artifact<'a: 'b, 'b>(
     Ok(())
 }
 
-fn get_index(value: &BxesValue, context: &mut BxesWriteContext) -> Result<u32, BxesWriteError> {
-    if let Some(index) = context.values_indices.borrow().get(&value) {
+fn get_index(
+    value: &Rc<Box<BxesValue>>,
+    context: &mut BxesWriteContext,
+) -> Result<u32, BxesWriteError> {
+    if let Some(index) = context.values_indices.borrow().get(value) {
         return Ok(*index as u32);
     }
 
     Err(BxesWriteError::FailedToFindValueIndex(value.clone()))
 }
 
-fn get_or_write_value_index<'a: 'b, 'b>(
-    value: &'a BxesValue,
-    context: &mut BxesWriteContext<'a, 'b>,
+fn get_or_write_value_index(
+    value: &Rc<Box<BxesValue>>,
+    context: &mut BxesWriteContext,
 ) -> Result<u32, BxesWriteError> {
     try_write_value(value, context)?;
     let index = *context.values_indices.borrow().get(value).unwrap() as u32;
@@ -580,9 +606,9 @@ fn get_or_write_value_index<'a: 'b, 'b>(
     return Ok(index);
 }
 
-pub fn try_write_drivers<'a: 'b, 'b>(
-    context: &mut BxesWriteContext<'a, 'b>,
-    drivers: &'a BxesDrivers,
+pub fn try_write_drivers(
+    context: &mut BxesWriteContext,
+    drivers: &BxesDrivers,
 ) -> Result<(), BxesWriteError> {
     for driver in &drivers.drivers {
         get_or_write_value_index(&driver.name, context)?;

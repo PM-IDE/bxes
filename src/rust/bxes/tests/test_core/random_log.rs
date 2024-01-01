@@ -56,7 +56,7 @@ fn generate_random_classifiers(rng: &mut ThreadRng) -> Vec<BxesClassifier> {
     })
 }
 
-fn generate_random_values(rng: &mut ThreadRng) -> Vec<BxesValue> {
+fn generate_random_values(rng: &mut ThreadRng) -> Vec<Rc<Box<BxesValue>>> {
     generate_random_list(rng, |rng| generate_random_bxes_value(rng))
 }
 
@@ -117,11 +117,15 @@ fn generate_random_event(rng: &mut ThreadRng) -> BxesEvent {
     }
 }
 
-fn generate_random_attributes(rng: &mut ThreadRng) -> Vec<(BxesValue, BxesValue)> {
+fn generate_random_attributes(
+    rng: &mut ThreadRng,
+) -> Vec<(Rc<Box<BxesValue>>, Rc<Box<BxesValue>>)> {
     generate_random_list(rng, |rng| generate_random_attribute(rng))
 }
 
-fn generate_random_attributes_option(rng: &mut ThreadRng) -> Option<Vec<(BxesValue, BxesValue)>> {
+fn generate_random_attributes_option(
+    rng: &mut ThreadRng,
+) -> Option<Vec<(Rc<Box<BxesValue>>, Rc<Box<BxesValue>>)>> {
     if rng.gen_bool(0.8) {
         Some(generate_random_attributes(rng))
     } else {
@@ -129,15 +133,15 @@ fn generate_random_attributes_option(rng: &mut ThreadRng) -> Option<Vec<(BxesVal
     }
 }
 
-fn generate_random_attribute(rng: &mut ThreadRng) -> (BxesValue, BxesValue) {
+fn generate_random_attribute(rng: &mut ThreadRng) -> (Rc<Box<BxesValue>>, Rc<Box<BxesValue>>) {
     (
         generate_random_string_bxes_value(rng),
         generate_random_bxes_value(rng),
     )
 }
 
-fn generate_random_string_bxes_value(rng: &mut ThreadRng) -> BxesValue {
-    BxesValue::String(Rc::new(Box::new(generate_random_string(rng))))
+fn generate_random_string_bxes_value(rng: &mut ThreadRng) -> Rc<Box<BxesValue>> {
+    Rc::new(Box::new(BxesValue::String(Rc::new(Box::new(generate_random_string(rng))))))
 }
 
 fn generate_random_string(rng: &mut ThreadRng) -> String {
@@ -148,31 +152,33 @@ fn generate_random_string(rng: &mut ThreadRng) -> String {
         .collect()
 }
 
-fn generate_random_bxes_value(rng: &mut ThreadRng) -> BxesValue {
-    match TypeIds::from_u8(rng.gen_range(0..TypeIds::VARIANT_COUNT) as u8).unwrap() {
-        TypeIds::I32 => BxesValue::Int32(rng.gen()),
-        TypeIds::I64 => BxesValue::Int64(rng.gen()),
-        TypeIds::U32 => BxesValue::Uint32(rng.gen()),
-        TypeIds::U64 => BxesValue::Uint64(rng.gen()),
-        TypeIds::F32 => BxesValue::Float32(rng.gen()),
-        TypeIds::F64 => BxesValue::Float64(rng.gen()),
-        TypeIds::Bool => BxesValue::Bool(rng.gen()),
-        TypeIds::String => BxesValue::String(Rc::new(Box::new(generate_random_string(rng)))),
-        TypeIds::Timestamp => BxesValue::Timestamp(rng.gen()),
-        TypeIds::BrafLifecycle => BxesValue::BrafLifecycle(generate_random_braf_lifecycle()),
-        TypeIds::StandardLifecycle => {
-            BxesValue::StandardLifecycle(generate_random_standard_lifecycle())
-        }
-        TypeIds::Guid => BxesValue::Guid(Uuid::new_v4()),
-        TypeIds::SoftwareEventType => {
-            BxesValue::SoftwareEventType(generate_random_enum::<SoftwareEventType>(
+fn generate_random_bxes_value(rng: &mut ThreadRng) -> Rc<Box<BxesValue>> {
+    Rc::new(Box::new(
+        match TypeIds::from_u8(rng.gen_range(0..TypeIds::VARIANT_COUNT) as u8).unwrap() {
+            TypeIds::I32 => BxesValue::Int32(rng.gen()),
+            TypeIds::I64 => BxesValue::Int64(rng.gen()),
+            TypeIds::U32 => BxesValue::Uint32(rng.gen()),
+            TypeIds::U64 => BxesValue::Uint64(rng.gen()),
+            TypeIds::F32 => BxesValue::Float32(rng.gen()),
+            TypeIds::F64 => BxesValue::Float64(rng.gen()),
+            TypeIds::Bool => BxesValue::Bool(rng.gen()),
+            TypeIds::String => BxesValue::String(Rc::new(Box::new(generate_random_string(rng)))),
+            TypeIds::Timestamp => BxesValue::Timestamp(rng.gen()),
+            TypeIds::BrafLifecycle => BxesValue::BrafLifecycle(generate_random_braf_lifecycle()),
+            TypeIds::StandardLifecycle => {
+                BxesValue::StandardLifecycle(generate_random_standard_lifecycle())
+            }
+            TypeIds::Guid => BxesValue::Guid(Uuid::new_v4()),
+            TypeIds::SoftwareEventType => BxesValue::SoftwareEventType(generate_random_enum::<
+                SoftwareEventType,
+            >(
                 SoftwareEventType::VARIANT_COUNT,
-            ))
-        }
-        TypeIds::Artifact => generate_random_artifact(rng),
-        TypeIds::Drivers => generate_random_drivers(rng),
-        _ => panic!("Got unknown type id"),
-    }
+            )),
+            TypeIds::Artifact => generate_random_artifact(rng),
+            TypeIds::Drivers => generate_random_drivers(rng),
+            _ => panic!("Got unknown type id"),
+        },
+    ))
 }
 
 fn generate_random_drivers(rng: &mut ThreadRng) -> BxesValue {
@@ -189,8 +195,10 @@ fn generate_random_drivers(rng: &mut ThreadRng) -> BxesValue {
 fn generate_random_driver(rng: &mut ThreadRng) -> BxesDriver {
     BxesDriver {
         amount: BxesValue::Float64(rng.gen()),
-        name: BxesValue::String(Rc::new(Box::new(generate_random_string(rng)))),
-        driver_type: BxesValue::String(Rc::new(Box::new(generate_random_string(rng)))),
+        name: Rc::new(Box::new(BxesValue::String(Rc::new(Box::new(generate_random_string(rng)))))),
+        driver_type: Rc::new(
+            Box::new(BxesValue::String(Rc::new(Box::new(generate_random_string(rng)))))
+        ),
     }
 }
 
@@ -207,9 +215,13 @@ fn generate_random_artifact(rng: &mut ThreadRng) -> BxesValue {
 
 fn generate_random_artifact_item(rng: &mut ThreadRng) -> BxesArtifactItem {
     BxesArtifactItem {
-        model: BxesValue::String(Rc::new(Box::new(generate_random_string(rng)))),
-        instance: BxesValue::String(Rc::new(Box::new(generate_random_string(rng)))),
-        transition: BxesValue::String(Rc::new(Box::new(generate_random_string(rng)))),
+        model: Rc::new(Box::new(BxesValue::String(Rc::new(Box::new(generate_random_string(rng)))))),
+        instance: Rc::new(
+            Box::new(BxesValue::String(Rc::new(Box::new(generate_random_string(rng)))))
+        ),
+        transition: Rc::new(
+            Box::new(BxesValue::String(Rc::new(Box::new(generate_random_string(rng)))))
+        ),
     }
 }
 

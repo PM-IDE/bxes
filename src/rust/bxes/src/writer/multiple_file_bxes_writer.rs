@@ -13,14 +13,12 @@ use super::{
     },
 };
 
-type WriterFunc = dyn for<'a, 'b> Fn(
-    &'a BxesEventLog,
-    Rc<RefCell<BxesWriteContext<'a, 'b>>>,
-) -> Result<(), BxesWriteError>;
+type WriterFunc =
+    dyn Fn(&BxesEventLog, Rc<RefCell<BxesWriteContext>>) -> Result<(), BxesWriteError>;
 
-pub fn write_bxes_multiple_files<'a>(
-    log: &'a BxesEventLog,
-    directory_path: &'a str,
+pub fn write_bxes_multiple_files(
+    log: &BxesEventLog,
+    directory_path: &str,
 ) -> Result<(), BxesWriteError> {
     let context = BxesWriteContext::empty();
 
@@ -53,14 +51,11 @@ fn execute_with_writer<'a, T>(
     log: &'a BxesEventLog,
     directory_path: &'a str,
     file_name: &'static str,
-    context: &'a BxesWriteContext<'a, '_>,
+    context: &'a BxesWriteContext<'_>,
     action: T,
 ) -> Result<(), BxesWriteError>
 where
-    T: for<'x> Fn(
-        &'a BxesEventLog,
-        Rc<RefCell<BxesWriteContext<'a, 'x>>>,
-    ) -> Result<(), BxesWriteError>,
+    T: Fn(&BxesEventLog, Rc<RefCell<BxesWriteContext>>) -> Result<(), BxesWriteError>,
 {
     let directory_path = Path::new(directory_path);
     let file_path = directory_path.join(file_name);

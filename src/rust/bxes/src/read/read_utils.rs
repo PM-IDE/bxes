@@ -12,7 +12,7 @@ use super::errors::*;
 
 pub fn try_read_event_log_metadata(
     reader: &mut BinaryReader,
-    values: &Vec<BxesValue>,
+    values: &Vec<Rc<Box<BxesValue>>>,
     kv_pairs: &Vec<(u32, u32)>,
 ) -> Result<BxesEventLogMetadata, BxesReadError> {
     let properties = try_read_attributes(reader, values, kv_pairs, false)?;
@@ -30,7 +30,7 @@ pub fn try_read_event_log_metadata(
 
 pub fn try_read_classifiers(
     reader: &mut BinaryReader,
-    values: &Vec<BxesValue>,
+    values: &Vec<Rc<Box<BxesValue>>>,
     kv_pairs: &Vec<(u32, u32)>,
 ) -> Result<Option<Vec<BxesClassifier>>, BxesReadError> {
     let count = try_read_u32(reader)?;
@@ -58,7 +58,7 @@ pub fn try_read_classifiers(
 
 pub fn try_read_globals(
     reader: &mut BinaryReader,
-    values: &Vec<BxesValue>,
+    values: &Vec<Rc<Box<BxesValue>>>,
     kv_pairs: &Vec<(u32, u32)>,
 ) -> Result<Option<Vec<BxesGlobal>>, BxesReadError> {
     let count = try_read_u32(reader)?;
@@ -88,7 +88,7 @@ pub fn try_read_globals(
 
 pub fn try_read_extensions(
     reader: &mut BinaryReader,
-    values: &Vec<BxesValue>,
+    values: &Vec<Rc<Box<BxesValue>>>,
     kv_pairs: &Vec<(u32, u32)>,
 ) -> Result<Option<Vec<BxesExtension>>, BxesReadError> {
     let count = try_read_u32(reader)?;
@@ -124,10 +124,7 @@ impl<'a, 'b> Read for BinaryReaderWrapper<'a, 'b> {
 
                 Ok(bytes.len())
             }
-            Err(err) => Err(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                err.to_string(),
-            )),
+            Err(err) => Err(std::io::Error::new(std::io::ErrorKind::Other, err.to_string())),
         }
     }
 }
@@ -156,7 +153,7 @@ fn string_or_err(value: &BxesValue) -> Result<Rc<Box<String>>, BxesReadError> {
 
 pub fn try_read_traces_variants(
     reader: &mut BinaryReader,
-    values: &Vec<BxesValue>,
+    values: &Vec<Rc<Box<BxesValue>>>,
     kv_pairs: &Vec<(u32, u32)>,
 ) -> Result<Vec<BxesTraceVariant>, BxesReadError> {
     let mut variants = vec![];
@@ -171,7 +168,7 @@ pub fn try_read_traces_variants(
 
 fn try_read_trace_variant(
     reader: &mut BinaryReader,
-    values: &Vec<BxesValue>,
+    values: &Vec<Rc<Box<BxesValue>>>,
     kv_pairs: &Vec<(u32, u32)>,
 ) -> Result<BxesTraceVariant, BxesReadError> {
     let traces_count = try_read_u32(reader)?;
@@ -198,7 +195,7 @@ fn try_read_trace_variant(
 
 fn try_read_event(
     reader: &mut BinaryReader,
-    values: &Vec<BxesValue>,
+    values: &Vec<Rc<Box<BxesValue>>>,
     kv_pairs: &Vec<(u32, u32)>,
 ) -> Result<BxesEvent, BxesReadError> {
     let name_index = try_read_leb128(reader)? as usize;
@@ -225,10 +222,10 @@ fn try_read_event(
 
 fn try_read_attributes(
     reader: &mut BinaryReader,
-    values: &Vec<BxesValue>,
+    values: &Vec<Rc<Box<BxesValue>>>,
     kv_pairs: &Vec<(u32, u32)>,
     leb_128: bool,
-) -> Result<Option<Vec<(BxesValue, BxesValue)>>, BxesReadError> {
+) -> Result<Option<Vec<(Rc<Box<BxesValue>>, Rc<Box<BxesValue>>)>>, BxesReadError> {
     let attributes_count = if leb_128 {
         try_read_leb128(reader)?
     } else {
@@ -250,15 +247,16 @@ fn try_read_attributes(
 
 fn try_read_kv_pair(
     reader: &mut BinaryReader,
-    values: &Vec<BxesValue>,
+    values: &Vec<Rc<Box<BxesValue>>>,
     kv_pairs: &Vec<(u32, u32)>,
     leb_128: bool,
-) -> Result<(BxesValue, BxesValue), BxesReadError> {
+) -> Result<(Rc<Box<BxesValue>>, Rc<Box<BxesValue>>), BxesReadError> {
     let kv_index = if leb_128 {
         try_read_leb128(reader)?
     } else {
         try_read_u32(reader)?
     } as usize;
+
     let kv_pair = match kv_pairs.get(kv_index) {
         None => return Err(BxesReadError::FailedToIndexKeyValue(kv_index)),
         Some(pair) => pair,
@@ -290,12 +288,14 @@ pub fn try_read_key_values(reader: &mut BinaryReader) -> Result<Vec<(u32, u32)>,
     Ok(key_values)
 }
 
-pub fn try_read_values(reader: &mut BinaryReader) -> Result<Vec<BxesValue>, BxesReadError> {
+pub fn try_read_values(
+    reader: &mut BinaryReader,
+) -> Result<Vec<Rc<Box<BxesValue>>>, BxesReadError> {
     let mut values = vec![];
 
     let values_count = try_read_u32(reader)?;
     for _ in 0..values_count {
-        values.push(try_read_bxes_value(reader, &values)?);
+        values.push(Rc::new(Box::new(try_read_bxes_value(reader, &values)?)));
     }
 
     Ok(values)
@@ -303,7 +303,7 @@ pub fn try_read_values(reader: &mut BinaryReader) -> Result<Vec<BxesValue>, Bxes
 
 fn try_read_bxes_value(
     reader: &mut BinaryReader,
-    values: &Vec<BxesValue>,
+    values: &Vec<Rc<Box<BxesValue>>>,
 ) -> Result<BxesValue, BxesReadError> {
     let type_id_byte = try_read_u8(reader)?;
     let type_id = match TypeIds::from_u8(type_id_byte) {
@@ -319,27 +319,25 @@ fn try_read_bxes_value(
         TypeIds::F32 => Ok(BxesValue::Float32(try_read_f32(reader)?)),
         TypeIds::F64 => Ok(BxesValue::Float64(try_read_f64(reader)?)),
         TypeIds::Bool => Ok(BxesValue::Bool(try_read_bool(reader)?)),
-        TypeIds::String => Ok(BxesValue::String(Rc::new(Box::new(try_read_string(
-            reader,
-        )?)))),
+        TypeIds::String => Ok(BxesValue::String(Rc::new(Box::new(try_read_string(reader)?)))),
         TypeIds::Timestamp => Ok(BxesValue::Timestamp(try_read_i64(reader)?)),
         TypeIds::BrafLifecycle => Ok(BxesValue::BrafLifecycle(try_read_braf_lifecycle(reader)?)),
-        TypeIds::StandardLifecycle => Ok(BxesValue::StandardLifecycle(
-            try_read_standard_lifecycle(reader)?,
-        )),
+        TypeIds::StandardLifecycle => {
+            Ok(BxesValue::StandardLifecycle(try_read_standard_lifecycle(reader)?))
+        }
         TypeIds::Guid => Ok(BxesValue::Guid(try_read_guid(reader)?)),
         TypeIds::Artifact => Ok(BxesValue::Artifact(try_read_artifact(reader, values)?)),
         TypeIds::Drivers => Ok(BxesValue::Drivers(try_read_drivers(reader, values)?)),
-        TypeIds::SoftwareEventType => Ok(BxesValue::SoftwareEventType(
-            try_read_software_event_type(reader)?,
-        )),
+        TypeIds::SoftwareEventType => {
+            Ok(BxesValue::SoftwareEventType(try_read_software_event_type(reader)?))
+        }
         _ => Err(BxesReadError::FailedToParseTypeId(type_id_byte)),
     }
 }
 
 pub fn try_read_drivers(
     reader: &mut BinaryReader,
-    values: &Vec<BxesValue>,
+    values: &Vec<Rc<Box<BxesValue>>>,
 ) -> Result<BxesDrivers, BxesReadError> {
     let drivers_count = try_read_u32(reader)?;
     let mut drivers = vec![];
@@ -353,7 +351,7 @@ pub fn try_read_drivers(
 
 pub fn try_read_driver(
     reader: &mut BinaryReader,
-    values: &Vec<BxesValue>,
+    values: &Vec<Rc<Box<BxesValue>>>,
 ) -> Result<BxesDriver, BxesReadError> {
     let amount = try_read_f64(reader)?;
     let name_index = try_read_u32(reader)? as usize;
@@ -368,7 +366,7 @@ pub fn try_read_driver(
 
 pub fn try_read_artifact(
     reader: &mut BinaryReader,
-    values: &Vec<BxesValue>,
+    values: &Vec<Rc<Box<BxesValue>>>,
 ) -> Result<BxesArtifact, BxesReadError> {
     let artifacts_count = try_read_u32(reader)?;
     let mut artifacts = vec![];
@@ -382,7 +380,7 @@ pub fn try_read_artifact(
 
 pub fn try_read_artifact_item(
     reader: &mut BinaryReader,
-    values: &Vec<BxesValue>,
+    values: &Vec<Rc<Box<BxesValue>>>,
 ) -> Result<BxesArtifactItem, BxesReadError> {
     let model_index = try_read_u32(reader)? as usize;
     let instance_index = try_read_u32(reader)? as usize;
@@ -454,9 +452,9 @@ fn try_read_bytes(reader: &mut BinaryReader, length: usize) -> Result<Vec<u8>, B
     let offset = try_tell_pos(reader)?;
     match reader.read_bytes(length) {
         Ok(bytes) => Ok(bytes),
-        Err(err) => Err(BxesReadError::FailedToReadValue(
-            FailedToReadValueError::new(offset, err.to_string()),
-        )),
+        Err(err) => Err(
+            BxesReadError::FailedToReadValue(FailedToReadValueError::new(offset, err.to_string()))
+        ),
     }
 }
 
@@ -468,9 +466,9 @@ fn try_read_enum<T: FromPrimitive>(reader: &mut BinaryReader) -> Result<T, BxesR
     let offset = try_tell_pos(reader)?;
     match reader.read_u8() {
         Ok(byte) => Ok(T::from_u8(byte).unwrap()),
-        Err(err) => Err(BxesReadError::FailedToReadValue(
-            FailedToReadValueError::new(offset, err.to_string()),
-        )),
+        Err(err) => Err(
+            BxesReadError::FailedToReadValue(FailedToReadValueError::new(offset, err.to_string()))
+        ),
     }
 }
 

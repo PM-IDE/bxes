@@ -4,13 +4,13 @@ use binary_rw::BinaryWriter;
 
 use crate::models::BxesValue;
 
-pub struct BxesWriteContext<'a: 'b, 'b> {
-    pub values_indices: Rc<RefCell<HashMap<&'a BxesValue, usize>>>,
-    pub kv_indices: Rc<RefCell<HashMap<(&'a BxesValue, &'a BxesValue), usize>>>,
+pub struct BxesWriteContext<'b> {
+    pub values_indices: Rc<RefCell<HashMap<Rc<Box<BxesValue>>, usize>>>,
+    pub kv_indices: Rc<RefCell<HashMap<(Rc<Box<BxesValue>>, Rc<Box<BxesValue>>), usize>>>,
     pub writer: Option<&'b mut BinaryWriter<'b>>,
 }
 
-impl<'a, 'b> BxesWriteContext<'a, 'b> {
+impl<'b> BxesWriteContext<'b> {
     pub fn empty() -> Self {
         Self {
             values_indices: Rc::new(RefCell::new(HashMap::new())),
@@ -27,7 +27,7 @@ impl<'a, 'b> BxesWriteContext<'a, 'b> {
         }
     }
 
-    pub fn with_writer<'c>(&self, writer: &'c mut BinaryWriter<'c>) -> BxesWriteContext<'a, 'c> {
+    pub fn with_writer<'c>(&self, writer: &'c mut BinaryWriter<'c>) -> BxesWriteContext<'c> {
         BxesWriteContext {
             values_indices: self.values_indices.clone(),
             kv_indices: self.kv_indices.clone(),

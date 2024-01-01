@@ -65,9 +65,9 @@ impl PartialEq for BxesArtifact {
 
 #[derive(Clone, Debug)]
 pub struct BxesArtifactItem {
-    pub model: BxesValue,
-    pub instance: BxesValue,
-    pub transition: BxesValue,
+    pub model: Rc<Box<BxesValue>>,
+    pub instance: Rc<Box<BxesValue>>,
+    pub transition: Rc<Box<BxesValue>>,
 }
 
 impl Hash for BxesArtifactItem {
@@ -115,8 +115,8 @@ impl PartialEq for BxesDrivers {
 #[derive(Clone, Debug)]
 pub struct BxesDriver {
     pub amount: BxesValue,
-    pub name: BxesValue,
-    pub driver_type: BxesValue,
+    pub name: Rc<Box<BxesValue>>,
+    pub driver_type: Rc<Box<BxesValue>>,
 }
 
 impl BxesDriver {
@@ -251,21 +251,21 @@ pub struct BxesEventLog {
 pub struct BxesEventLogMetadata {
     pub extensions: Option<Vec<BxesExtension>>,
     pub classifiers: Option<Vec<BxesClassifier>>,
-    pub properties: Option<Vec<(BxesValue, BxesValue)>>,
+    pub properties: Option<Vec<(Rc<Box<BxesValue>>, Rc<Box<BxesValue>>)>>,
     pub globals: Option<Vec<BxesGlobal>>,
 }
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct BxesExtension {
-    pub name: BxesValue,
-    pub prefix: BxesValue,
-    pub uri: BxesValue,
+    pub name: Rc<Box<BxesValue>>,
+    pub prefix: Rc<Box<BxesValue>>,
+    pub uri: Rc<Box<BxesValue>>,
 }
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct BxesClassifier {
-    pub name: BxesValue,
-    pub keys: Vec<BxesValue>,
+    pub name: Rc<Box<BxesValue>>,
+    pub keys: Vec<Rc<Box<BxesValue>>>,
 }
 
 #[derive(Debug, FromPrimitive, ToPrimitive, VariantCount, PartialEq, Eq)]
@@ -278,22 +278,22 @@ pub enum BxesGlobalKind {
 #[derive(Debug, PartialEq, Eq)]
 pub struct BxesGlobal {
     pub entity_kind: BxesGlobalKind,
-    pub globals: Vec<(BxesValue, BxesValue)>,
+    pub globals: Vec<(Rc<Box<BxesValue>>, Rc<Box<BxesValue>>)>,
 }
 
 #[derive(Debug)]
 pub struct BxesTraceVariant {
     pub traces_count: u32,
-    pub metadata: Vec<(BxesValue, BxesValue)>,
+    pub metadata: Vec<(Rc<Box<BxesValue>>, Rc<Box<BxesValue>>)>,
     pub events: Vec<BxesEvent>,
 }
 
 #[derive(Debug)]
 pub struct BxesEvent {
-    pub name: BxesValue,
+    pub name: Rc<Box<BxesValue>>,
     pub timestamp: i64,
     pub lifecycle: Lifecycle,
-    pub attributes: Option<Vec<(BxesValue, BxesValue)>>,
+    pub attributes: Option<Vec<(Rc<Box<BxesValue>>, Rc<Box<BxesValue>>)>>,
 }
 
 impl PartialEq for BxesEvent {
@@ -315,8 +315,8 @@ impl BxesEvent {
 }
 
 fn compare_list_of_attributes(
-    first_attributes: &Option<Vec<(BxesValue, BxesValue)>>,
-    second_attributes: &Option<Vec<(BxesValue, BxesValue)>>,
+    first_attributes: &Option<Vec<(Rc<Box<BxesValue>>, Rc<Box<BxesValue>>)>>,
+    second_attributes: &Option<Vec<(Rc<Box<BxesValue>>, Rc<Box<BxesValue>>)>>,
 ) -> bool {
     if first_attributes.is_none() && second_attributes.is_none() {
         return true;
@@ -342,8 +342,8 @@ fn compare_list_of_attributes(
 }
 
 fn attributes_equals(
-    first_attribute: &(BxesValue, BxesValue),
-    second_attribute: &(BxesValue, BxesValue),
+    first_attribute: &(Rc<Box<BxesValue>>, Rc<Box<BxesValue>>),
+    second_attribute: &(Rc<Box<BxesValue>>, Rc<Box<BxesValue>>),
 ) -> bool {
     first_attribute.0.eq(&second_attribute.0) && first_attribute.1.eq(&second_attribute.1)
 }
