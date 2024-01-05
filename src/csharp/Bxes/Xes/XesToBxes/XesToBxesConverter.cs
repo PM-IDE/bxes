@@ -64,7 +64,7 @@ public class XesToBxesConverter(ILogger logger, bool doIndicesPreprocessing) : I
     {
       case XesConstants.TraceTagName:
         handler.HandleTraceStart();
-        ReadTrace(reader, context, handler.HandleEvent);
+        ReadTrace(reader.ReadSubtree(), context, handler.HandleEvent);
         break;
       case XesConstants.ClassifierTagName:
         handler.HandleClassifier(ReadClassifier(reader));
