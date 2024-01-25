@@ -12,7 +12,7 @@ public class CSharpImplExecutor : ExecutorBase
     StartInfo = new ProcessStartInfo
     {
       FileName = "dotnet",
-      Arguments = $"{TestDataProvider.CSharpExecutable} xes-to-bxes -path {xesLogPath} -output-path {bxesLogPath}"
+      Arguments = $"{TestDataProvider.CSharpExecutable} xes-to-bxes -path {xesLogPath} -output-path {bxesLogPath} --bxes-compression false"
     }
   };
 }
