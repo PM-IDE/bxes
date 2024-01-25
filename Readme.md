@@ -172,7 +172,7 @@ Type id + additional type info (i.e. length of a string) forms a header of a val
 ### Event description
 
 - name value index: (`u32`, `4 bytes`)
-- timestamp value (`i64`, `8 bytes`)
+- timestamp value (`i64`, `8 bytes`), number of nanoseconds since Unix Epoch (date in UTC)
 - lifecycle value (`2 bytes`, type id (`1 byte`) + value (`1 byte`), `0` if unspecified)
 - number of attributes (`u32`, `4 bytes`)
 - sequence of key value indices (size * `4 bytes`)
