@@ -1,4 +1,6 @@
-﻿namespace Bxes.IntegrationTests;
+﻿using Bxes.Reader;
+
+namespace Bxes.IntegrationTests;
 
 public static class GoldBasedTestExecutor
 {
@@ -15,12 +17,12 @@ public static class GoldBasedTestExecutor
       }
 
       var files = Directory.EnumerateFiles(tempPath).ToList();
-      var goldBytes = File.ReadAllBytes(files[0]);
+      var goldLog = new SingleFileBxesReader().Read(files[0]);
 
       foreach (var filePath in files[1..])
       {
-        var currentBytes = File.ReadAllBytes(filePath);
-        Assert.That(currentBytes, Is.EquivalentTo(goldBytes));
+        var currentLog = new SingleFileBxesReader().Read(filePath);
+        Assert.True(currentLog.Equals(goldLog));
       }
     }
     finally
