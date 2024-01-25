@@ -17,3 +17,25 @@ public enum StandardLifecycleValues : byte
   Unknown = 12,
   Withdraw = 13,
 }
+
+public static class StandardLifecycleValuesUtil 
+{
+  public static StandardLifecycleValues? TryParse(string value) => value switch
+  {
+    "unspecified" => StandardLifecycleValues.Unspecified,
+    "assign" => StandardLifecycleValues.Assign,
+    "ate_abort" => StandardLifecycleValues.AteAbort,
+    "autoskip" => StandardLifecycleValues.Autoskip,
+    "complete" => StandardLifecycleValues.Complete,
+    "manualskip" => StandardLifecycleValues.ManualSkip,
+    "pi_abort" => StandardLifecycleValues.PiAbort,
+    "reassign" => StandardLifecycleValues.ReAssign,
+    "resume" => StandardLifecycleValues.Resume,
+    "schedule" => StandardLifecycleValues.Schedule,
+    "start" => StandardLifecycleValues.Start,
+    "suspend" => StandardLifecycleValues.Suspend,
+    "unknown" => StandardLifecycleValues.Unspecified,
+    "withdraw" => StandardLifecycleValues.Withdraw,
+    _ => null
+  };
+}
