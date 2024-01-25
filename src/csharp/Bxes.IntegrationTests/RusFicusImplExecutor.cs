@@ -12,7 +12,7 @@ public class RusFicusImplExecutor : ExecutorBase
     StartInfo = new ProcessStartInfo
     {
       FileName = "python",
-      Arguments = $"{Environment.GetEnvironmentVariable(EnvVars.RustExecutablePath)} {xesLogPath} {bxesLogPath}"
+      Arguments = $"{TestDataProvider.FicusRustExecutable} {xesLogPath} {bxesLogPath}",
     }
   };
 }

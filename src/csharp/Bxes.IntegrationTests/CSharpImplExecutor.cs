@@ -11,8 +11,8 @@ public class CSharpImplExecutor : ExecutorBase
   {
     StartInfo = new ProcessStartInfo
     {
-      FileName = Environment.GetEnvironmentVariable(EnvVars.CSharpExecutablePath),
-      Arguments = $"xes-to-bxes -path {xesLogPath} -output-path {bxesLogPath}"
+      FileName = "dotnet",
+      Arguments = $"{TestDataProvider.CSharpExecutable} xes-to-bxes -path {xesLogPath} -output-path {bxesLogPath}"
     }
   };
 }

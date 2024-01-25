@@ -1,5 +1,6 @@
 namespace Bxes.IntegrationTests;
 
+[TestFixture]
 public class DifferentImplXesToBxesTest
 {
   private readonly List<IBxesImplExecutor> myExecutors = new()
@@ -12,10 +13,7 @@ public class DifferentImplXesToBxesTest
   [Test]
   public void ExecuteTest()
   {
-    var sourceFolder = Environment.GetEnvironmentVariable(EnvVars.SourceFolderPath);
-    Assert.That(sourceFolder, Is.Not.Null);
-    
-    foreach (var directory in Directory.GetDirectories(sourceFolder))
+    foreach (var directory in Directory.GetDirectories(TestDataProvider.SourceLogDirectory))
     {
       foreach (var xesFile in Directory.EnumerateFiles(directory))
       {
