@@ -77,7 +77,7 @@ public static class XesReadUtil
     BxesValue bxesValue = reader.Name switch
     {
       XesConstants.StringTagName => new BxesStringValue(value),
-      XesConstants.DateTagName => new BxesTimeStampValue(DateTime.Parse(value).Ticks),
+      XesConstants.DateTagName => new BxesTimeStampValue((DateTimeOffset.Parse(value) - DateTimeOffset.UnixEpoch).Ticks * 100),
       XesConstants.IntTagName => new BxesInt64Value(long.Parse(value)),
       XesConstants.FloatTagName => new BxesFloat64Value(double.Parse(value)),
       XesConstants.BoolTagName => new BxesBoolValue(bool.Parse(value)),
