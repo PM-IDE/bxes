@@ -11,7 +11,7 @@ var builder = new CommandLineBuilder(rootCommand);
 var logger = BxesDefaultLoggerFactory.Create();
 
 rootCommand.AddCommand(CreateCommand("xes-to-bxes", "Convert XES event log to bxes format",
-  new XesToBxesCommandHandler(logger, true)));
+  new XesToBxesCommandHandler(logger)));
 
 rootCommand.AddCommand(CreateCommand("bxes-to-xes", "Convert bxes event log into XES format",
   new BxesToXesCommandHandler()));
@@ -25,6 +25,8 @@ Command CreateCommand(string name, string description, ConvertCommandHandlerBase
   var command = new Command(name, description);
   command.AddOption(Options.PathOption);
   command.AddOption(Options.OutputPathOption);
+  command.AddOption(Options.BestBxesCompression);
+
   command.Handler = handler;
 
   return command;

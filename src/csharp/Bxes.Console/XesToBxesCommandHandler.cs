@@ -1,11 +1,12 @@
+using System.CommandLine.Parsing;
 using Bxes.Logging;
 using Bxes.Xes;
 using Bxes.Xes.XesToBxes;
 
 namespace Bxes.Console;
 
-internal class XesToBxesCommandHandler(ILogger logger, bool preprocessValuesAndKeyValues) : ConvertCommandHandlerBase
+internal class XesToBxesCommandHandler(ILogger logger) : ConvertCommandHandlerBase
 {
-  protected override IBetweenFormatsConverter CreateConverter() =>
-    new XesToBxesConverter(logger, preprocessValuesAndKeyValues);
+  protected override IBetweenFormatsConverter CreateConverter(ParseResult result) =>
+    new XesToBxesConverter(logger, result.GetValueForOption(Options.BestBxesCompression));
 }
