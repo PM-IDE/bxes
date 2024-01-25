@@ -1,3 +1,4 @@
+using System.Runtime;
 using Bxes.Models.Values;
 using Bxes.Utils;
 using Bxes.Writer;
@@ -115,16 +116,11 @@ public class EventLogMetadata : IEventLogMetadata
       return false;
     }
 
-    if (!Extensions.Zip(other.Extensions).All(pair => pair.First.Equals(pair.Second))) return false;
-    if (!Classifiers.Zip(other.Classifiers).All(pair => pair.First.Equals(pair.Second))) return false;
-    if (!Properties.Zip(other.Properties).All(pair => pair.First.Equals(pair.Second))) return false;
+    if (!EventLogUtil.EqualsRegardingOrder(Extensions, other.Extensions)) return false;
+    if (!EventLogUtil.EqualsRegardingOrder(Classifiers, other.Classifiers)) return false;
+    if (!EventLogUtil.EqualsRegardingOrder(Properties, other.Properties)) return false;
 
-    return Globals.Zip(other.Globals).All(pair =>
-    {
-      return pair.First.Kind == pair.Second.Kind &&
-             pair.First.Globals.Count == pair.Second.Globals.Count &&
-             pair.First.Globals.Zip(pair.Second.Globals).All(pair => pair.First.Equals(pair.Second));
-    });
+    return EventLogUtil.EqualsRegardingOrder(Globals, other.Globals);
   }
 
   public override bool Equals(object? obj) => obj is EventLogMetadata other && Equals(other);
@@ -144,6 +140,23 @@ public record BxesClassifier
 {
   public required List<BxesStringValue> Keys { get; init; }
   public required BxesStringValue Name { get; init; }
+
+
+  public virtual bool Equals(BxesClassifier? other) =>
+    other is { } &&
+    Name.Equals(other.Name) &&
+    EventLogUtil.EqualsRegardingOrder(Keys, other.Keys);
+
+  public override int GetHashCode()
+  {
+    var nameHash = Name.GetHashCode();
+    foreach (var key in Keys)
+    {
+      nameHash = HashCode.Combine(nameHash, key.GetHashCode());
+    }
+
+    return nameHash;
+  }
 }
 
 public record BxesExtension
@@ -151,12 +164,37 @@ public record BxesExtension
   public required BxesStringValue Prefix { get; init; }
   public required BxesStringValue Uri { get; init; }
   public required BxesStringValue Name { get; init; }
+
+
+  public virtual bool Equals(BxesExtension? other) =>
+    other is { } &&
+    Prefix.Equals(other.Prefix) &&
+    Uri.Equals(other.Uri) &&
+    Name.Equals(other.Name);
+
+  public override int GetHashCode() => HashCode.Combine(Prefix, Uri, Name);
 }
 
 public record BxesGlobal
 {
   public required GlobalsEntityKind Kind { get; init; }
   public required List<AttributeKeyValue> Globals { get; init; }
+
+  public virtual bool Equals(BxesGlobal? other) =>
+    other is { } &&
+    other.Kind == Kind &&
+    EventLogUtil.EqualsRegardingOrder(Globals, other.Globals);
+
+  public override int GetHashCode()
+  {
+    var kindHash = Kind.GetHashCode();
+    foreach (var kv in Globals)
+    {
+      kindHash = HashCode.Combine(kv.GetHashCode(), kindHash);
+    }
+
+    return kindHash;
+  }
 }
 
 public class InMemoryEventLog(uint version, IEventLogMetadata metadata, List<ITraceVariant> traces) : IEventLog
@@ -202,5 +240,25 @@ public static class EventLogUtil
     return first.Count == second.Count &&
            first.Zip(second).All(pair =>
              pair.First.Key.Equals(pair.Second.Key) && pair.First.Value.Equals(pair.Second.Value));
+  }
+
+  public static bool EqualsRegardingOrder<T>(IList<T> firstList, IList<T> secondList)
+  {
+    if (firstList.Count != secondList.Count) return false;
+
+    var firstSet = firstList.ToHashSet();
+    var secondSet = secondList.ToHashSet();
+
+    foreach (var first in firstSet)
+    {
+      if (!secondSet.Contains(first)) return false;
+    }
+
+    foreach (var second in secondSet)
+    {
+      if (!firstSet.Contains(second)) return false;
+    }
+
+    return true;
   }
 }
