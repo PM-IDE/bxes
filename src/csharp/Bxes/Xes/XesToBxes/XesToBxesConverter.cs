@@ -130,8 +130,8 @@ public class XesToBxesConverter(ILogger logger, bool doIndicesPreprocessing) : I
     return new BxesExtension
     {
       Name = new BxesStringValue(name),
-      Prefix = new BxesStringValue(name),
-      Uri = new BxesStringValue(name)
+      Prefix = new BxesStringValue(prefix),
+      Uri = new BxesStringValue(uri)
     };
   }
 
