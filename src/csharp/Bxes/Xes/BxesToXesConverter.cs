@@ -75,7 +75,7 @@ public class BxesToXesConverter : IBetweenFormatsConverter
 
   private static void WriteClassifier(XmlWriter writer, BxesClassifier classifier)
   {
-    using var _ = StartEndElementCookie.CreateStartEndElement(writer, null, XesConstants.ClassifierKeysAttribute, null);
+    using var _ = StartEndElementCookie.CreateStartEndElement(writer, null, XesConstants.ClassifierTagName, null);
     WriteAttribute(writer, XesConstants.ClassifierNameAttribute, classifier.Name.Value);
 
     var keys = string.Join(' ', classifier.Keys.Select(key => key.Value));
