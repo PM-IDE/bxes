@@ -33,7 +33,7 @@ public static class EventUtil
     return first.Timestamp == second.Timestamp &&
            first.Name == second.Name &&
            first.Lifecycle.Equals(second.Lifecycle) &&
-           EventLogUtil.Equals(first.Attributes.ToList(), second.Attributes.ToList());
+           EventLogUtil.EqualsRegardingOrder(first.Attributes, second.Attributes);
   }
 }
 
