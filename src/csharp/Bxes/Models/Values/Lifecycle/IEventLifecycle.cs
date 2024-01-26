@@ -12,7 +12,7 @@ public interface IEventLifecycle
     if (BrafLifecycleValuesUtil.TryParse(value) is { } brafLifecycleValues)
       return new BrafLifecycle(brafLifecycleValues);
 
-    return new BrafLifecycle(BrafLifecycleValues.Unspecified);
+    return new StandardXesLifecycle(StandardLifecycleValues.Unspecified);
   }
 
   void WriteTo(BxesWriteContext context);
