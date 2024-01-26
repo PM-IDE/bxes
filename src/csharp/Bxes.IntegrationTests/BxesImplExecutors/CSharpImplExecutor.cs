@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace Bxes.IntegrationTests;
+namespace Bxes.IntegrationTests.BxesImplExecutors;
 
 public class CSharpImplExecutor : ExecutorBase
 {
@@ -12,7 +12,11 @@ public class CSharpImplExecutor : ExecutorBase
     StartInfo = new ProcessStartInfo
     {
       FileName = "dotnet",
-      Arguments = $"{TestDataProvider.CSharpExecutable} xes-to-bxes -path {xesLogPath} -output-path {bxesLogPath} --bxes-compression false"
+      Arguments = $"{TestDataProvider.CSharpExecutable} " +
+                  $"xes-to-bxes " +
+                  $"-path {xesLogPath} " +
+                  $"-output-path {bxesLogPath} " +
+                  $"--bxes-compression false"
     }
   };
 }

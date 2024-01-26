@@ -1,10 +1,10 @@
 ﻿using System.Diagnostics;
 
-namespace Bxes.IntegrationTests;
+namespace Bxes.IntegrationTests.BxesImplExecutors;
 
-public class RusFicusImplExecutor : ExecutorBase
+public class RustFicusImplExecutor : ExecutorBase
 {
-  public override string Name => "rust";
+  public override string Name => "ficus";
 
 
   protected override Process CreateProcess(string xesLogPath, string bxesLogPath) => new()

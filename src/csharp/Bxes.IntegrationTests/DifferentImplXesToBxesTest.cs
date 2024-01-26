@@ -1,3 +1,5 @@
+using Bxes.IntegrationTests.BxesImplExecutors;
+
 namespace Bxes.IntegrationTests;
 
 [TestFixture]
@@ -5,7 +7,7 @@ public class DifferentImplXesToBxesTest
 {
   private readonly List<IBxesImplExecutor> myExecutors = new()
   {
-    new RusFicusImplExecutor(),
+    new RustFicusImplExecutor(),
     new CSharpImplExecutor()
   };
 

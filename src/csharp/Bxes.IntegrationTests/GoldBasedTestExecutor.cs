@@ -1,4 +1,6 @@
-﻿using Bxes.Reader;
+﻿using Bxes.IntegrationTests.BxesImplExecutors;
+using Bxes.Reader;
+using Bxes.Xes;
 
 namespace Bxes.IntegrationTests;
 
