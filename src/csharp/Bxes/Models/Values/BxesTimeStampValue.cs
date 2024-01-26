@@ -2,11 +2,11 @@ using Bxes.Writer;
 
 namespace Bxes.Models.Values;
 
-public class BxesTimeStampValue(long value) : BxesValue<long>(value)
+public class BxesTimeStampValue(long nanoseconds) : BxesValue<long>(nanoseconds)
 {
   public override TypeIds TypeId => TypeIds.Timestamp;
 
-  public DateTime Timestamp { get; } = new(value, DateTimeKind.Utc);
+  public DateTime Timestamp { get; } = DateTime.UnixEpoch + TimeSpan.FromTicks(nanoseconds / 100);
 
 
   public override void WriteTo(BxesWriteContext context)
