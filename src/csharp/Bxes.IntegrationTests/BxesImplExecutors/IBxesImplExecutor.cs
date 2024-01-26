@@ -26,7 +26,10 @@ public abstract class ExecutorBase : IBxesImplExecutor
       Assert.Fail($"Failed to perform conversion in {timeout}, killing process");
     }
 
-    Assert.That(process.ExitCode, Is.Zero);
+    if (process.ExitCode != 0)
+    {
+      Assert.Fail($"The conversion {Name} process for {xesLogPath} exited with non-zero exit code {process.ExitCode}");
+    }
   }
 
   protected abstract Process CreateProcess(string xesLogPath, string bxesLogPath);
