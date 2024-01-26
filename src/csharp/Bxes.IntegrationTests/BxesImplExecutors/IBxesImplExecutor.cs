@@ -19,7 +19,7 @@ public abstract class ExecutorBase : IBxesImplExecutor
     var process = CreateProcess(xesLogPath, bxesLogPath);
     process.Start();
 
-    var timeout = TimeSpan.FromSeconds(10);
+    var timeout = TimeSpan.FromSeconds(20);
     if (!process.WaitForExit(timeout))
     {
       process.Kill();
