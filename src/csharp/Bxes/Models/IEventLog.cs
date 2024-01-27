@@ -150,7 +150,7 @@ public record BxesClassifier
   public override int GetHashCode()
   {
     var nameHash = Name.GetHashCode();
-    foreach (var key in Keys)
+    foreach (var key in Keys.OrderBy(key => key.Value))
     {
       nameHash = HashCode.Combine(nameHash, key.GetHashCode());
     }
@@ -188,7 +188,7 @@ public record BxesGlobal
   public override int GetHashCode()
   {
     var kindHash = Kind.GetHashCode();
-    foreach (var kv in Globals)
+    foreach (var kv in Globals.OrderBy(key => key.Key.Value))
     {
       kindHash = HashCode.Combine(kv.GetHashCode(), kindHash);
     }
