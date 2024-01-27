@@ -1,6 +1,5 @@
 ﻿using Bxes.IntegrationTests.BxesImplExecutors;
 using Bxes.Reader;
-using Bxes.Xes;
 
 namespace Bxes.IntegrationTests;
 
@@ -24,7 +23,13 @@ public static class GoldBasedTestExecutor
       foreach (var filePath in files[1..])
       {
         var currentLog = new SingleFileBxesReader().Read(filePath);
-        Assert.True(currentLog.Equals(goldLog));
+
+        if (!currentLog.Equals(goldLog))
+        {
+          Assert.Fail($"The log from execution {Path.GetFileNameWithoutExtension(filePath)}, " +
+                      $"differs from gold log from {Path.GetFileNameWithoutExtension(files[0])}, " +
+                      $"original log: {Path.GetFileNameWithoutExtension(xesLogPath)}");
+        }
       }
     }
     finally
