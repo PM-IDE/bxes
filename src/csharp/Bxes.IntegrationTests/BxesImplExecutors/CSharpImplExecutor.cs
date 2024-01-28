@@ -15,8 +15,7 @@ public class CSharpImplExecutor : ExecutorBase
       Arguments = $"{TestDataProvider.CSharpExecutable} " +
                   $"xes-to-bxes " +
                   $"-path {xesLogPath} " +
-                  $"-output-path {bxesLogPath} " +
-                  $"--bxes-compression false"
+                  $"-output-path {bxesLogPath} "
     }
   };
 }
