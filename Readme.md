@@ -66,7 +66,7 @@ The following types are suported in bxes:
 
 XES-sprcific types:
 
-- `timestamp` (type id = 8, `8 bytes`), the date is UTC ticks.
+- `timestamp` (type id = 8, `8 bytes`), the date is i64 which represents the number of nanoseconds sine Unix epoch
 - `braf-lifecycle-transition` (type id = 9, `1 byte`) - BRAF lifecycle model
     - NULL (unspecified) = `0`,
     - Closed = `1`
