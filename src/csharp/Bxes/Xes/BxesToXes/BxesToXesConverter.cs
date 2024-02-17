@@ -6,7 +6,7 @@ using Bxes.Models.Values.Lifecycle;
 using Bxes.Reader;
 using Bxes.Writer;
 
-namespace Bxes.Xes;
+namespace Bxes.Xes.BxesToXes;
 
 internal readonly struct StartEndElementCookie : IDisposable
 {

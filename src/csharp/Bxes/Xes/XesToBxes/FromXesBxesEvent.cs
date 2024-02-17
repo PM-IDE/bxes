@@ -1,8 +1,7 @@
 using Bxes.Models;
-using Bxes.Models.Values.Lifecycle;
 using Bxes.Writer;
 
-namespace Bxes.Xes;
+namespace Bxes.Xes.XesToBxes;
 
 public readonly struct FromXesBxesEvent : IEvent
 {

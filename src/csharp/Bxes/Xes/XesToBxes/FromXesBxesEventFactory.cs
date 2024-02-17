@@ -1,11 +1,9 @@
 using System.Xml;
 using Bxes.Models;
 using Bxes.Models.Values;
-using Bxes.Models.Values.Lifecycle;
 using Bxes.Writer;
-using Bxes.Xes.XesToBxes;
 
-namespace Bxes.Xes;
+namespace Bxes.Xes.XesToBxes;
 
 public static class FromXesBxesEventFactory
 {
