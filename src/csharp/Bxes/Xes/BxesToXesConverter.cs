@@ -220,7 +220,7 @@ public class BxesToXesConverter : IBetweenFormatsConverter
     using var _ = StartEndElementCookie.CreateStartEndElement(writer, null, XesConstants.DateTagName, null);
     WriteKeyAttribute(writer, XesConstants.TimeTimestamp);
 
-    var dateString = new DateTime(stamp).ToUniversalTime().ToString("O");
+    var dateString = DateTimeOffset.UnixEpoch.AddTicks(stamp / 100).ToString("O");
     WriteAttribute(writer, XesConstants.ValueAttributeName, dateString);
   }
 
