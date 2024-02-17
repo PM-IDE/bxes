@@ -37,7 +37,6 @@ public static class TestLogsProvider
     new(
       Random.Shared.Next(10123123),
       new BxesStringValue(GenerateRandomString()),
-      new BrafLifecycle(GenerateRandomEnum<BrafLifecycleValues>()),
       GenerateRandomAttributes()
     );
 

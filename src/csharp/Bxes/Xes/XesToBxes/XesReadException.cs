@@ -1,6 +1,6 @@
 using System.Xml;
 
-namespace Bxes.Xes;
+namespace Bxes.Xes.XesToBxes;
 
 public class XesReadException(XmlReader reader, string message) : BxesException
 {

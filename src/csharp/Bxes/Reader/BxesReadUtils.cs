@@ -148,7 +148,6 @@ public static class BxesReadUtils
       {
         var name = (BxesStringValue)values[(int)reader.ReadLeb128Unsigned()];
         var timestamp = reader.ReadInt64();
-        var lifecycle = (IEventLifecycle)BxesValue.Parse(reader, values);
 
         var attributesCount = reader.ReadLeb128Unsigned();
         var eventAttributes = new List<AttributeKeyValue>();
@@ -159,7 +158,7 @@ public static class BxesReadUtils
           eventAttributes.Add(new((BxesStringValue)values[(int)kv.Key], values[(int)kv.Value]));
         }
 
-        events.Add(new InMemoryEventImpl(timestamp, name, lifecycle, eventAttributes));
+        events.Add(new InMemoryEventImpl(timestamp, name, eventAttributes));
       }
 
       variants.Add(new TraceVariantImpl(tracesCount, events, metadata));

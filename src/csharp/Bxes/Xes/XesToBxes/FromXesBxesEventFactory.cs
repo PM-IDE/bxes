@@ -1,11 +1,9 @@
 using System.Xml;
 using Bxes.Models;
 using Bxes.Models.Values;
-using Bxes.Models.Values.Lifecycle;
 using Bxes.Writer;
-using Bxes.Xes.XesToBxes;
 
-namespace Bxes.Xes;
+namespace Bxes.Xes.XesToBxes;
 
 public static class FromXesBxesEventFactory
 {
@@ -14,9 +12,7 @@ public static class FromXesBxesEventFactory
     var attributes = new Lazy<List<AttributeKeyValue>>(static () => new List<AttributeKeyValue>());
     var initializedName = false;
     var initializedTimestamp = false;
-    var initializedLifecycle = false;
 
-    IEventLifecycle lifecycle = new StandardXesLifecycle(StandardLifecycleValues.Unspecified);
     string name = null!;
     long timestamp = 0;
 
@@ -40,10 +36,6 @@ public static class FromXesBxesEventFactory
               timestamp = ((BxesTimeStampValue)bxesValue).Value;
               initializedTimestamp = true;
               break;
-            case XesConstants.LifecycleTransition:
-              lifecycle = IEventLifecycle.Parse(value);
-              initializedLifecycle = true;
-              break;
             default:
               attributes.Value.Add(new AttributeKeyValue(new BxesStringValue(key), bxesValue));
               break;
@@ -58,14 +50,10 @@ public static class FromXesBxesEventFactory
     if (!initializedTimestamp)
       TryInitializeFromDefaults(XesConstants.TimeTimestamp, ref timestamp, ref initializedTimestamp, context);
 
-    if (!initializedLifecycle)
-      TryInitializeFromDefaults(XesConstants.LifecycleTransition, ref lifecycle, ref initializedLifecycle, context);
-
     return new FromXesBxesEvent
     {
       Timestamp = timestamp,
       Name = name,
-      Lifecycle = lifecycle,
       Attributes = attributes.IsValueCreated ? attributes.Value : ArraySegment<AttributeKeyValue>.Empty
     };
   }
