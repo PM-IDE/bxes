@@ -147,7 +147,7 @@ public static class BxesReadUtils
       for (uint j = 0; j < eventsCount; ++j)
       {
         var name = (BxesStringValue)values[(int)reader.ReadLeb128Unsigned()];
-        var timestamp = reader.ReadInt64();
+        var timestamp = reader.ReadLeb128Signed();
 
         var attributesCount = reader.ReadLeb128Unsigned();
         var eventAttributes = new List<AttributeKeyValue>();
