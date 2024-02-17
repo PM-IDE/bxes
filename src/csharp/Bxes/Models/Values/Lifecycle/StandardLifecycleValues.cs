@@ -34,7 +34,7 @@ public static class StandardLifecycleValuesUtil
     "schedule" => StandardLifecycleValues.Schedule,
     "start" => StandardLifecycleValues.Start,
     "suspend" => StandardLifecycleValues.Suspend,
-    "unknown" => StandardLifecycleValues.Unspecified,
+    "unknown" => StandardLifecycleValues.Unknown,
     "withdraw" => StandardLifecycleValues.Withdraw,
     _ => null
   };
