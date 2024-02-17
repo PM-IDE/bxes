@@ -82,11 +82,6 @@ pub fn try_write_event(
         event.timestamp,
     )?;
 
-    try_write_lifecycle(
-        context.borrow_mut().writer.as_mut().unwrap(),
-        &event.lifecycle,
-    )?;
-
     try_write_attributes(context, event.attributes.as_ref(), true)
 }
 

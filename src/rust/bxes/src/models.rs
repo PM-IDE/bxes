@@ -292,7 +292,6 @@ pub struct BxesTraceVariant {
 pub struct BxesEvent {
     pub name: Rc<Box<BxesValue>>,
     pub timestamp: i64,
-    pub lifecycle: Lifecycle,
     pub attributes: Option<Vec<(Rc<Box<BxesValue>>, Rc<Box<BxesValue>>)>>,
 }
 
@@ -308,9 +307,7 @@ impl PartialEq for BxesEvent {
 
 impl BxesEvent {
     fn compare_events_by_properties(&self, other: &Self) -> bool {
-        self.name == other.name
-            && self.timestamp == other.timestamp
-            && self.lifecycle == other.lifecycle
+        self.name == other.name && self.timestamp == other.timestamp
     }
 }
 

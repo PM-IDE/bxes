@@ -1,4 +1,4 @@
-use std::{any::TypeId, rc::Rc};
+use std::rc::Rc;
 
 use bxes::{
     models::{
@@ -11,7 +11,7 @@ use bxes::{
 use num_traits::FromPrimitive;
 use rand::{
     distributions::Alphanumeric,
-    rngs::{self, ThreadRng},
+    rngs::ThreadRng,
     Rng,
 };
 use uuid::Uuid;
@@ -112,7 +112,6 @@ fn generate_random_event(rng: &mut ThreadRng) -> BxesEvent {
     BxesEvent {
         name: generate_random_string_bxes_value(rng),
         timestamp: rng.gen(),
-        lifecycle: generate_random_lifecycle(rng),
         attributes: generate_random_attributes_option(rng),
     }
 }

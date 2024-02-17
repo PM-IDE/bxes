@@ -186,16 +186,10 @@ fn try_read_event(
     }
 
     let timestamp = try_read_i64(reader)?;
-    let lifecycle = match try_read_bxes_value(reader, values)? {
-        BxesValue::StandardLifecycle(lifecycle) => Lifecycle::Standard(lifecycle),
-        BxesValue::BrafLifecycle(lifecycle) => Lifecycle::Braf(lifecycle),
-        _ => return Err(BxesReadError::LifecycleOfEventOutOfRange),
-    };
 
     Ok(BxesEvent {
         name: name.unwrap().clone(),
         timestamp,
-        lifecycle,
         attributes: try_read_attributes(reader, values, kv_pairs, true)?,
     })
 }
