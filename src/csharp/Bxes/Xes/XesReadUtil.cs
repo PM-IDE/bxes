@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Xml;
 using Bxes.Models;
 using Bxes.Models.Values;
+using Bxes.Models.Values.Lifecycle;
 using Bxes.Utils;
 using Bxes.Xes.XesToBxes;
 
@@ -72,6 +73,13 @@ public static class XesReadUtil
         default:
           throw new XesReadException(reader, $"Failed to parse list {key}");
       }
+    }
+
+    if (key is XesConstants.LifecycleTransition)
+    {
+      var bxesLifecycle = (BxesValue)IEventLifecycle.Parse(value);
+      var lifecycleParseResult = AttributeValueParseResult.Create(value, bxesLifecycle);
+      return AttributeParseResult.KeyValue(key, lifecycleParseResult);
     }
 
     BxesValue bxesValue = reader.Name switch

@@ -116,11 +116,6 @@ public class BxesToXesConverter : IBetweenFormatsConverter
     WriteDateTag(writer, currentEvent.Timestamp);
     WriteValueTag(writer, XesConstants.StringTagName, XesConstants.ConceptName, currentEvent.Name);
 
-    if (currentEvent.Lifecycle.IsDefined())
-    {
-      WriteLifecycle(writer, currentEvent.Lifecycle);
-    }
-
     foreach (var attribute in currentEvent.Attributes)
     {
       WriteKeyValuePair(writer, attribute);
@@ -203,13 +198,6 @@ public class BxesToXesConverter : IBetweenFormatsConverter
         WriteValueTag(writer, XesConstants.StringTagName, XesConstants.ArtifactItemTransition, item.Transition);
       }
     }
-  }
-
-  private static void WriteLifecycle(XmlWriter writer, IEventLifecycle lifecycle)
-  {
-    using var _ = StartEndElementCookie.CreateStartEndElement(writer, null, XesConstants.StringTagName, null);
-    WriteKeyAttribute(writer, XesConstants.LifecycleTransition);
-    WriteAttribute(writer, XesConstants.ValueAttributeName, lifecycle.ToStringValue());
   }
 
   private static void WriteExtensionTag(XmlWriter writer, string name, string prefix, string uri)

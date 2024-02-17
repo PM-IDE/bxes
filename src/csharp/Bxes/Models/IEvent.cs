@@ -1,5 +1,4 @@
 using Bxes.Models.Values;
-using Bxes.Models.Values.Lifecycle;
 using Bxes.Writer;
 
 namespace Bxes.Models;
@@ -8,7 +7,6 @@ public interface IEvent : IEquatable<IEvent>
 {
   long Timestamp { get; }
   string Name { get; }
-  IEventLifecycle Lifecycle { get; }
 
   IList<AttributeKeyValue> Attributes { get; }
 
@@ -32,7 +30,6 @@ public static class EventUtil
   {
     return first.Timestamp == second.Timestamp &&
            first.Name == second.Name &&
-           first.Lifecycle.Equals(second.Lifecycle) &&
            EventLogUtil.EqualsRegardingOrder(first.Attributes, second.Attributes);
   }
 }
@@ -40,12 +37,10 @@ public static class EventUtil
 public class InMemoryEventImpl(
   long timestamp,
   BxesStringValue name,
-  IEventLifecycle lifecycle,
   List<AttributeKeyValue> attributes
 ) : IEvent
 {
   public long Timestamp { get; } = timestamp;
-  public IEventLifecycle Lifecycle { get; } = lifecycle;
   public string Name => name.Value;
   public IList<AttributeKeyValue> Attributes { get; } = attributes;
 

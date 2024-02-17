@@ -8,7 +8,6 @@ public readonly struct FromXesBxesEvent : IEvent
 {
   public required long Timestamp { get; init; }
   public required string Name { get; init; }
-  public required IEventLifecycle Lifecycle { get; init; }
   public required IList<AttributeKeyValue> Attributes { get; init; }
 
 

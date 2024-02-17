@@ -179,7 +179,6 @@ internal static class BxesWriteUtils
   {
     context.Writer.WriteLeb128Unsigned(context.ValuesIndices[new BxesStringValue(@event.Name)]);
     context.Writer.Write(@event.Timestamp);
-    @event.Lifecycle.WriteTo(context);
 
     WriteCollection(@event.Attributes, context, true, WriteKeyValueIndex);
   }
