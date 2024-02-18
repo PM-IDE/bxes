@@ -31,7 +31,7 @@ RUN $python -m pip install .
 COPY --from=build /app /app
 WORKDIR /app/bxes/src/python/
 
-RUN $python ya.py https://disk.yandex.ru/d/wUu0vOxxaodGWg ./test_data.zip
+RUN $python ya.py https://disk.yandex.ru/d/79u-2vgUkJug0w ./test_data.zip
 RUN unzip bxes_test_data.zip
 RUN mv test_data /app/bxes/
 RUN find . -name ".DS_Store" -exec rm {} \;
