@@ -8,7 +8,10 @@ using Bxes.Writer.Stream;
 
 namespace Bxes.Xes.XesToBxes;
 
-public class XesToBxesConverter(ILogger logger, bool doIndicesPreprocessing) : IBetweenFormatsConverter
+public class XesToBxesConverter(
+  ILogger logger, 
+  bool doIndicesPreprocessing
+) : IBetweenFormatsConverter
 {
   public void Convert(string filePath, string outputPath)
   {
