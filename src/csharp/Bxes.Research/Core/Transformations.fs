@@ -43,7 +43,7 @@ module Transformations =
 
         executeTransformation logPath outputDirectory name extension (fun outputPath ->
             let logger = BxesDefaultLoggerFactory.Create()
-            XesToBxesConverter(logger, preprocess).Convert(logPath, outputPath))
+            XesToBxesConverter(logger, preprocess, true).Convert(logPath, outputPath))
 
     let bxesPreprocessingTransformation logPath outputDirectory =
         bxesTransformationBase logPath outputDirectory true

@@ -3,7 +3,8 @@ using Bxes.Utils;
 
 namespace Bxes.Writer.Stream;
 
-public class SingleFileBxesStreamWriterImpl<TEvent> : IBxesStreamWriter where TEvent : IEvent
+public class SingleFileBxesStreamWriterImpl<TEvent> : 
+  IBxesStreamWriter, IXesToBxesStatisticsCollector where TEvent : IEvent
 {
   private readonly MultipleFilesBxesStreamWriterImpl<TEvent> myMultipleWriter;
   private readonly string mySavePath;
@@ -82,4 +83,6 @@ public class SingleFileBxesStreamWriterImpl<TEvent> : IBxesStreamWriter where TE
       writer.Write(buffer, 0, readCount);
     }
   }
+
+  public XesToBxesConversionStatistics ObtainStatistics() => myMultipleWriter.ObtainStatistics();
 }

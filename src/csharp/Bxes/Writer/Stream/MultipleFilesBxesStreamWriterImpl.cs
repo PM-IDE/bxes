@@ -38,9 +38,16 @@ internal readonly struct ValuesCounter()
       map[value] = 1;
     }
   }
+
+  public XesToBxesConversionStatistics ToStatistics() => new()
+  {
+    Values = myValuesCounts,
+    Attributes = myKeyValuesCounts
+  };
 }
 
-public class MultipleFilesBxesStreamWriterImpl<TEvent> : IBxesStreamWriter where TEvent : IEvent
+public class MultipleFilesBxesStreamWriterImpl<TEvent> : 
+  IBxesStreamWriter, IXesToBxesStatisticsCollector where TEvent : IEvent
 {
   private readonly uint myBxesVersion;
   private readonly BinaryWriter myMetadataWriter;
@@ -223,4 +230,6 @@ public class MultipleFilesBxesStreamWriterImpl<TEvent> : IBxesStreamWriter where
 
     BxesWriteUtils.WriteEventLogMetadata(myMetadata, myContext.WithWriter(myMetadataWriter));
   }
+
+  public XesToBxesConversionStatistics ObtainStatistics() => myValuesCounter.ToStatistics();
 }

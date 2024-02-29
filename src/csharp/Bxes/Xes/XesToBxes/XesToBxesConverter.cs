@@ -10,7 +10,8 @@ namespace Bxes.Xes.XesToBxes;
 
 public class XesToBxesConverter(
   ILogger logger, 
-  bool doIndicesPreprocessing
+  bool doIndicesPreprocessing,
+  bool writeStatistics
 ) : IBetweenFormatsConverter
 {
   public void Convert(string filePath, string outputPath)
@@ -25,7 +26,47 @@ public class XesToBxesConverter(
       ExtractValuesAndKeyValues(fs, context);
     }
 
+    if (writeStatistics && writer is IXesToBxesStatisticsCollector collector)
+    {
+      WriteStatistics(collector, Path.GetDirectoryName(outputPath)!);
+    }
+
     ConvertXesToBxes(fs, context);
+  }
+
+  private static void WriteStatistics(IXesToBxesStatisticsCollector collector, string directory)
+  {
+    var statistics = collector.ObtainStatistics();
+    WriteValuesStatistics(statistics.Values, directory);
+    WriteAttributesStatistics(statistics.Attributes, directory);
+  }
+
+  private static void WriteValuesStatistics(IReadOnlyDictionary<BxesValue, int> valuesCounts, string directory)
+  {
+    const string FileName = "ValuesStatistics.csv";
+
+    using var fs = File.OpenWrite(Path.Combine(directory, FileName));
+    using var sw = new StreamWriter(fs);
+    
+    sw.WriteLine("Value;Count");
+    foreach (var (bxesValue, count) in valuesCounts)
+    {
+      sw.WriteLine($"{bxesValue};{count}");
+    }
+  }
+
+  private static void WriteAttributesStatistics(IReadOnlyDictionary<AttributeKeyValue, int> kvCounts, string directory)
+  {
+    const string FileName = "AttributesStatistics.csv";
+
+    using var fs = File.OpenWrite(Path.Combine(directory, FileName));
+    using var sw = new StreamWriter(fs);
+    
+    sw.WriteLine("Key;Value;Count");
+    foreach (var ((key, value), count) in kvCounts)
+    {
+      sw.WriteLine($"{key};{value};{count}");
+    }
   }
 
   private static void ExtractValuesAndKeyValues(FileStream fs, XesReadContext context)
