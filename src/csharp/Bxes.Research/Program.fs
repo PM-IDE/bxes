@@ -27,7 +27,7 @@ let main args =
     | true ->
         use fs = File.OpenWrite(Path.Combine(outputDirectory, "results.csv"))
         use sw = new StreamWriter(fs)
-        sw.WriteLine("Name;OriginalSize;BxesSize;BxesPreprocessing;ZipSize;BxesToXesSize;ExiSize")
+        sw.WriteLine("Name;OriginalSize;BxesSize;BxesPreprocessing;ZipSize;BxesToXesSize;ExiSize;ValuesRepeatCoef;AttributesRepeatCoef")
         
         Directory.GetDirectories(logsTopLevelDirectory)
         |> Array.map (fun directory ->
@@ -37,8 +37,11 @@ let main args =
                 let transformationResult = logResults
                                            |> List.map (fun res -> res.TransformedFileSize.ToString())
                                            |> String.concat ";"
-
-                sw.WriteLine($"{logName};{logResults[0].OriginalFileSize};{transformationResult}")))
+                
+                let outputDir = logResults[0].TransformedFilesDirectory
+                let valuesCoef = Transformations.extractValuesRepeatCoef outputDir
+                let attributesCoef = Transformations.extractAttributesRepeatCoef outputDir
+                sw.WriteLine($"{logName};{logResults[0].OriginalFileSize};{transformationResult};{valuesCoef};{attributesCoef}")))
         |> ignore
     | false ->
         printfn "The top level logs directory does not exist"

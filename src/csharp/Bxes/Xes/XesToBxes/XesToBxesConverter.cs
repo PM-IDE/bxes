@@ -8,6 +8,73 @@ using Bxes.Writer.Stream;
 
 namespace Bxes.Xes.XesToBxes;
 
+public static class XesToBxesStatisticFiles
+{
+  public const string ValuesStatistics = "ValuesStatistics.csv";
+  public const string AttributesStatistics = "AttributesStatistics.csv";
+}
+
+public static class XesToBxesStatisticUtil
+{
+  public static void WriteValuesStatistics(IReadOnlyDictionary<BxesValue, int> valuesCounts, string directory)
+  {
+    using var fs = File.OpenWrite(Path.Combine(directory, XesToBxesStatisticFiles.ValuesStatistics));
+    using var sw = new StreamWriter(fs);
+    
+    sw.WriteLine("Value;Count");
+    foreach (var (bxesValue, count) in valuesCounts)
+    {
+      sw.WriteLine($"{bxesValue};{count}");
+    }
+  }
+
+  public static void WriteAttributesStatistics(IReadOnlyDictionary<AttributeKeyValue, int> kvCounts, string directory)
+  {
+    using var fs = File.OpenWrite(Path.Combine(directory, XesToBxesStatisticFiles.AttributesStatistics));
+    using var sw = new StreamWriter(fs);
+    
+    sw.WriteLine("Key;Value;Count");
+    foreach (var ((key, value), count) in kvCounts)
+    {
+      sw.WriteLine($"{key};{value};{count}");
+    }
+  }
+
+  public static Dictionary<string, int> ReadValuesStatistics(string path)
+  {
+    using var fs = File.OpenRead(path);
+    using var sr = new StreamReader(fs);
+
+    var result = new Dictionary<string, int>();
+
+    sr.ReadLine();
+    while (sr.ReadLine() is { } line)
+    {
+      var strings = line.Split(';');
+      result[strings[0]] = int.Parse(strings[1]);
+    }
+
+    return result;
+  }
+
+  public static Dictionary<(string, string), int> ReadAttributesStatistics(string path)
+  {
+    using var fs = File.OpenRead(path);
+    using var sr = new StreamReader(fs);
+
+    var result = new Dictionary<(string, string), int>();
+
+    sr.ReadLine();
+    while (sr.ReadLine() is { } line)
+    {
+      var strings = line.Split(';');
+      result[(strings[0], strings[1])] = int.Parse(strings[2]);
+    }
+
+    return result;
+  }
+}
+
 public class XesToBxesConverter(
   ILogger logger, 
   bool doIndicesPreprocessing,
@@ -37,36 +104,8 @@ public class XesToBxesConverter(
   private static void WriteStatistics(IXesToBxesStatisticsCollector collector, string directory)
   {
     var statistics = collector.ObtainStatistics();
-    WriteValuesStatistics(statistics.Values, directory);
-    WriteAttributesStatistics(statistics.Attributes, directory);
-  }
-
-  private static void WriteValuesStatistics(IReadOnlyDictionary<BxesValue, int> valuesCounts, string directory)
-  {
-    const string FileName = "ValuesStatistics.csv";
-
-    using var fs = File.OpenWrite(Path.Combine(directory, FileName));
-    using var sw = new StreamWriter(fs);
-    
-    sw.WriteLine("Value;Count");
-    foreach (var (bxesValue, count) in valuesCounts)
-    {
-      sw.WriteLine($"{bxesValue};{count}");
-    }
-  }
-
-  private static void WriteAttributesStatistics(IReadOnlyDictionary<AttributeKeyValue, int> kvCounts, string directory)
-  {
-    const string FileName = "AttributesStatistics.csv";
-
-    using var fs = File.OpenWrite(Path.Combine(directory, FileName));
-    using var sw = new StreamWriter(fs);
-    
-    sw.WriteLine("Key;Value;Count");
-    foreach (var ((key, value), count) in kvCounts)
-    {
-      sw.WriteLine($"{key};{value};{count}");
-    }
+    XesToBxesStatisticUtil.WriteValuesStatistics(statistics.Values, directory);
+    XesToBxesStatisticUtil.WriteAttributesStatistics(statistics.Attributes, directory);
   }
 
   private static void ExtractValuesAndKeyValues(FileStream fs, XesReadContext context)

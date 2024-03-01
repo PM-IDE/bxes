@@ -1,6 +1,7 @@
 namespace Bxes.Research.Core
 
 open System
+open System.Collections.Generic
 open System.Diagnostics
 open System.IO
 open System.IO.Compression
@@ -12,6 +13,7 @@ module Transformations =
     type TransformationResult =
         { TransformationName: string
           OriginalFilePath: string
+          TransformedFilesDirectory: string
           OriginalFileSize: int64
           TransformedFileSize: int64 }
 
@@ -34,6 +36,7 @@ module Transformations =
 
         { TransformationName = extension
           OriginalFilePath = logPath
+          TransformedFilesDirectory = outputDirectory 
           OriginalFileSize = FileInfo(logPath).Length
           TransformedFileSize = FileInfo(outputPath).Length }
 
@@ -98,3 +101,18 @@ module Transformations =
     let processEventLog logPath outputDirectory =
         transformations
         |> List.map (fun transformation -> transformation logPath outputDirectory)
+
+    let private calculateRepeatCoef (data: Dictionary<'a, int>) =
+        let max = double (data.Values |> Seq.max)
+        let min = double (data.Values |> Seq.min)
+        (data.Values |> Seq.map (fun x -> (double x - min) / (max - min)) |> Seq.sum) / double data.Count
+
+    let extractValuesRepeatCoef outputDirectory =
+        let valuesStatPath = Path.Combine(outputDirectory, XesToBxesStatisticFiles.ValuesStatistics)
+        let stat = XesToBxesStatisticUtil.ReadValuesStatistics valuesStatPath
+        calculateRepeatCoef stat
+
+    let extractAttributesRepeatCoef outputDirectory =
+        let valuesStatPath = Path.Combine(outputDirectory, XesToBxesStatisticFiles.AttributesStatistics)
+        let stat = XesToBxesStatisticUtil.ReadAttributesStatistics valuesStatPath
+        calculateRepeatCoef stat
