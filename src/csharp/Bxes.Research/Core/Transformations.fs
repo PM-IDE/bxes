@@ -107,12 +107,27 @@ module Transformations =
         let min = double (data.Values |> Seq.min)
         (data.Values |> Seq.map (fun x -> (double x - min) / (max - min)) |> Seq.sum) / double data.Count
 
-    let extractValuesRepeatCoef outputDirectory =
+    let private calculateVariantsCoef (data: Dictionary<'a, int>) =
+        double data.Count / double (data.Values |> Seq.sum)
+        
+    let private doExtractValuesRepeatCoef outputDirectory coefFunc =
         let valuesStatPath = Path.Combine(outputDirectory, XesToBxesStatisticFiles.ValuesStatistics)
         let stat = XesToBxesStatisticUtil.ReadValuesStatistics valuesStatPath
-        calculateRepeatCoef stat
-
-    let extractAttributesRepeatCoef outputDirectory =
+        coefFunc stat
+        
+    let private doExtractAttributesRepeatCoef outputDirectory coefFunc =
         let valuesStatPath = Path.Combine(outputDirectory, XesToBxesStatisticFiles.AttributesStatistics)
         let stat = XesToBxesStatisticUtil.ReadAttributesStatistics valuesStatPath
-        calculateRepeatCoef stat
+        coefFunc stat
+
+    let extractValuesRepeatCoef outputDirectory =
+        doExtractValuesRepeatCoef outputDirectory calculateRepeatCoef
+
+    let extractAttributesRepeatCoef outputDirectory =
+        doExtractAttributesRepeatCoef outputDirectory calculateRepeatCoef
+
+    let extractValuesVariantsCoef outputDirectory =
+        doExtractValuesRepeatCoef outputDirectory calculateVariantsCoef
+
+    let extractAttributesVariantsCoef outputDirectory =
+        doExtractAttributesRepeatCoef outputDirectory calculateVariantsCoef
