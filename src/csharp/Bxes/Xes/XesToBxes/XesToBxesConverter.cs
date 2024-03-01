@@ -16,15 +16,17 @@ public static class XesToBxesStatisticFiles
 
 public static class XesToBxesStatisticUtil
 {
+  private const string Separator = "\t";
+  
   public static void WriteValuesStatistics(IReadOnlyDictionary<BxesValue, int> valuesCounts, string directory)
   {
     using var fs = File.OpenWrite(Path.Combine(directory, XesToBxesStatisticFiles.ValuesStatistics));
     using var sw = new StreamWriter(fs);
     
-    sw.WriteLine("Value;Count");
+    sw.WriteLine($"Value{Separator}Count");
     foreach (var (bxesValue, count) in valuesCounts)
     {
-      sw.WriteLine($"{bxesValue};{count}");
+      sw.WriteLine($"{PreprocessString(bxesValue.ToString()!)}{Separator}{count}");
     }
   }
 
@@ -33,12 +35,16 @@ public static class XesToBxesStatisticUtil
     using var fs = File.OpenWrite(Path.Combine(directory, XesToBxesStatisticFiles.AttributesStatistics));
     using var sw = new StreamWriter(fs);
     
-    sw.WriteLine("Key;Value;Count");
+    sw.WriteLine($"Key{Separator}Value{Separator}Count");
     foreach (var ((key, value), count) in kvCounts)
     {
-      sw.WriteLine($"{key};{value};{count}");
+      var keyString = PreprocessString(key.ToString());
+      var valueString = PreprocessString(value.ToString()!);
+      sw.WriteLine($"{keyString}{Separator}{valueString}{Separator}{count}");
     }
   }
+
+  private static string PreprocessString(string value) => value.Replace("\n", string.Empty);
 
   public static Dictionary<string, int> ReadValuesStatistics(string path)
   {
@@ -50,7 +56,9 @@ public static class XesToBxesStatisticUtil
     sr.ReadLine();
     while (sr.ReadLine() is { } line)
     {
-      var strings = line.Split(';');
+      if (string.IsNullOrWhiteSpace(line)) continue;
+
+      var strings = line.Split(Separator);
       result[strings[0]] = int.Parse(strings[1]);
     }
 
@@ -67,7 +75,9 @@ public static class XesToBxesStatisticUtil
     sr.ReadLine();
     while (sr.ReadLine() is { } line)
     {
-      var strings = line.Split(';');
+      if (string.IsNullOrWhiteSpace(line)) continue;
+
+      var strings = line.Split(Separator);
       result[(strings[0], strings[1])] = int.Parse(strings[2]);
     }
 
