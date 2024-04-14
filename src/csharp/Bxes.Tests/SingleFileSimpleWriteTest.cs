@@ -10,7 +10,7 @@ public class SingleFileSimpleWriteTest
   [Test]
   public void SimpleTest1()
   {
-    ExecuteSimpleTest(TestLogsProvider.CreateSimpleTestLog1());
+    ExecuteSimpleTest(TestLogsProvider.CreateSimpleTestLog());
   }
 
   private static void ExecuteSimpleTest(IEventLog log)

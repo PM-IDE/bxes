@@ -2,19 +2,20 @@ namespace Bxes.Models;
 
 public enum TypeIds : byte
 {
-  I32 = 0,
-  I64 = 1,
-  U32 = 2,
-  U64 = 3,
-  F32 = 4,
-  F64 = 5,
-  String = 6,
-  Bool = 7,
-  Timestamp = 8,
-  BrafLifecycle = 9,
-  StandardLifecycle = 10,
-  Artifact = 11,
-  Drivers = 12,
-  Guid = 13,
-  SoftwareEventType = 14
+  Null = 0,
+  I32 = 1,
+  I64 = 2,
+  U32 = 3,
+  U64 = 4,
+  F32 = 5,
+  F64 = 6,
+  String = 7,
+  Bool = 8,
+  Timestamp = 9,
+  BrafLifecycle = 10,
+  StandardLifecycle = 11,
+  Artifact = 12,
+  Drivers = 13,
+  Guid = 14,
+  SoftwareEventType = 15
 }

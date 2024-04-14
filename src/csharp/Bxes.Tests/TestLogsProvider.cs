@@ -8,7 +8,7 @@ namespace Bxes.Tests;
 
 public static class TestLogsProvider
 {
-  public static IEventLog CreateSimpleTestLog1()
+  public static IEventLog CreateSimpleTestLog()
   {
     var variants = new List<ITraceVariant>();
     var variantsCount = Random.Shared.Next(10);
@@ -127,6 +127,7 @@ public static class TestLogsProvider
     var typeId = (TypeIds)Random.Shared.Next(Enum.GetValues<TypeIds>().Length);
     return typeId switch
     {
+      TypeIds.Null => BxesNullValue.Instance,
       TypeIds.I32 => new BxesInt32Value(Random.Shared.Next(10000)),
       TypeIds.I64 => new BxesInt64Value(Random.Shared.Next(10000)),
       TypeIds.U32 => new BxesUint32Value((uint)Random.Shared.Next(10000)),

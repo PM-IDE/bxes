@@ -17,6 +17,8 @@ public abstract class BxesValue
 
     switch (typeId)
     {
+      case TypeIds.Null:
+        return BxesNullValue.Instance;
       case TypeIds.Bool:
         var value = reader.ReadByte() switch
         {
