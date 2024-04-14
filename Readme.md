@@ -160,6 +160,10 @@ Type id + additional type info (i.e. length of a string) forms a header of a val
     - The name index of a classifier is written
     - The number of keys is written (`u32`)
     - The keys are written (value-index `u32`)
+- The number of value-attributes is written (`u32`)
+  - The value-attributes info are written:
+    - The name of the attribute is written (`String`)
+    - The type of the attribute is written (`byte`)
 
 ### Trace variant format
 
@@ -173,7 +177,7 @@ Type id + additional type info (i.e. length of a string) forms a header of a val
 
 - name value index: (`u32`, `4 bytes`)
 - timestamp value (`i64`, `8 bytes`), number of nanoseconds since Unix Epoch (date in UTC)
-- lifecycle value (`2 bytes`, type id (`1 byte`) + value (`1 byte`), `0` if unspecified)
+- the value-attributes are written, the number of value attributes is specified in the event log metadata.
 - number of attributes (`u32`, `4 bytes`)
 - sequence of key value indices (size * `4 bytes`)
 
