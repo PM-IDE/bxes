@@ -1,11 +1,12 @@
 use num_derive::FromPrimitive;
 use num_traits::ToBytes;
-use std::hash::Hash;
+use std::hash::{Hash, Hasher};
 use std::rc::Rc;
 use variant_count::VariantCount;
 
 #[derive(Clone, Debug)]
 pub enum BxesValue {
+    Null,
     Int32(i32),
     Int64(i64),
     Uint32(u32),
@@ -40,7 +41,7 @@ pub struct BxesArtifact {
 }
 
 impl Hash for BxesArtifact {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+    fn hash<H: Hasher>(&self, state: &mut H) {
         for item in &self.items {
             item.hash(state);
         }
@@ -71,7 +72,7 @@ pub struct BxesArtifactItem {
 }
 
 impl Hash for BxesArtifactItem {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+    fn hash<H: Hasher>(&self, state: &mut H) {
         self.instance.hash(state);
         self.transition.hash(state);
     }
@@ -146,8 +147,9 @@ impl PartialEq for BxesDriver {
 }
 
 impl Hash for BxesValue {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+    fn hash<H: Hasher>(&self, state: &mut H) {
         match self {
+            BxesValue::Null => state.write_u8(0),
             BxesValue::Int32(value) => state.write_i32(*value),
             BxesValue::Int64(value) => state.write_i64(*value),
             BxesValue::Uint32(value) => state.write_u32(*value),
@@ -170,6 +172,7 @@ impl Hash for BxesValue {
 impl PartialEq for BxesValue {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
+            (Self::Null, Self::Null) => true,
             (Self::Int32(left), Self::Int32(right)) => left == right,
             (Self::Int64(left), Self::Int64(right)) => left == right,
             (Self::Uint32(left), Self::Uint32(right)) => left == right,

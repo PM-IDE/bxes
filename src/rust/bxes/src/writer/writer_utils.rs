@@ -493,6 +493,7 @@ pub fn try_write_value(
 
     let value_ref = value.as_ref().as_ref();
     match value_ref {
+        BxesValue::Null => try_write_u8_no_type_id(context.writer.as_mut().unwrap(), 0),
         BxesValue::Int32(value) => try_write_i32(context.writer.as_mut().unwrap(), *value),
         BxesValue::Int64(value) => try_write_i64(context.writer.as_mut().unwrap(), *value),
         BxesValue::Uint32(value) => try_write_u32(context.writer.as_mut().unwrap(), *value),

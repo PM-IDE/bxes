@@ -286,6 +286,7 @@ fn try_read_bxes_value(
     };
 
     match type_id {
+        TypeIds::Null => Ok(BxesValue::Null),
         TypeIds::I32 => Ok(BxesValue::Int32(try_read_i32(reader)?)),
         TypeIds::I64 => Ok(BxesValue::Int64(try_read_i64(reader)?)),
         TypeIds::U32 => Ok(BxesValue::Uint32(try_read_u32(reader)?)),

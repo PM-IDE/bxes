@@ -154,6 +154,7 @@ fn generate_random_string(rng: &mut ThreadRng) -> String {
 fn generate_random_bxes_value(rng: &mut ThreadRng) -> Rc<Box<BxesValue>> {
     Rc::new(Box::new(
         match TypeIds::from_u8(rng.gen_range(0..TypeIds::VARIANT_COUNT) as u8).unwrap() {
+            TypeIds::Null => BxesValue::Null,
             TypeIds::I32 => BxesValue::Int32(rng.gen()),
             TypeIds::I64 => BxesValue::Int64(rng.gen()),
             TypeIds::U32 => BxesValue::Uint32(rng.gen()),
