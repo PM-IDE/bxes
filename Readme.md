@@ -1,3 +1,5 @@
+## The repository is archived, the project moved to https://github.com/PM-IDE/workspace
+
 ## This document describes the `bxes` format.
 
 ### Goals
